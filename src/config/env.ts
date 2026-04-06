@@ -12,6 +12,8 @@ import {
 export type ThemeName = "crt" | "amber";
 
 export interface VisualConfig {
+  showGrid: boolean;
+  showStats: boolean;
   scanOpacity: number;
   scanSpacing: number;
   scanLineOpacity: number;
@@ -42,6 +44,7 @@ export interface RuntimeConfig {
   token: string;
   theme: ThemeName;
   outputPath: string;
+  minifySvg: boolean;
   visual: VisualConfig;
 }
 
@@ -49,6 +52,9 @@ const DEFAULT_OUTPUT_PATH = path.join("assets", "crt-contributions.svg");
 
 function visualConfigFromEnv(env: EnvSource): VisualConfig {
   return {
+    showGrid: booleanEnv(env, ["CRT_SHOW_GRID", "SHIPPING_RADAR_SHOW_GRID"], false),
+    showStats: booleanEnv(env, ["CRT_SHOW_STATS", "SHIPPING_RADAR_SHOW_STATS"], true),
+
     scanOpacity: numberEnv(env, ["CRT_SCAN_OPACITY", "SHIPPING_RADAR_SCAN_OPACITY"], 0.085),
     scanSpacing: integerEnv(env, ["CRT_SCAN_SPACING", "SHIPPING_RADAR_SCAN_SPACING"], 6),
     scanLineOpacity: numberEnv(env, ["CRT_SCANLINE_OPACITY", "SHIPPING_RADAR_SCANLINE_OPACITY"], 0.16),
@@ -101,6 +107,7 @@ export function loadRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
     token,
     theme,
     outputPath,
+    minifySvg: booleanEnv(env, ["CRT_MINIFY_SVG"], true),
     visual: visualConfigFromEnv(env)
   };
 }

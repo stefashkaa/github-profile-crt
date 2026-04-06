@@ -6,9 +6,14 @@ import { generateCrtContributionSvg } from "./generator";
 async function main(): Promise<void> {
   const config = loadRuntimeConfig();
   const result = await generateCrtContributionSvg(config);
+  const savedBytes = result.sizeBeforeOptimization - result.finalSize;
+  const savedPercent =
+    result.sizeBeforeOptimization > 0
+      ? ((savedBytes / result.sizeBeforeOptimization) * 100).toFixed(1)
+      : "0.0";
 
   console.log(
-    `Generated ${result.outputPath} (${result.weeks} weeks, ${result.totalContributions} contributions total)`
+    `Generated ${result.outputPath} (${result.weeks} weeks, ${result.totalContributions} contributions total, ${result.finalSize} bytes${result.optimized ? `, saved ${savedBytes} bytes (${savedPercent}%)` : ""})`
   );
 }
 

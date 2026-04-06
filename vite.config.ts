@@ -13,7 +13,7 @@ export default defineConfig({
         index: resolve(__dirname, "src/index.ts"),
         cli: resolve(__dirname, "src/cli.ts")
       },
-      external: [/^node:/, "dotenv/config"],
+      external: [/^node:/, "dotenv/config", "svgo"],
       output: {
         format: "es",
         entryFileNames: "[name].js"

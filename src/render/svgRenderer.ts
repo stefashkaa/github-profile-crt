@@ -7,7 +7,7 @@ import {
   type WeeklyStats
 } from "../model/calendar";
 import { deriveWeeklyStats } from "../model/weekly";
-import { average, clamp, maxOf } from "../utils/math";
+import { clamp, maxOf } from "../utils/math";
 import { escapeXml } from "../utils/xml";
 import { buildLayout } from "./layout";
 import { getPalette } from "./palette";
@@ -150,22 +150,26 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     layout.margin.top + layout.headerHeight + layout.subHeaderHeight + 12
   );
 
-  const gridLines = [0, 0.25, 0.5, 0.75, 1]
-    .map((progress) => {
-      const y = layout.chartTop + layout.chartHeight * progress;
-      return `<line x1="${layout.margin.left}" y1="${y}" x2="${layout.width - layout.margin.right}" y2="${y}" class="grid"/>`;
-    })
-    .join("\n");
+  const gridLines = visual.showGrid
+    ? [0, 0.25, 0.5, 0.75, 1]
+        .map((progress) => {
+          const y = layout.chartTop + layout.chartHeight * progress;
+          return `<line x1="${layout.margin.left}" y1="${y}" x2="${layout.width - layout.margin.right}" y2="${y}" class="grid"/>`;
+        })
+        .join("\n")
+    : "";
 
-  const verticalTicks = weekly
-    .filter((_, index) => index % 4 === 0)
-    .map((_, tickIndex) => {
-      const index = tickIndex * 4;
-      const x =
-        layout.margin.left + index * (layout.barWidth + layout.weekGap) + Math.floor(layout.barWidth / 2) + 0.5;
-      return `<line x1="${x}" y1="${layout.chartTop}" x2="${x}" y2="${layout.chartBottom}" class="vtick"/>`;
-    })
-    .join("\n");
+  const verticalTicks = visual.showGrid
+    ? weekly
+        .filter((_, index) => index % 4 === 0)
+        .map((_, tickIndex) => {
+          const index = tickIndex * 4;
+          const x =
+            layout.margin.left + index * (layout.barWidth + layout.weekGap) + Math.floor(layout.barWidth / 2) + 0.5;
+          return `<line x1="${x}" y1="${layout.chartTop}" x2="${x}" y2="${layout.chartBottom}" class="vtick"/>`;
+        })
+        .join("\n")
+    : "";
 
   const dotGrid = renderDotGrid(weekly, layout, palette.primary);
 
@@ -194,17 +198,10 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     `
     : "";
 
-  const movingScanBand = visual.animateScanlines
-    ? `
-      <rect x="0" y="${layout.chartTop - 10}" width="${layout.width}" height="14" fill="${palette.scan}" opacity="${visual.scanLineOpacity}">
-        <animate attributeName="y" values="${layout.chartTop - 10};${layout.chartBottom + 10};${layout.chartTop - 10}" dur="${visual.scanLineDuration}s" repeatCount="indefinite"/>
-      </rect>
-    `
-    : "";
-
   const lastWeek = weekly[weekly.length - 1];
-  const averageWeek = Math.round(average(weekly.map((week) => week.total)));
-  const peakWeek = maxWeekly;
+  const footerUser = `USER: @${username}`;
+  const footerStats = `CONTRIBUTIONS: ${calendar.totalContributions} | BEST WEEK: ${maxWeekly} | LAST WEEK: ${lastWeek ? lastWeek.total : 0}`;
+  const footerCredits = "CREDITS: stefashkaa/github-profile-crt";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-labelledby="title desc">
@@ -216,11 +213,6 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <stop offset="0%" stop-color="${palette.bg0}"/>
       <stop offset="60%" stop-color="${palette.bg1}"/>
       <stop offset="100%" stop-color="${palette.bg2}"/>
-    </linearGradient>
-
-    <linearGradient id="headerGlow" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="${palette.primary}" stop-opacity="0.16"/>
-      <stop offset="100%" stop-color="${palette.primary}" stop-opacity="0"/>
     </linearGradient>
 
     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
@@ -280,25 +272,22 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   </defs>
 
   <style>
-    .title {
-      font: 700 15px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      fill: ${palette.text};
-      letter-spacing: 0.06em;
-    }
-    .meta {
-      font: 600 10.5px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      fill: ${palette.textDim};
-      letter-spacing: 0.08em;
-    }
     .month {
       font: 600 10px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       fill: ${palette.textDim};
       letter-spacing: 0.10em;
     }
-    .foot {
-      font: 600 10px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    .credit {
+      font: 600 8.25px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       fill: ${palette.textDim};
-      letter-spacing: 0.08em;
+      letter-spacing: 0.03em;
+      opacity: 0.78;
+    }
+    .footer {
+      font: 600 8.5px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      fill: ${palette.textDim};
+      letter-spacing: 0.04em;
+      opacity: 0.9;
     }
     .grid {
       stroke: ${palette.primary};
@@ -318,14 +307,6 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   <rect width="${layout.width}" height="${layout.height}" rx="14" filter="url(#noiseFilter)" opacity="${visual.noiseOpacity}" fill="${palette.primarySoft}"/>
   <rect width="${layout.width}" height="${layout.height}" rx="14" fill="url(#scanPattern)" opacity="${visual.scanOpacity}"/>
   <rect width="${layout.width}" height="${layout.height}" rx="14" fill="url(#vignette)" opacity="${visual.vignetteOpacity}"/>
-
-  <rect x="${layout.margin.left}" y="${layout.margin.top + 3}" width="${layout.width - layout.margin.left - layout.margin.right}" height="1" fill="url(#headerGlow)"/>
-
-  <text x="${layout.margin.left}" y="${layout.margin.top}" class="title">CRT_CONTRIB_MONITOR</text>
-  <text x="${layout.width - layout.margin.right}" y="${layout.margin.top}" class="meta" text-anchor="end">TOTAL=${calendar.totalContributions}</text>
-
-  <text x="${layout.margin.left}" y="${layout.margin.top + 18}" class="meta">USER=${escapeXml(username.toUpperCase())} MODE=${escapeXml(theme.toUpperCase())} AVG_WEEK=${averageWeek} PEAK_WEEK=${peakWeek}</text>
-  <text x="${layout.width - layout.margin.right}" y="${layout.margin.top + 18}" class="meta" text-anchor="end">LAST_WEEK=${lastWeek ? lastWeek.total : 0}</text>
 
   ${monthLabels}
   ${gridLines}
@@ -382,11 +363,10 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     <animate attributeName="x2" values="${sweepFrom};${sweepTo}" dur="${visual.sweepDuration}s" repeatCount="indefinite"/>
   </line>
 
-  ${movingScanBand}
-
   <g>${dotGrid}</g>
 
-  <text x="${layout.margin.left}" y="${layout.footerY}" class="foot">WEEKS ---&gt;</text>
-  <text x="${layout.width - layout.margin.right}" y="${layout.footerY}" class="foot" text-anchor="end">SOURCE=GITHUB_CONTRIBUTION_CALENDAR</text>
+  <text x="${layout.margin.left}" y="${layout.footerY}" class="footer">${escapeXml(footerUser)}</text>
+  ${visual.showStats ? `<text x="${layout.width / 2}" y="${layout.footerY}" class="footer" text-anchor="middle">${escapeXml(footerStats)}</text>` : ""}
+  <text x="${layout.width - layout.margin.right}" y="${layout.footerY}" class="credit" text-anchor="end">${escapeXml(footerCredits)}</text>
 </svg>`;
 }

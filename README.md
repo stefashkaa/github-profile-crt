@@ -31,6 +31,11 @@ GH_TOKEN=ghp_xxx
 GITHUB_USER=your-github-username
 CRT_THEME=crt
 CRT_OUTPUT_PATH=assets/crt-contributions.svg
+CRT_SHOW_GRID=true
+CRT_SHOW_STATS=true
+CRT_ANIMATE_SCANLINES=true
+CRT_MINIFY_SVG=true
+CRT_SVG_MINIFY_MULTIPASS=true
 ```
 
 ## Generate SVG locally
@@ -46,6 +51,29 @@ For local dev (run TypeScript directly, no build):
 ```bash
 pnpm dev
 ```
+
+Generate without SVG optimization (for visual diff checks):
+
+```bash
+pnpm generate:raw
+```
+
+## SVG optimization
+
+By default, output is minified with `svgo` in a conservative mode that keeps the same visuals and animation behavior.
+
+- `CRT_MINIFY_SVG=true|false` enables/disables optimization
+- `CRT_SVG_MINIFY_MULTIPASS=true|false` enables deeper optimization passes
+
+## Visual toggles
+
+- `CRT_SHOW_GRID=true|false` shows/hides bar-chart grid lines and vertical ticks
+- `CRT_SHOW_STATS=true|false` shows/hides compact stats in the footer
+- `CRT_ANIMATE_SCANLINES=true|false` enables/disables animated scanline movement
+
+Footer always keeps:
+- `USER: @<username>`
+- `CREDITS: stefashkaa/github-profile-crt`
 
 ## GitHub Actions workflow
 

@@ -16,19 +16,19 @@ export interface ScreenLayout {
 }
 
 export function buildLayout(weekCount: number): ScreenLayout {
-  const margin = { top: 28, right: 28, bottom: 24, left: 28 };
+  const margin = { top: 20, right: 28, bottom: 22, left: 28 };
   const weekGap = 6;
   const barWidth = 7;
-  const headerHeight = 28;
-  const subHeaderHeight = 18;
-  const monthRowHeight = 18;
+  const headerHeight = 0;
+  const subHeaderHeight = 0;
+  const monthRowHeight = 16;
   const chartTop = margin.top + headerHeight + subHeaderHeight + monthRowHeight + 10;
   const chartHeight = 170;
   const chartBottom = chartTop + chartHeight;
 
-  const heatmapTop = chartBottom + 26;
+  const heatmapTop = chartBottom + 22;
   const heatmapGap = 11;
-  const footerY = heatmapTop + heatmapGap * 6 + 20;
+  const footerY = heatmapTop + heatmapGap * 6 + 18;
 
   const width = margin.left + margin.right + weekCount * (barWidth + weekGap);
   const height = footerY + margin.bottom;
