@@ -10,7 +10,7 @@ import { deriveWeeklyStats } from "../model/weekly";
 import { clamp, maxOf } from "../utils/math";
 import { escapeXml } from "../utils/xml";
 import { buildLayout } from "./layout";
-import { buildAreaPath, buildSteppedPath } from "./paths";
+import { buildAreaPath, buildSteppedPath, type ChartPoint } from "./paths";
 import type { ThemeableConfig } from "./themes";
 
 export interface SvgRenderInput {
@@ -33,20 +33,53 @@ function spectrumColor(index: number, count: number, saturation: number, lightne
   return `hsl(${spectrumHueAt(index, count).toFixed(1)}, ${saturation}%, ${lightness}%)`;
 }
 
+const BAR_DEPTH_X = 2;
+const BAR_DEPTH_Y = 2;
+const PULSE_PATH_LENGTH = 1000;
+
+interface BarGeometry {
+  x: number;
+  y: number;
+  height: number;
+  centerX: number;
+  lineX: number;
+  lineY: number;
+}
+
+function resolveBarGeometry(
+  index: number,
+  total: number,
+  maxWeekly: number,
+  layout: ReturnType<typeof buildLayout>
+): BarGeometry {
+  const x = layout.margin.left + index * (layout.barWidth + layout.weekGap) + 0.5;
+  const normalized = total / maxWeekly;
+  const height = Math.max(4, normalized * (layout.chartHeight - 8));
+  const y = layout.chartBottom - height + 0.5;
+  const centerX = x + Math.floor(layout.barWidth / 2);
+
+  return {
+    x,
+    y,
+    height: Math.max(1, Math.floor(height)),
+    centerX,
+    lineX: centerX + BAR_DEPTH_X * 0.35,
+    lineY: y - BAR_DEPTH_Y * 0.55
+  };
+}
+
 function renderBars(
   weekly: WeeklyStats[],
+  geometries: BarGeometry[],
   layout: ReturnType<typeof buildLayout>,
-  maxWeekly: number,
   themeConfig: ThemeableConfig,
+  primary: string,
   primarySoft: string,
   useSpectrumChart: boolean
 ): string {
   return weekly
     .map((week, index) => {
-      const x = layout.margin.left + index * (layout.barWidth + layout.weekGap) + 0.5;
-      const normalized = week.total / maxWeekly;
-      const height = Math.max(4, normalized * (layout.chartHeight - 8));
-      const y = layout.chartBottom - height + 0.5;
+      const geometry = geometries[index]!;
 
       const intensity = clamp(
         themeConfig.barMinOpacity + (week.intensity / 4) * (themeConfig.barMaxOpacity - themeConfig.barMinOpacity),
@@ -55,32 +88,72 @@ function renderBars(
       );
 
       const title = `${week.firstDay}: ${week.total} contributions | active days: ${week.activeDays} | peak day: ${week.peak}`;
-      const barFill = useSpectrumChart ? spectrumColor(index, weekly.length, 92, 54) : "url(#barGradient)";
-      const barHighlightFill = useSpectrumChart ? spectrumColor(index, weekly.length, 98, 74) : primarySoft;
+      const barFrontFill = useSpectrumChart ? spectrumColor(index, weekly.length, 92, 54) : "url(#barGradient)";
+      const barTopFill = useSpectrumChart ? spectrumColor(index, weekly.length, 97, 73) : primarySoft;
+      const barSideFill = useSpectrumChart ? spectrumColor(index, weekly.length, 88, 42) : primary;
+      const topFace = `${geometry.x},${geometry.y} ${geometry.x + layout.barWidth},${geometry.y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${geometry.y - BAR_DEPTH_Y} ${geometry.x + BAR_DEPTH_X},${geometry.y - BAR_DEPTH_Y}`;
+      const sideFace = `${geometry.x + layout.barWidth},${geometry.y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${geometry.y - BAR_DEPTH_Y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${geometry.y + geometry.height - BAR_DEPTH_Y} ${geometry.x + layout.barWidth},${geometry.y + geometry.height}`;
 
       return `
       <g shape-rendering="crispEdges">
         <title>${escapeXml(title)}</title>
-        <rect
-          x="${x}"
-          y="${y}"
-          width="${layout.barWidth}"
-          height="${Math.max(1, Math.floor(height))}"
-          rx="${themeConfig.barRadius}"
-          fill="${barFill}"
-          opacity="${intensity}"
+        <polygon
+          points="${sideFace}"
+          fill="${barSideFill}"
+          opacity="${Math.max(0.14, intensity * 0.62)}"
         />
         <rect
-          x="${x}"
-          y="${y}"
+          x="${geometry.x}"
+          y="${geometry.y}"
           width="${layout.barWidth}"
-          height="1"
-          rx="0"
-          fill="${barHighlightFill}"
-          opacity="${Math.min(0.95, intensity + 0.12)}"
+          height="${geometry.height}"
+          rx="${themeConfig.barRadius}"
+          fill="${barFrontFill}"
+          opacity="${intensity}"
+        />
+        <polygon
+          points="${topFace}"
+          fill="${barTopFill}"
+          opacity="${Math.min(0.97, intensity + 0.18)}"
+        />
+        <line
+          x1="${geometry.x + BAR_DEPTH_X}"
+          y1="${geometry.y - BAR_DEPTH_Y}"
+          x2="${geometry.x + layout.barWidth + BAR_DEPTH_X}"
+          y2="${geometry.y - BAR_DEPTH_Y}"
+          stroke="${barTopFill}"
+          stroke-opacity="${Math.min(0.98, intensity + 0.22)}"
+          stroke-width="1"
         />
       </g>
     `;
+    })
+    .join("\n");
+}
+
+function renderSignalDropLines(
+  points: ChartPoint[],
+  geometries: BarGeometry[],
+  themeConfig: ThemeableConfig,
+  useSpectrumChart: boolean,
+  primarySoft: string
+): string {
+  return points
+    .map((point, index) => {
+      if (index % 3 !== 0) {
+        return "";
+      }
+
+      const geometry = geometries[index]!;
+
+      if (point.y >= geometry.y) {
+        return "";
+      }
+
+      const stroke = useSpectrumChart ? spectrumColor(index, points.length, 92, 72) : primarySoft;
+      const opacity = Math.max(0.08, themeConfig.lineGlowOpacity * 0.42);
+
+      return `<line x1="${point.x}" y1="${point.y + 0.4}" x2="${point.x}" y2="${geometry.y}" stroke="${stroke}" stroke-opacity="${opacity}" stroke-width="1" shape-rendering="crispEdges"/>`;
     })
     .join("\n");
 }
@@ -147,20 +220,17 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const layout = buildLayout(calendar.weeks.length);
   const weekly = deriveWeeklyStats(calendar.weeks);
   const maxWeekly = Math.max(1, maxOf(weekly.map((week) => week.total)));
+  const geometries = weekly.map((week, index) => resolveBarGeometry(index, week.total, maxWeekly, layout));
 
-  const points = weekly.map((week, index) => {
-    const x = layout.margin.left + index * (layout.barWidth + layout.weekGap) + Math.floor(layout.barWidth / 2) + 0.5;
-    const normalized = week.total / maxWeekly;
-    const barHeight = Math.max(4, normalized * (layout.chartHeight - 8));
-    const y = layout.chartBottom - barHeight;
-
-    return { x, y };
+  const points = geometries.map((geometry) => {
+    return { x: geometry.lineX, y: geometry.lineY };
   });
 
   const steppedPath = buildSteppedPath(points);
   const areaPath = buildAreaPath(points, layout.chartBottom);
 
-  const bars = renderBars(weekly, layout, maxWeekly, themeConfig, palette.primarySoft, useSpectrumChart);
+  const bars = renderBars(weekly, geometries, layout, themeConfig, palette.primary, palette.primarySoft, useSpectrumChart);
+  const signalDropLines = renderSignalDropLines(points, geometries, themeConfig, useSpectrumChart, palette.primarySoft);
   const monthLabels = renderMonthLabels(
     weekly.length,
     layout.margin.left,
@@ -191,9 +261,6 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     : "";
 
   const dotGrid = renderDotGrid(weekly, layout, palette.primary, useSpectrumChart);
-
-  const sweepFrom = layout.margin.left - 16;
-  const sweepTo = layout.width - layout.margin.right + 16;
 
   const noiseAnimation = themeConfig.animateNoise
     ? `
@@ -254,9 +321,23 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const areaFill = useSpectrumChart ? "url(#spectrumAreaGradient)" : "url(#areaGradient)";
   const lineStroke = useSpectrumChart ? "url(#spectrumStrokeGradient)" : palette.primary;
   const lineGlowStroke = useSpectrumChart ? "url(#spectrumGlowGradient)" : palette.primarySoft;
-  const sweepStroke = useSpectrumChart ? "url(#spectrumGlowGradient)" : palette.primarySoft;
-  const sweepLineOpacity = useSpectrumChart ? Math.max(themeConfig.sweepOpacity, 0.14) : themeConfig.sweepOpacity;
+  const pulseStroke = useSpectrumChart ? "url(#spectrumGlowGradient)" : palette.primarySoft;
+  const pulseVisibleLength = useSpectrumChart ? 124 : 96;
+  const pulseTrailLength = Math.min(PULSE_PATH_LENGTH - 64, pulseVisibleLength + 130);
+  const pulseDurationSeconds = Math.max(2.6, themeConfig.sweepDuration * 0.84);
+  const pulseDuration = pulseDurationSeconds.toFixed(2);
+  const pulseTrailDuration = (pulseDurationSeconds * 1.18).toFixed(2);
+  const sweepFrom = layout.margin.left - 16;
+  const sweepTo = layout.width - layout.margin.right + 16;
+  const sweepLineOpacity = useSpectrumChart ? Math.max(themeConfig.sweepOpacity, 0.16) : Math.max(0.11, themeConfig.sweepOpacity * 0.82);
+  const sweepLineGlowOpacity = Math.min(0.4, sweepLineOpacity + 0.1);
   const sweepLineWidth = useSpectrumChart ? 1.35 : 1.1;
+  const glowBaseOpacity = clamp(themeConfig.lineGlowOpacity, 0.08, 0.9);
+  const glowMinOpacity = Math.max(0.08, glowBaseOpacity * 0.74).toFixed(3);
+  const glowMaxOpacity = Math.min(0.96, glowBaseOpacity * 1.16).toFixed(3);
+  const glowPulseAnimation = themeConfig.animateNoise || themeConfig.animateScanlines
+    ? `<animate attributeName="opacity" values="${glowMinOpacity};${glowMaxOpacity};${glowMinOpacity}" dur="${(themeConfig.sweepDuration * 1.34).toFixed(2)}s" repeatCount="indefinite"/>`
+    : "";
 
   const lastWeek = weekly[weekly.length - 1];
   const footerUser = `USER: @${username}`;
@@ -324,12 +405,6 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <rect width="${themeConfig.scanSpacing}" height="${Math.max(1, themeConfig.scanSpacing - 2)}" fill="transparent"/>
       <rect y="${Math.max(1, themeConfig.scanSpacing - 2)}" width="${themeConfig.scanSpacing}" height="1" fill="${palette.scan}"/>
     </pattern>
-
-    <clipPath id="sweepClip">
-      <rect x="${sweepFrom}" y="${layout.chartTop - 8}" width="26" height="${layout.chartHeight + 16}" rx="2">
-        <animate attributeName="x" values="${sweepFrom};${sweepTo}" dur="${themeConfig.sweepDuration}s" repeatCount="indefinite"/>
-      </rect>
-    </clipPath>
   </defs>
 
   <style>
@@ -376,6 +451,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   <path d="${areaPath}" fill="${areaFill}"/>
 
   ${bars}
+  <g>${signalDropLines}</g>
 
   <path
     d="${steppedPath}"
@@ -394,34 +470,72 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     fill="none"
     stroke-linejoin="miter"
     stroke-linecap="square"
-    opacity="${themeConfig.lineGlowOpacity}"
+    opacity="${glowMinOpacity}"
     filter="url(#phosphorGlow)"
-  />
-
-  <g clip-path="url(#sweepClip)">
-    <path
-      d="${steppedPath}"
-      stroke="${sweepStroke}"
-      stroke-width="${themeConfig.sweepWidth}"
-      fill="none"
-      stroke-linejoin="miter"
-      stroke-linecap="square"
-      shape-rendering="crispEdges"
-      opacity="0.95"
+  >${glowPulseAnimation}</path>
+  <path
+    d="${steppedPath}"
+    stroke="${pulseStroke}"
+    stroke-width="${themeConfig.sweepWidth + 1.18}"
+    fill="none"
+    stroke-linejoin="miter"
+    stroke-linecap="square"
+    opacity="${Math.max(0.2, glowBaseOpacity * 0.72)}"
+    filter="url(#phosphorGlow)"
+    pathLength="${PULSE_PATH_LENGTH}"
+    stroke-dasharray="${pulseTrailLength} ${PULSE_PATH_LENGTH - pulseTrailLength}"
+  >
+    <animate
+      attributeName="stroke-dashoffset"
+      values="${PULSE_PATH_LENGTH + 180};180"
+      dur="${pulseTrailDuration}s"
+      repeatCount="indefinite"
     />
-  </g>
-
+  </path>
+  <path
+    d="${steppedPath}"
+    stroke="${pulseStroke}"
+    stroke-width="${themeConfig.sweepWidth}"
+    fill="none"
+    stroke-linejoin="miter"
+    stroke-linecap="square"
+    shape-rendering="crispEdges"
+    opacity="0.92"
+    pathLength="${PULSE_PATH_LENGTH}"
+    stroke-dasharray="${pulseVisibleLength} ${PULSE_PATH_LENGTH - pulseVisibleLength}"
+  >
+    <animate
+      attributeName="stroke-dashoffset"
+      values="${PULSE_PATH_LENGTH};0"
+      dur="${pulseDuration}s"
+      repeatCount="indefinite"
+    />
+  </path>
   <line
     x1="${sweepFrom}"
-    y1="${layout.chartTop - 8}"
+    y1="${layout.chartTop - 10}"
     x2="${sweepFrom}"
-    y2="${layout.chartBottom + 8}"
-    stroke="${sweepStroke}"
+    y2="${layout.chartBottom + 10}"
+    stroke="${pulseStroke}"
+    stroke-opacity="${sweepLineGlowOpacity}"
+    stroke-width="${sweepLineWidth + 2.2}"
+    filter="url(#phosphorGlow)"
+  >
+    <animate attributeName="x1" values="${sweepFrom};${sweepTo}" dur="${pulseDuration}s" repeatCount="indefinite"/>
+    <animate attributeName="x2" values="${sweepFrom};${sweepTo}" dur="${pulseDuration}s" repeatCount="indefinite"/>
+  </line>
+  <line
+    x1="${sweepFrom}"
+    y1="${layout.chartTop - 10}"
+    x2="${sweepFrom}"
+    y2="${layout.chartBottom + 10}"
+    stroke="${pulseStroke}"
     stroke-opacity="${sweepLineOpacity}"
     stroke-width="${sweepLineWidth}"
+    shape-rendering="crispEdges"
   >
-    <animate attributeName="x1" values="${sweepFrom};${sweepTo}" dur="${themeConfig.sweepDuration}s" repeatCount="indefinite"/>
-    <animate attributeName="x2" values="${sweepFrom};${sweepTo}" dur="${themeConfig.sweepDuration}s" repeatCount="indefinite"/>
+    <animate attributeName="x1" values="${sweepFrom};${sweepTo}" dur="${pulseDuration}s" repeatCount="indefinite"/>
+    <animate attributeName="x2" values="${sweepFrom};${sweepTo}" dur="${pulseDuration}s" repeatCount="indefinite"/>
   </line>
 
   <g>${dotGrid}</g>
