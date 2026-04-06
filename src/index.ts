@@ -1,6 +1,14 @@
-export { loadRuntimeConfig, type RuntimeConfig, type ThemeName, type VisualConfig } from "./config/env";
-export { generateCrtContributionSvg, type GenerationResult } from "./generator";
+export { loadRuntimeConfig, type RuntimeConfig, type VisualConfig } from "./config/env";
+export { generateCrtContributionSvgs, type GeneratedThemeFile, type GenerationResult } from "./generator";
 export { renderCrtContributionSvg, type SvgRenderInput } from "./render/svgRenderer";
+export {
+  defaultThemeId,
+  getThemeableConfigs,
+  outputFileNameForTheme,
+  type ThemeName,
+  type ThemePalette,
+  type ThemeableConfig
+} from "./render/themes";
 export type {
   ContributionCalendar,
   ContributionDay,

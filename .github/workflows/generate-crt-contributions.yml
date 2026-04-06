@@ -33,20 +33,20 @@ jobs:
       - name: Generate SVG
         env:
           GITHUB_USER: ${{ vars.GITHUB_USER || github.repository_owner }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
-          CRT_THEME: ${{ vars.CRT_THEME || 'crt' }}
-          CRT_OUTPUT_PATH: assets/crt-contributions.svg
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
+          CRT_OUTPUT_DIR: assets
         run: pnpm generate
 
-      - name: Commit and push SVG if changed
+      - name: Commit and push SVGs if changed
         run: |
-          if [ -z "$(git status --porcelain -- assets/crt-contributions.svg)" ]; then
+          changed_files="$(git status --porcelain -- assets | grep 'crt-contributions' || true)"
+          if [ -z "$changed_files" ]; then
             echo "No SVG changes detected"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/crt-contributions.svg
-          git commit -m "chore: update CRT contribution svg"
+          git add assets/crt-contributions.svg assets/crt-contributions-*.svg
+          git commit -m "chore: update CRT contribution svgs"
           git push

@@ -1,20 +1,32 @@
 import "dotenv/config";
 import process from "node:process";
 import { loadRuntimeConfig } from "./config/env";
-import { generateCrtContributionSvg } from "./generator";
+import { generateCrtContributionSvgs } from "./generator";
+
+function totalSavedBytes(sizeBefore: number, sizeAfter: number): number {
+  return sizeBefore - sizeAfter;
+}
 
 async function main(): Promise<void> {
   const config = loadRuntimeConfig();
-  const result = await generateCrtContributionSvg(config);
-  const savedBytes = result.sizeBeforeOptimization - result.finalSize;
-  const savedPercent =
-    result.sizeBeforeOptimization > 0
-      ? ((savedBytes / result.sizeBeforeOptimization) * 100).toFixed(1)
-      : "0.0";
+  const result = await generateCrtContributionSvgs(config);
+
+  const rawTotalBytes = result.files.reduce((sum, file) => sum + file.sizeBeforeOptimization, 0);
+  const finalTotalBytes = result.files.reduce((sum, file) => sum + file.finalSize, 0);
+  const savedBytes = totalSavedBytes(rawTotalBytes, finalTotalBytes);
+  const savedPercent = rawTotalBytes > 0
+    ? ((savedBytes / rawTotalBytes) * 100).toFixed(1)
+    : "0.0";
 
   console.log(
-    `Generated ${result.outputPath} (${result.weeks} weeks, ${result.totalContributions} contributions total, ${result.finalSize} bytes${result.optimized ? `, saved ${savedBytes} bytes (${savedPercent}%)` : ""})`
+    `Generated ${result.files.length} themed SVGs in ${result.outputDirectory} (${result.weeks} weeks, ${result.totalContributions} contributions total${result.optimized ? `, saved ${savedBytes} bytes (${savedPercent}%)` : ""})`
   );
+
+  for (const file of result.files) {
+    console.log(` - ${file.themeId}: ${file.outputPath} (${file.finalSize} bytes)`);
+  }
+
+  console.log(`Default alias: ${result.defaultOutputPath}`);
 }
 
 main().catch((error: unknown) => {

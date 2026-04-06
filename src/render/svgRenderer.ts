@@ -1,4 +1,4 @@
-import type { ThemeName, VisualConfig } from "../config/env";
+import type { VisualConfig } from "../config/env";
 import {
   buildMonthLabels,
   formatDateShort,
@@ -10,12 +10,12 @@ import { deriveWeeklyStats } from "../model/weekly";
 import { clamp, maxOf } from "../utils/math";
 import { escapeXml } from "../utils/xml";
 import { buildLayout } from "./layout";
-import { getPalette } from "./palette";
 import { buildAreaPath, buildSteppedPath } from "./paths";
+import type { ThemeableConfig } from "./themes";
 
 export interface SvgRenderInput {
   username: string;
-  theme: ThemeName;
+  themeConfig: ThemeableConfig;
   calendar: ContributionCalendar;
   visual: VisualConfig;
 }
@@ -24,7 +24,7 @@ function renderBars(
   weekly: WeeklyStats[],
   layout: ReturnType<typeof buildLayout>,
   maxWeekly: number,
-  visual: VisualConfig,
+  themeConfig: ThemeableConfig,
   primarySoft: string
 ): string {
   return weekly
@@ -35,9 +35,9 @@ function renderBars(
       const y = layout.chartBottom - height + 0.5;
 
       const intensity = clamp(
-        visual.barMinOpacity + (week.intensity / 4) * (visual.barMaxOpacity - visual.barMinOpacity),
-        visual.barMinOpacity,
-        visual.barMaxOpacity
+        themeConfig.barMinOpacity + (week.intensity / 4) * (themeConfig.barMaxOpacity - themeConfig.barMinOpacity),
+        themeConfig.barMinOpacity,
+        themeConfig.barMaxOpacity
       );
 
       const title = `${week.firstDay}: ${week.total} contributions | active days: ${week.activeDays} | peak day: ${week.peak}`;
@@ -50,7 +50,7 @@ function renderBars(
           y="${y}"
           width="${layout.barWidth}"
           height="${Math.max(1, Math.floor(height))}"
-          rx="${visual.barRadius}"
+          rx="${themeConfig.barRadius}"
           fill="url(#barGradient)"
           opacity="${intensity}"
         />
@@ -122,8 +122,8 @@ function renderDotGrid(
 }
 
 export function renderCrtContributionSvg(input: SvgRenderInput): string {
-  const { username, theme, calendar, visual } = input;
-  const palette = getPalette(theme);
+  const { username, themeConfig, calendar, visual } = input;
+  const palette = themeConfig.palette;
 
   const layout = buildLayout(calendar.weeks.length);
   const weekly = deriveWeeklyStats(calendar.weeks);
@@ -141,7 +141,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const steppedPath = buildSteppedPath(points);
   const areaPath = buildAreaPath(points, layout.chartBottom);
 
-  const bars = renderBars(weekly, layout, maxWeekly, visual, palette.primarySoft);
+  const bars = renderBars(weekly, layout, maxWeekly, themeConfig, palette.primarySoft);
   const monthLabels = renderMonthLabels(
     weekly.length,
     layout.margin.left,
@@ -176,24 +176,24 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const sweepFrom = layout.margin.left - 16;
   const sweepTo = layout.width - layout.margin.right + 16;
 
-  const noiseAnimation = visual.animateNoise
+  const noiseAnimation = themeConfig.animateNoise
     ? `
       <animate
         xlink:href="#noiseTurbulence"
         attributeName="baseFrequency"
-        values="${visual.noiseFrequency};${(visual.noiseFrequency * 0.92).toFixed(3)};${(visual.noiseFrequency * 1.05).toFixed(3)};${visual.noiseFrequency}"
-        dur="${visual.noiseDuration}s"
+        values="${themeConfig.noiseFrequency};${(themeConfig.noiseFrequency * 0.92).toFixed(3)};${(themeConfig.noiseFrequency * 1.05).toFixed(3)};${themeConfig.noiseFrequency}"
+        dur="${themeConfig.noiseDuration}s"
         repeatCount="indefinite"/>
     `
     : "";
 
-  const scanPatternAnimation = visual.animateScanlines
+  const scanPatternAnimation = themeConfig.animateScanlines
     ? `
       <animateTransform
         attributeName="patternTransform"
         type="translate"
-        values="0 0; 0 ${visual.scanSpacing * 2}"
-        dur="${visual.scanLineDuration}s"
+        values="0 0; 0 ${themeConfig.scanSpacing * 2}"
+        dur="${themeConfig.scanLineDuration}s"
         repeatCount="indefinite"/>
     `
     : "";
@@ -221,7 +221,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     </linearGradient>
 
     <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${palette.primary}" stop-opacity="${visual.areaOpacity}"/>
+      <stop offset="0%" stop-color="${palette.primary}" stop-opacity="${themeConfig.areaOpacity}"/>
       <stop offset="100%" stop-color="${palette.primary}" stop-opacity="0"/>
     </linearGradient>
 
@@ -231,7 +231,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     </radialGradient>
 
     <filter id="phosphorGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="${visual.phosphorBlur}" result="blur"/>
+      <feGaussianBlur stdDeviation="${themeConfig.phosphorBlur}" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
@@ -242,9 +242,9 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <feTurbulence
         id="noiseTurbulence"
         type="fractalNoise"
-        baseFrequency="${visual.noiseFrequency}"
+        baseFrequency="${themeConfig.noiseFrequency}"
         numOctaves="1"
-        seed="${visual.noiseSeed}"
+        seed="${themeConfig.noiseSeed}"
         stitchTiles="stitch"
         result="noise"/>
       ${noiseAnimation}
@@ -258,15 +258,15 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
           0 0 0 1 0"/>
     </filter>
 
-    <pattern id="scanPattern" width="${visual.scanSpacing}" height="${visual.scanSpacing}" patternUnits="userSpaceOnUse">
+    <pattern id="scanPattern" width="${themeConfig.scanSpacing}" height="${themeConfig.scanSpacing}" patternUnits="userSpaceOnUse">
       ${scanPatternAnimation}
-      <rect width="${visual.scanSpacing}" height="${Math.max(1, visual.scanSpacing - 2)}" fill="transparent"/>
-      <rect y="${Math.max(1, visual.scanSpacing - 2)}" width="${visual.scanSpacing}" height="1" fill="${palette.scan}"/>
+      <rect width="${themeConfig.scanSpacing}" height="${Math.max(1, themeConfig.scanSpacing - 2)}" fill="transparent"/>
+      <rect y="${Math.max(1, themeConfig.scanSpacing - 2)}" width="${themeConfig.scanSpacing}" height="1" fill="${palette.scan}"/>
     </pattern>
 
     <clipPath id="sweepClip">
       <rect x="${sweepFrom}" y="${layout.chartTop - 8}" width="26" height="${layout.chartHeight + 16}" rx="2">
-        <animate attributeName="x" values="${sweepFrom};${sweepTo}" dur="${visual.sweepDuration}s" repeatCount="indefinite"/>
+        <animate attributeName="x" values="${sweepFrom};${sweepTo}" dur="${themeConfig.sweepDuration}s" repeatCount="indefinite"/>
       </rect>
     </clipPath>
   </defs>
@@ -291,22 +291,22 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     }
     .grid {
       stroke: ${palette.primary};
-      stroke-opacity: ${visual.gridOpacity};
+      stroke-opacity: ${themeConfig.gridOpacity};
       stroke-width: 1;
       shape-rendering: crispEdges;
     }
     .vtick {
       stroke: ${palette.primary};
-      stroke-opacity: ${visual.verticalTickOpacity};
+      stroke-opacity: ${themeConfig.verticalTickOpacity};
       stroke-width: 1;
       shape-rendering: crispEdges;
     }
   </style>
 
   <rect width="${layout.width}" height="${layout.height}" rx="14" fill="url(#bg)"/>
-  <rect width="${layout.width}" height="${layout.height}" rx="14" filter="url(#noiseFilter)" opacity="${visual.noiseOpacity}" fill="${palette.primarySoft}"/>
-  <rect width="${layout.width}" height="${layout.height}" rx="14" fill="url(#scanPattern)" opacity="${visual.scanOpacity}"/>
-  <rect width="${layout.width}" height="${layout.height}" rx="14" fill="url(#vignette)" opacity="${visual.vignetteOpacity}"/>
+  <rect width="${layout.width}" height="${layout.height}" rx="14" filter="url(#noiseFilter)" opacity="${themeConfig.noiseOpacity}" fill="${palette.primarySoft}"/>
+  <rect width="${layout.width}" height="${layout.height}" rx="14" fill="url(#scanPattern)" opacity="${themeConfig.scanOpacity}"/>
+  <rect width="${layout.width}" height="${layout.height}" rx="14" fill="url(#vignette)" opacity="${themeConfig.vignetteOpacity}"/>
 
   ${monthLabels}
   ${gridLines}
@@ -319,7 +319,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   <path
     d="${steppedPath}"
     stroke="${palette.primary}"
-    stroke-width="${visual.lineWidth}"
+    stroke-width="${themeConfig.lineWidth}"
     fill="none"
     stroke-linejoin="miter"
     stroke-linecap="square"
@@ -329,11 +329,11 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   <path
     d="${steppedPath}"
     stroke="${palette.primarySoft}"
-    stroke-width="${visual.sweepWidth + 1.1}"
+    stroke-width="${themeConfig.sweepWidth + 1.1}"
     fill="none"
     stroke-linejoin="miter"
     stroke-linecap="square"
-    opacity="${visual.lineGlowOpacity}"
+    opacity="${themeConfig.lineGlowOpacity}"
     filter="url(#phosphorGlow)"
   />
 
@@ -341,7 +341,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     <path
       d="${steppedPath}"
       stroke="${palette.primarySoft}"
-      stroke-width="${visual.sweepWidth}"
+      stroke-width="${themeConfig.sweepWidth}"
       fill="none"
       stroke-linejoin="miter"
       stroke-linecap="square"
@@ -356,11 +356,11 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     x2="${sweepFrom}"
     y2="${layout.chartBottom + 8}"
     stroke="${palette.primarySoft}"
-    stroke-opacity="${visual.sweepOpacity}"
+    stroke-opacity="${themeConfig.sweepOpacity}"
     stroke-width="1.1"
   >
-    <animate attributeName="x1" values="${sweepFrom};${sweepTo}" dur="${visual.sweepDuration}s" repeatCount="indefinite"/>
-    <animate attributeName="x2" values="${sweepFrom};${sweepTo}" dur="${visual.sweepDuration}s" repeatCount="indefinite"/>
+    <animate attributeName="x1" values="${sweepFrom};${sweepTo}" dur="${themeConfig.sweepDuration}s" repeatCount="indefinite"/>
+    <animate attributeName="x2" values="${sweepFrom};${sweepTo}" dur="${themeConfig.sweepDuration}s" repeatCount="indefinite"/>
   </line>
 
   <g>${dotGrid}</g>
