@@ -1,4 +1,5 @@
-export type ThemeName = "crt" | "amber" | "ice" | "ruby" | "mint" | "mono" | "neon" | "rainbow" | "chaos" | "chaos-max" | "static";
+export type ThemeName = "crt" | "amber" | "ice" | "ruby" | "mint" | "mono" | "neon" | "rainbow" | "chaos" | "chaos-max" | "static" | "custom";
+export type PresetThemeName = Exclude<ThemeName, "custom">;
 export type ThemeMode = "dark" | "light";
 
 export interface ThemePalette {
@@ -577,6 +578,14 @@ export function getThemeableConfigs(): ThemeableConfig[] {
   return THEMEABLE_CONFIGS;
 }
 
+export function presetThemeNames(): PresetThemeName[] {
+  return THEMEABLE_CONFIGS.map((theme) => theme.id) as PresetThemeName[];
+}
+
+export function getThemeConfigById(themeId: PresetThemeName): ThemeableConfig | undefined {
+  return THEMEABLE_CONFIGS.find((theme) => theme.id === themeId);
+}
+
 export function supportedModesForTheme(themeId: ThemeName): ThemeMode[] {
   return LIGHT_THEME_OVERRIDES[themeId] ? ["dark", "light"] : ["dark"];
 }
@@ -594,5 +603,5 @@ export function defaultThemeId(): ThemeName {
 }
 
 export function outputFileNameForTheme(themeId: ThemeName, mode: ThemeMode = "dark"): string {
-  return `crt-contributions-${themeId}-${mode}.svg`;
+  return `${themeId}-${mode}.svg`;
 }

@@ -33,7 +33,7 @@ jobs:
       - name: Generate SVG
         env:
           GITHUB_USER: ${{ vars.GITHUB_USER || github.repository_owner }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
           CRT_OUTPUT_DIR: assets
         run: pnpm generate
 

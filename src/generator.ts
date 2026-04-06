@@ -6,12 +6,10 @@ import { fetchContributionCalendar } from "./github/fetchContributionCalendar";
 import { optimizeGeneratedSvg } from "./render/optimizeSvg";
 import { renderCrtContributionSvg } from "./render/svgRenderer";
 import {
-  getThemeableConfigs,
   outputFileNameForTheme,
-  supportedModesForTheme,
-  themeConfigForMode,
   type ThemeMode,
-  type ThemeName
+  type ThemeName,
+  type ThemeableConfig
 } from "./render/themes";
 
 export interface GeneratedThemeFile {
@@ -35,18 +33,22 @@ export async function generateCrtContributionSvgs(config: RuntimeConfig): Promis
 
   const client = createGitHubGraphQlClient(config.token);
   const calendar = await fetchContributionCalendar(client, config.username);
-  const themes = getThemeableConfigs();
 
   const files: GeneratedThemeFile[] = [];
 
-  for (const themeConfig of themes) {
-    const modes = supportedModesForTheme(themeConfig.id);
+  for (const resolvedTheme of config.themes) {
+    const variants: Array<{ mode: ThemeMode; themeConfig: ThemeableConfig }> = [
+      { mode: "dark", themeConfig: resolvedTheme.dark }
+    ];
 
-    for (const mode of modes) {
-      const modeThemeConfig = themeConfigForMode(themeConfig, mode);
+    if (resolvedTheme.light) {
+      variants.push({ mode: "light", themeConfig: resolvedTheme.light });
+    }
+
+    for (const { mode, themeConfig } of variants) {
       const rawSvg = renderCrtContributionSvg({
         username: config.username,
-        themeConfig: modeThemeConfig,
+        themeConfig,
         calendar,
         visual: config.visual
       });
@@ -55,11 +57,11 @@ export async function generateCrtContributionSvgs(config: RuntimeConfig): Promis
         ? optimizeGeneratedSvg(rawSvg, { multipass: true })
         : rawSvg;
 
-      const outputPath = path.join(config.outputDirectory, outputFileNameForTheme(themeConfig.id, mode));
+      const outputPath = path.join(config.outputDirectory, outputFileNameForTheme(resolvedTheme.id, mode));
       await fs.writeFile(outputPath, finalSvg, "utf8");
 
       files.push({
-        themeId: themeConfig.id,
+        themeId: resolvedTheme.id,
         mode,
         outputPath,
         sizeBeforeOptimization: Buffer.byteLength(rawSvg, "utf8"),
