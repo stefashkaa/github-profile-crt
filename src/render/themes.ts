@@ -1,4 +1,4 @@
-export type ThemeName = "crt" | "amber" | "ice" | "ruby" | "mint" | "mono" | "chaos" | "chaos-max" | "static";
+export type ThemeName = "crt" | "amber" | "ice" | "ruby" | "mint" | "mono" | "neon" | "rainbow" | "chaos" | "chaos-max" | "static";
 export type ThemeMode = "dark" | "light";
 
 export interface ThemePalette {
@@ -13,6 +13,7 @@ export interface ThemePalette {
 
 export interface ThemeableConfig {
   id: ThemeName;
+  spectrumChart?: boolean;
   palette: ThemePalette;
   scanOpacity: number;
   scanSpacing: number;
@@ -255,6 +256,77 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     phosphorBlur: 1.6
   },
   {
+    id: "neon",
+    palette: {
+      bg0: "#08030f",
+      bg1: "#12071f",
+      bg2: "#1b0a2e",
+      primary: "#ff4fd8",
+      primarySoft: "#6be8ff",
+      textDim: "#b8a3ff",
+      scan: "rgb(255,79,216)"
+    },
+    scanOpacity: 0.08,
+    scanSpacing: 5,
+    scanLineOpacity: 0.18,
+    scanLineDuration: 4.8,
+    animateScanlines: true,
+    noiseOpacity: 0.026,
+    noiseFrequency: 0.95,
+    noiseSeed: 73,
+    animateNoise: true,
+    noiseDuration: 3.2,
+    sweepOpacity: 0.2,
+    sweepWidth: 2.1,
+    sweepDuration: 4.8,
+    barMinOpacity: 0.32,
+    barMaxOpacity: 0.94,
+    barRadius: 0,
+    vignetteOpacity: 0.13,
+    areaOpacity: 0.14,
+    gridOpacity: 0.075,
+    verticalTickOpacity: 0.038,
+    lineGlowOpacity: 0.24,
+    lineWidth: 1.45,
+    phosphorBlur: 2.4
+  },
+  {
+    id: "rainbow",
+    spectrumChart: true,
+    palette: {
+      bg0: "#08030f",
+      bg1: "#12071f",
+      bg2: "#1b0a2e",
+      primary: "#ff4fd8",
+      primarySoft: "#6be8ff",
+      textDim: "#b8a3ff",
+      scan: "rgb(255,79,216)"
+    },
+    scanOpacity: 0.08,
+    scanSpacing: 5,
+    scanLineOpacity: 0.18,
+    scanLineDuration: 4.8,
+    animateScanlines: true,
+    noiseOpacity: 0.026,
+    noiseFrequency: 0.95,
+    noiseSeed: 73,
+    animateNoise: true,
+    noiseDuration: 3.2,
+    sweepOpacity: 0.2,
+    sweepWidth: 2.1,
+    sweepDuration: 4.8,
+    barMinOpacity: 0.32,
+    barMaxOpacity: 0.94,
+    barRadius: 0,
+    vignetteOpacity: 0.13,
+    areaOpacity: 0.14,
+    gridOpacity: 0.075,
+    verticalTickOpacity: 0.038,
+    lineGlowOpacity: 0.24,
+    lineWidth: 1.45,
+    phosphorBlur: 2.4
+  },
+  {
     id: "chaos",
     palette: {
       bg0: "#020304",
@@ -421,6 +493,46 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
     gridOpacity: 0.042,
     verticalTickOpacity: 0.024,
     lineGlowOpacity: 0.09
+  },
+  neon: {
+    palette: {
+      bg0: "#f7efff",
+      bg1: "#eedffd",
+      bg2: "#e3d0f8",
+      primary: "#b334a0",
+      primarySoft: "#1a88bc",
+      textDim: "#6e5593",
+      scan: "rgb(179,52,160)"
+    },
+    scanOpacity: 0.022,
+    scanLineOpacity: 0.041,
+    noiseOpacity: 0.0048,
+    sweepOpacity: 0.078,
+    vignetteOpacity: 0.02,
+    areaOpacity: 0.046,
+    gridOpacity: 0.04,
+    verticalTickOpacity: 0.022,
+    lineGlowOpacity: 0.088
+  },
+  rainbow: {
+    palette: {
+      bg0: "#f7efff",
+      bg1: "#eedffd",
+      bg2: "#e3d0f8",
+      primary: "#b334a0",
+      primarySoft: "#1a88bc",
+      textDim: "#6e5593",
+      scan: "rgb(179,52,160)"
+    },
+    scanOpacity: 0.022,
+    scanLineOpacity: 0.041,
+    noiseOpacity: 0.0048,
+    sweepOpacity: 0.078,
+    vignetteOpacity: 0.02,
+    areaOpacity: 0.046,
+    gridOpacity: 0.04,
+    verticalTickOpacity: 0.022,
+    lineGlowOpacity: 0.088
   },
   static: {
     palette: {

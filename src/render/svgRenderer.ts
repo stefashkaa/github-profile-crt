@@ -20,12 +20,26 @@ export interface SvgRenderInput {
   visual: VisualConfig;
 }
 
+function spectrumHueAt(index: number, count: number): number {
+  if (count <= 1) {
+    return 260;
+  }
+
+  const progress = index / (count - 1);
+  return 260 + progress * 360;
+}
+
+function spectrumColor(index: number, count: number, saturation: number, lightness: number): string {
+  return `hsl(${spectrumHueAt(index, count).toFixed(1)}, ${saturation}%, ${lightness}%)`;
+}
+
 function renderBars(
   weekly: WeeklyStats[],
   layout: ReturnType<typeof buildLayout>,
   maxWeekly: number,
   themeConfig: ThemeableConfig,
-  primarySoft: string
+  primarySoft: string,
+  useSpectrumChart: boolean
 ): string {
   return weekly
     .map((week, index) => {
@@ -41,6 +55,8 @@ function renderBars(
       );
 
       const title = `${week.firstDay}: ${week.total} contributions | active days: ${week.activeDays} | peak day: ${week.peak}`;
+      const barFill = useSpectrumChart ? spectrumColor(index, weekly.length, 92, 54) : "url(#barGradient)";
+      const barHighlightFill = useSpectrumChart ? spectrumColor(index, weekly.length, 98, 74) : primarySoft;
 
       return `
       <g shape-rendering="crispEdges">
@@ -51,7 +67,7 @@ function renderBars(
           width="${layout.barWidth}"
           height="${Math.max(1, Math.floor(height))}"
           rx="${themeConfig.barRadius}"
-          fill="url(#barGradient)"
+          fill="${barFill}"
           opacity="${intensity}"
         />
         <rect
@@ -60,7 +76,7 @@ function renderBars(
           width="${layout.barWidth}"
           height="1"
           rx="0"
-          fill="${primarySoft}"
+          fill="${barHighlightFill}"
           opacity="${Math.min(0.95, intensity + 0.12)}"
         />
       </g>
@@ -90,12 +106,14 @@ function renderMonthLabels(
 function renderDotGrid(
   weekly: WeeklyStats[],
   layout: ReturnType<typeof buildLayout>,
-  primary: string
+  primary: string,
+  useSpectrumChart: boolean
 ): string {
   return weekly
     .map((week, weekIndex) => {
       const centerX =
         layout.margin.left + weekIndex * (layout.barWidth + layout.weekGap) + Math.floor(layout.barWidth / 2) + 0.5;
+      const dotColor = useSpectrumChart ? spectrumColor(weekIndex, weekly.length, 88, 56) : primary;
 
       return week.days
         .map((day, row) => {
@@ -108,7 +126,7 @@ function renderDotGrid(
           width="4"
           height="4"
           rx="0.8"
-          fill="${primary}"
+          fill="${dotColor}"
           opacity="${levelOpacity(day.contributionLevel)}"
           shape-rendering="crispEdges"
         >
@@ -124,6 +142,7 @@ function renderDotGrid(
 export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const { username, themeConfig, calendar, visual } = input;
   const palette = themeConfig.palette;
+  const useSpectrumChart = themeConfig.spectrumChart === true;
 
   const layout = buildLayout(calendar.weeks.length);
   const weekly = deriveWeeklyStats(calendar.weeks);
@@ -141,7 +160,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const steppedPath = buildSteppedPath(points);
   const areaPath = buildAreaPath(points, layout.chartBottom);
 
-  const bars = renderBars(weekly, layout, maxWeekly, themeConfig, palette.primarySoft);
+  const bars = renderBars(weekly, layout, maxWeekly, themeConfig, palette.primarySoft, useSpectrumChart);
   const monthLabels = renderMonthLabels(
     weekly.length,
     layout.margin.left,
@@ -171,7 +190,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
         .join("\n")
     : "";
 
-  const dotGrid = renderDotGrid(weekly, layout, palette.primary);
+  const dotGrid = renderDotGrid(weekly, layout, palette.primary, useSpectrumChart);
 
   const sweepFrom = layout.margin.left - 16;
   const sweepTo = layout.width - layout.margin.right + 16;
@@ -197,6 +216,47 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
         repeatCount="indefinite"/>
     `
     : "";
+
+  const spectrumDefs = useSpectrumChart
+    ? `
+    <linearGradient id="spectrumStrokeGradient" gradientUnits="userSpaceOnUse" x1="${layout.margin.left}" y1="${layout.chartTop}" x2="${layout.width - layout.margin.right}" y2="${layout.chartTop}">
+      <stop offset="0%" stop-color="hsl(260, 96%, 66%)"/>
+      <stop offset="16%" stop-color="hsl(218, 96%, 64%)"/>
+      <stop offset="32%" stop-color="hsl(186, 94%, 60%)"/>
+      <stop offset="50%" stop-color="hsl(132, 90%, 55%)"/>
+      <stop offset="68%" stop-color="hsl(78, 92%, 56%)"/>
+      <stop offset="84%" stop-color="hsl(24, 94%, 60%)"/>
+      <stop offset="100%" stop-color="hsl(300, 92%, 62%)"/>
+    </linearGradient>
+
+    <linearGradient id="spectrumGlowGradient" gradientUnits="userSpaceOnUse" x1="${layout.margin.left}" y1="${layout.chartTop}" x2="${layout.width - layout.margin.right}" y2="${layout.chartTop}">
+      <stop offset="0%" stop-color="hsl(260, 100%, 78%)"/>
+      <stop offset="16%" stop-color="hsl(218, 100%, 76%)"/>
+      <stop offset="32%" stop-color="hsl(186, 100%, 74%)"/>
+      <stop offset="50%" stop-color="hsl(132, 100%, 72%)"/>
+      <stop offset="68%" stop-color="hsl(78, 100%, 74%)"/>
+      <stop offset="84%" stop-color="hsl(24, 100%, 76%)"/>
+      <stop offset="100%" stop-color="hsl(300, 100%, 78%)"/>
+    </linearGradient>
+
+    <linearGradient id="spectrumAreaGradient" gradientUnits="userSpaceOnUse" x1="${layout.margin.left}" y1="${layout.chartTop}" x2="${layout.width - layout.margin.right}" y2="${layout.chartTop}">
+      <stop offset="0%" stop-color="hsl(260, 96%, 66%)" stop-opacity="${(themeConfig.areaOpacity * 0.85).toFixed(3)}"/>
+      <stop offset="16%" stop-color="hsl(218, 96%, 64%)" stop-opacity="${(themeConfig.areaOpacity * 0.85).toFixed(3)}"/>
+      <stop offset="32%" stop-color="hsl(186, 94%, 60%)" stop-opacity="${(themeConfig.areaOpacity * 0.85).toFixed(3)}"/>
+      <stop offset="50%" stop-color="hsl(132, 90%, 55%)" stop-opacity="${(themeConfig.areaOpacity * 0.85).toFixed(3)}"/>
+      <stop offset="68%" stop-color="hsl(78, 92%, 56%)" stop-opacity="${(themeConfig.areaOpacity * 0.85).toFixed(3)}"/>
+      <stop offset="84%" stop-color="hsl(24, 94%, 60%)" stop-opacity="${(themeConfig.areaOpacity * 0.85).toFixed(3)}"/>
+      <stop offset="100%" stop-color="hsl(300, 92%, 62%)" stop-opacity="${(themeConfig.areaOpacity * 0.85).toFixed(3)}"/>
+    </linearGradient>
+  `
+    : "";
+
+  const areaFill = useSpectrumChart ? "url(#spectrumAreaGradient)" : "url(#areaGradient)";
+  const lineStroke = useSpectrumChart ? "url(#spectrumStrokeGradient)" : palette.primary;
+  const lineGlowStroke = useSpectrumChart ? "url(#spectrumGlowGradient)" : palette.primarySoft;
+  const sweepStroke = useSpectrumChart ? "url(#spectrumGlowGradient)" : palette.primarySoft;
+  const sweepLineOpacity = useSpectrumChart ? Math.max(themeConfig.sweepOpacity, 0.14) : themeConfig.sweepOpacity;
+  const sweepLineWidth = useSpectrumChart ? 1.35 : 1.1;
 
   const lastWeek = weekly[weekly.length - 1];
   const footerUser = `USER: @${username}`;
@@ -224,6 +284,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <stop offset="0%" stop-color="${palette.primary}" stop-opacity="${themeConfig.areaOpacity}"/>
       <stop offset="100%" stop-color="${palette.primary}" stop-opacity="0"/>
     </linearGradient>
+    ${spectrumDefs}
 
     <radialGradient id="vignette" cx="50%" cy="50%" r="75%">
       <stop offset="60%" stop-color="rgba(0,0,0,0)"/>
@@ -312,13 +373,13 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   ${gridLines}
   ${verticalTicks}
 
-  <path d="${areaPath}" fill="url(#areaGradient)"/>
+  <path d="${areaPath}" fill="${areaFill}"/>
 
   ${bars}
 
   <path
     d="${steppedPath}"
-    stroke="${palette.primary}"
+    stroke="${lineStroke}"
     stroke-width="${themeConfig.lineWidth}"
     fill="none"
     stroke-linejoin="miter"
@@ -328,7 +389,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   />
   <path
     d="${steppedPath}"
-    stroke="${palette.primarySoft}"
+    stroke="${lineGlowStroke}"
     stroke-width="${themeConfig.sweepWidth + 1.1}"
     fill="none"
     stroke-linejoin="miter"
@@ -340,7 +401,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   <g clip-path="url(#sweepClip)">
     <path
       d="${steppedPath}"
-      stroke="${palette.primarySoft}"
+      stroke="${sweepStroke}"
       stroke-width="${themeConfig.sweepWidth}"
       fill="none"
       stroke-linejoin="miter"
@@ -355,9 +416,9 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     y1="${layout.chartTop - 8}"
     x2="${sweepFrom}"
     y2="${layout.chartBottom + 8}"
-    stroke="${palette.primarySoft}"
-    stroke-opacity="${themeConfig.sweepOpacity}"
-    stroke-width="1.1"
+    stroke="${sweepStroke}"
+    stroke-opacity="${sweepLineOpacity}"
+    stroke-width="${sweepLineWidth}"
   >
     <animate attributeName="x1" values="${sweepFrom};${sweepTo}" dur="${themeConfig.sweepDuration}s" repeatCount="indefinite"/>
     <animate attributeName="x2" values="${sweepFrom};${sweepTo}" dur="${themeConfig.sweepDuration}s" repeatCount="indefinite"/>

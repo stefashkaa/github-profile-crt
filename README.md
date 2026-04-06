@@ -20,6 +20,8 @@ Dark files for all themes:
 - `crt-contributions-ruby-dark.svg`
 - `crt-contributions-mint-dark.svg`
 - `crt-contributions-mono-dark.svg`
+- `crt-contributions-neon-dark.svg`
+- `crt-contributions-rainbow-dark.svg`
 - `crt-contributions-chaos-dark.svg`
 - `crt-contributions-chaos-max-dark.svg`
 - `crt-contributions-static-dark.svg`
@@ -27,6 +29,8 @@ Light files for profile-safe themes:
 - `crt-contributions-crt-light.svg`
 - `crt-contributions-amber-light.svg`
 - `crt-contributions-ice-light.svg`
+- `crt-contributions-neon-light.svg`
+- `crt-contributions-rainbow-light.svg`
 - `crt-contributions-static-light.svg`
 
 ## Project structure
@@ -99,6 +103,8 @@ To add a new theme, append one config object there.
 
 Special presets included:
 
+- `neon` - magenta/cyan retro neon style (no spectrum sweep)
+- `rainbow` - full-spectrum dynamic chart coloring across weeks
 - `chaos` - high-energy mode with aggressive animated noise
 - `chaos-max` - maximum noise and dense fast scanline chaos
 - `static` - calm mode with scanline and noise animation disabled
@@ -108,6 +114,8 @@ Light-mode adaptive themes included:
 - `crt`
 - `amber`
 - `ice`
+- `neon`
+- `rainbow`
 - `static`
 
 ## GitHub Actions workflow
