@@ -33,7 +33,7 @@ jobs:
       - name: Generate SVG
         env:
           GITHUB_USER: ${{ vars.GITHUB_USER || github.repository_owner }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN || github.token }}
           CRT_OUTPUT_DIR: assets
         run: pnpm generate
 
@@ -47,6 +47,6 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/crt-contributions.svg assets/crt-contributions-*.svg
+          git add assets
           git commit -m "chore: update CRT contribution svgs"
           git push

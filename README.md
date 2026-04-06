@@ -28,9 +28,6 @@ Light files for profile-safe themes:
 - `crt-contributions-amber-light.svg`
 - `crt-contributions-ice-light.svg`
 - `crt-contributions-static-light.svg`
-Compatibility aliases (dark):
-- `crt-contributions-crt.svg` ... `crt-contributions-static.svg`
-- `crt-contributions.svg` (default alias to `crt` dark)
 
 ## Project structure
 

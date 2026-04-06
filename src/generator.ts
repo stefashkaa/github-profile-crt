@@ -6,9 +6,7 @@ import { fetchContributionCalendar } from "./github/fetchContributionCalendar";
 import { optimizeGeneratedSvg } from "./render/optimizeSvg";
 import { renderCrtContributionSvg } from "./render/svgRenderer";
 import {
-  defaultThemeId,
   getThemeableConfigs,
-  outputLegacyAliasFileNameForTheme,
   outputFileNameForTheme,
   supportedModesForTheme,
   themeConfigForMode,
@@ -26,7 +24,6 @@ export interface GeneratedThemeFile {
 
 export interface GenerationResult {
   outputDirectory: string;
-  defaultOutputPath: string;
   totalContributions: number;
   weeks: number;
   optimized: boolean;
@@ -41,7 +38,6 @@ export async function generateCrtContributionSvgs(config: RuntimeConfig): Promis
   const themes = getThemeableConfigs();
 
   const files: GeneratedThemeFile[] = [];
-  const darkRenderedByTheme = new Map<ThemeName, string>();
 
   for (const themeConfig of themes) {
     const modes = supportedModesForTheme(themeConfig.id);
@@ -62,16 +58,6 @@ export async function generateCrtContributionSvgs(config: RuntimeConfig): Promis
       const outputPath = path.join(config.outputDirectory, outputFileNameForTheme(themeConfig.id, mode));
       await fs.writeFile(outputPath, finalSvg, "utf8");
 
-      if (mode === "dark") {
-        darkRenderedByTheme.set(themeConfig.id, finalSvg);
-
-        // Preserve old output names for compatibility with existing README links.
-        const legacyAliasPath = path.join(config.outputDirectory, outputLegacyAliasFileNameForTheme(themeConfig.id));
-        if (legacyAliasPath !== outputPath) {
-          await fs.writeFile(legacyAliasPath, finalSvg, "utf8");
-        }
-      }
-
       files.push({
         themeId: themeConfig.id,
         mode,
@@ -82,17 +68,8 @@ export async function generateCrtContributionSvgs(config: RuntimeConfig): Promis
     }
   }
 
-  const defaultTheme = defaultThemeId();
-  const defaultOutputPath = path.join(config.outputDirectory, "crt-contributions.svg");
-  const defaultSvg = darkRenderedByTheme.get(defaultTheme);
-
-  if (defaultSvg) {
-    await fs.writeFile(defaultOutputPath, defaultSvg, "utf8");
-  }
-
   return {
     outputDirectory: config.outputDirectory,
-    defaultOutputPath,
     totalContributions: calendar.totalContributions,
     weeks: calendar.weeks.length,
     optimized: config.minifySvg,

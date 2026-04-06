@@ -484,7 +484,3 @@ export function defaultThemeId(): ThemeName {
 export function outputFileNameForTheme(themeId: ThemeName, mode: ThemeMode = "dark"): string {
   return `crt-contributions-${themeId}-${mode}.svg`;
 }
-
-export function outputLegacyAliasFileNameForTheme(themeId: ThemeName): string {
-  return `crt-contributions-${themeId}.svg`;
-}

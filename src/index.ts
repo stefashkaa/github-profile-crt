@@ -4,7 +4,6 @@ export { renderCrtContributionSvg, type SvgRenderInput } from "./render/svgRende
 export {
   defaultThemeId,
   getThemeableConfigs,
-  outputLegacyAliasFileNameForTheme,
   outputFileNameForTheme,
   supportedModesForTheme,
   themeConfigForMode,
