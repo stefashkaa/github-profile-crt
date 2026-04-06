@@ -1,4 +1,5 @@
 export type ThemeName = "crt" | "amber" | "ice" | "ruby" | "mint" | "mono" | "chaos" | "chaos-max" | "static";
+export type ThemeMode = "dark" | "light";
 
 export interface ThemePalette {
   bg0: string;
@@ -37,6 +38,10 @@ export interface ThemeableConfig {
   lineWidth: number;
   phosphorBlur: number;
 }
+
+type ThemeVariantOverride = Partial<Omit<ThemeableConfig, "id" | "palette">> & {
+  palette?: Partial<ThemePalette>;
+};
 
 const THEMEABLE_CONFIGS: ThemeableConfig[] = [
   {
@@ -356,14 +361,130 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
   }
 ];
 
+const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = {
+  crt: {
+    palette: {
+      bg0: "#edf7ed",
+      bg1: "#ddf0dd",
+      bg2: "#d2e9d2",
+      primary: "#1d7f2a",
+      primarySoft: "#2da83d",
+      textDim: "#2f6e3b",
+      scan: "rgb(45,168,61)"
+    },
+    scanOpacity: 0.028,
+    scanLineOpacity: 0.05,
+    noiseOpacity: 0.006,
+    sweepOpacity: 0.09,
+    vignetteOpacity: 0.03,
+    areaOpacity: 0.055,
+    gridOpacity: 0.048,
+    verticalTickOpacity: 0.03,
+    lineGlowOpacity: 0.1
+  },
+  amber: {
+    palette: {
+      bg0: "#fff5e7",
+      bg1: "#fcecd5",
+      bg2: "#f5dfbf",
+      primary: "#a45c00",
+      primarySoft: "#d88418",
+      textDim: "#8a622f",
+      scan: "rgb(216,132,24)"
+    },
+    scanOpacity: 0.024,
+    scanLineOpacity: 0.045,
+    noiseOpacity: 0.005,
+    sweepOpacity: 0.085,
+    vignetteOpacity: 0.025,
+    areaOpacity: 0.05,
+    gridOpacity: 0.044,
+    verticalTickOpacity: 0.026,
+    lineGlowOpacity: 0.095
+  },
+  ice: {
+    palette: {
+      bg0: "#edf6ff",
+      bg1: "#deefff",
+      bg2: "#d2e7fb",
+      primary: "#0f6ea2",
+      primarySoft: "#1f91cf",
+      textDim: "#336a88",
+      scan: "rgb(31,145,207)"
+    },
+    scanOpacity: 0.024,
+    scanLineOpacity: 0.042,
+    noiseOpacity: 0.0045,
+    sweepOpacity: 0.082,
+    vignetteOpacity: 0.022,
+    areaOpacity: 0.048,
+    gridOpacity: 0.042,
+    verticalTickOpacity: 0.024,
+    lineGlowOpacity: 0.09
+  },
+  static: {
+    palette: {
+      bg0: "#f4f7f9",
+      bg1: "#e9f0f4",
+      bg2: "#dde8ee",
+      primary: "#2f6f84",
+      primarySoft: "#3f8faa",
+      textDim: "#4c6874",
+      scan: "rgb(63,143,170)"
+    },
+    scanOpacity: 0.018,
+    scanLineOpacity: 0.034,
+    noiseOpacity: 0.0038,
+    sweepOpacity: 0.06,
+    vignetteOpacity: 0.016,
+    areaOpacity: 0.038,
+    gridOpacity: 0.032,
+    verticalTickOpacity: 0.018,
+    lineGlowOpacity: 0.068
+  }
+};
+
+function applyThemeOverride(base: ThemeableConfig, override?: ThemeVariantOverride): ThemeableConfig {
+  if (!override) {
+    return base;
+  }
+
+  const { palette: paletteOverride, ...restOverride } = override;
+
+  return {
+    ...base,
+    ...restOverride,
+    palette: {
+      ...base.palette,
+      ...(paletteOverride ?? {})
+    }
+  };
+}
+
 export function getThemeableConfigs(): ThemeableConfig[] {
   return THEMEABLE_CONFIGS;
+}
+
+export function supportedModesForTheme(themeId: ThemeName): ThemeMode[] {
+  return LIGHT_THEME_OVERRIDES[themeId] ? ["dark", "light"] : ["dark"];
+}
+
+export function themeConfigForMode(themeConfig: ThemeableConfig, mode: ThemeMode): ThemeableConfig {
+  if (mode === "dark") {
+    return themeConfig;
+  }
+
+  return applyThemeOverride(themeConfig, LIGHT_THEME_OVERRIDES[themeConfig.id]);
 }
 
 export function defaultThemeId(): ThemeName {
   return "crt";
 }
 
-export function outputFileNameForTheme(themeId: ThemeName): string {
+export function outputFileNameForTheme(themeId: ThemeName, mode: ThemeMode = "dark"): string {
+  return `crt-contributions-${themeId}-${mode}.svg`;
+}
+
+export function outputLegacyAliasFileNameForTheme(themeId: ThemeName): string {
   return `crt-contributions-${themeId}.svg`;
 }

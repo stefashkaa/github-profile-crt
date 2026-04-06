@@ -23,7 +23,7 @@ async function main(): Promise<void> {
   );
 
   for (const file of result.files) {
-    console.log(` - ${file.themeId}: ${file.outputPath} (${file.finalSize} bytes)`);
+    console.log(` - ${file.themeId} (${file.mode}): ${file.outputPath} (${file.finalSize} bytes)`);
   }
 
   console.log(`Default alias: ${result.defaultOutputPath}`);

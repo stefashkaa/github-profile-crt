@@ -13,16 +13,24 @@ Generate CRT-style GitHub contribution SVGs for multiple visual themes in one ru
 
 Each run creates all theme variants at once in `assets/` (or your configured output dir):
 
-- `crt-contributions-crt.svg`
-- `crt-contributions-amber.svg`
-- `crt-contributions-ice.svg`
-- `crt-contributions-ruby.svg`
-- `crt-contributions-mint.svg`
-- `crt-contributions-mono.svg`
-- `crt-contributions-chaos.svg`
-- `crt-contributions-chaos-max.svg`
-- `crt-contributions-static.svg`
-- `crt-contributions.svg` (default alias to the `crt` theme)
+Dark files for all themes:
+- `crt-contributions-crt-dark.svg`
+- `crt-contributions-amber-dark.svg`
+- `crt-contributions-ice-dark.svg`
+- `crt-contributions-ruby-dark.svg`
+- `crt-contributions-mint-dark.svg`
+- `crt-contributions-mono-dark.svg`
+- `crt-contributions-chaos-dark.svg`
+- `crt-contributions-chaos-max-dark.svg`
+- `crt-contributions-static-dark.svg`
+Light files for profile-safe themes:
+- `crt-contributions-crt-light.svg`
+- `crt-contributions-amber-light.svg`
+- `crt-contributions-ice-light.svg`
+- `crt-contributions-static-light.svg`
+Compatibility aliases (dark):
+- `crt-contributions-crt.svg` ... `crt-contributions-static.svg`
+- `crt-contributions.svg` (default alias to `crt` dark)
 
 ## Project structure
 
@@ -98,6 +106,13 @@ Special presets included:
 - `chaos-max` - maximum noise and dense fast scanline chaos
 - `static` - calm mode with scanline and noise animation disabled
 
+Light-mode adaptive themes included:
+
+- `crt`
+- `amber`
+- `ice`
+- `static`
+
 ## GitHub Actions workflow
 
 Workflow file:
@@ -114,7 +129,9 @@ It runs on schedule or manually, generates all theme SVGs, and commits updated f
 ## README usage example
 
 ```md
-![CRT Contributions](./assets/crt-contributions.svg)
-
-![CRT Contributions (Ice)](./assets/crt-contributions-ice.svg)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/crt-contributions-crt-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="./assets/crt-contributions-crt-light.svg">
+  <img alt="CRT contribution monitor for GitHub profile" src="./assets/crt-contributions-crt-dark.svg">
+</picture>
 ```
