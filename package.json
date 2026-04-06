@@ -1,0 +1,27 @@
+{
+  "name": "github-profile-crt",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Generate CRT-style GitHub contribution SVGs for profile README files.",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "generate": "pnpm build && node dist/cli.js",
+    "generate:dev": "tsx src/cli.ts",
+    "dev": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10"
+  }
+}
