@@ -11,7 +11,6 @@ import { deriveWeeklyStats } from "../model/weekly";
 import { clamp, maxOf } from "../utils/math";
 import { escapeXml } from "../utils/xml";
 import { buildLayout } from "./layout";
-import { buildAreaPath, buildSteppedPath, type ChartPoint } from "./paths";
 import type { ThemeableConfig } from "./themes";
 
 export interface SvgRenderInput {
@@ -37,15 +36,12 @@ function spectrumColor(index: number, count: number, saturation: number, lightne
 
 const BAR_DEPTH_X = 2;
 const BAR_DEPTH_Y = 2;
-const PULSE_PATH_LENGTH = 1000;
 
 interface BarGeometry {
   x: number;
   y: number;
   height: number;
   centerX: number;
-  lineX: number;
-  lineY: number;
 }
 
 function resolveBarGeometry(
@@ -55,18 +51,17 @@ function resolveBarGeometry(
   layout: ReturnType<typeof buildLayout>
 ): BarGeometry {
   const x = layout.margin.left + index * (layout.barWidth + layout.weekGap) + 0.5;
-  const normalized = total / maxWeekly;
-  const height = Math.max(4, normalized * (layout.chartHeight - 8));
+  const safeMaxWeekly = maxWeekly > 0 ? maxWeekly : 1;
+  const normalized = total <= 0 ? 0 : total / safeMaxWeekly;
+  const height = total <= 0 ? 0 : Math.max(9, normalized * (layout.chartHeight - 8));
   const y = layout.chartBottom - height + 0.5;
   const centerX = x + Math.floor(layout.barWidth / 2);
 
   return {
     x,
     y,
-    height: Math.max(1, Math.floor(height)),
-    centerX,
-    lineX: centerX + BAR_DEPTH_X * 0.35,
-    lineY: y - BAR_DEPTH_Y * 0.55
+    height: Math.max(0, Math.floor(height)),
+    centerX
   };
 }
 
@@ -79,6 +74,8 @@ function renderBars(
   primarySoft: string,
   useSpectrumChart: boolean
 ): string {
+  const maxBarHeight = layout.chartHeight - 6;
+
   return weekly
     .map((week, index) => {
       const geometry = geometries[index]!;
@@ -93,69 +90,159 @@ function renderBars(
       const barFrontFill = useSpectrumChart ? spectrumColor(index, weekly.length, 92, 54) : "url(#barGradient)";
       const barTopFill = useSpectrumChart ? spectrumColor(index, weekly.length, 97, 73) : primarySoft;
       const barSideFill = useSpectrumChart ? spectrumColor(index, weekly.length, 88, 42) : primary;
-      const topFace = `${geometry.x},${geometry.y} ${geometry.x + layout.barWidth},${geometry.y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${geometry.y - BAR_DEPTH_Y} ${geometry.x + BAR_DEPTH_X},${geometry.y - BAR_DEPTH_Y}`;
-      const sideFace = `${geometry.x + layout.barWidth},${geometry.y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${geometry.y - BAR_DEPTH_Y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${geometry.y + geometry.height - BAR_DEPTH_Y} ${geometry.x + layout.barWidth},${geometry.y + geometry.height}`;
+      const outlineStroke = useSpectrumChart ? spectrumColor(index, weekly.length, 98, 80) : primarySoft;
+      const outlineOpacity = Math.min(0.9, Math.max(0.4, intensity + 0.18));
+      const pointerStrokeOpacity = Math.min(0.98, outlineOpacity + 0.06);
+
+      const bottomY = geometry.y + geometry.height;
+      const pointerWidth = Math.max(4, layout.barWidth - 1);
+      const pointerHeight = Math.max(2, Math.floor(layout.barWidth * 0.34));
+      const pointerGap = Math.max(1, pointerHeight - 1);
+      const requiredPointerClearance = pointerHeight + BAR_DEPTH_Y;
+
+      // Keep animated bars below the true-value pointer position with guaranteed spacing.
+      const animationPeakHeight = Math.max(
+        4,
+        Math.min(maxBarHeight, Math.floor(geometry.height + pointerGap - requiredPointerClearance))
+      );
+      const pulseAmplitude = clamp(Math.round(animationPeakHeight * 0.16), 1, 7);
+      const lowHeight = Math.max(4, animationPeakHeight - pulseAmplitude);
+      const midHeight = Math.max(4, animationPeakHeight - Math.max(1, Math.floor(pulseAmplitude * 0.5)));
+      const heightFrames = [lowHeight, midHeight, animationPeakHeight, midHeight, lowHeight];
+      const topFrames = heightFrames.map((height) => bottomY - height);
+
+      const topFaceFromY = (y: number): string =>
+        `${geometry.x},${y} ${geometry.x + layout.barWidth},${y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${y - BAR_DEPTH_Y} ${geometry.x + BAR_DEPTH_X},${y - BAR_DEPTH_Y}`;
+      const sideFaceFromY = (y: number): string =>
+        `${geometry.x + layout.barWidth},${y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${y - BAR_DEPTH_Y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${bottomY - BAR_DEPTH_Y} ${geometry.x + layout.barWidth},${bottomY}`;
+
+      const yValues = topFrames.map((value) => value.toFixed(2)).join(";");
+      const heightValues = heightFrames.map((value) => value.toFixed(2)).join(";");
+      const topFaceValues = topFrames.map((y) => topFaceFromY(y)).join(";");
+      const sideFaceValues = topFrames.map((y) => sideFaceFromY(y)).join(";");
+
+      const pointerDepthX = Math.max(1.3, BAR_DEPTH_X - 0.2);
+      const pointerDepthY = Math.max(1.3, BAR_DEPTH_Y - 0.2);
+      const pointerX = geometry.x + (layout.barWidth - pointerWidth) / 2;
+      const pointerTopFaceFromY = (y: number): string =>
+        `${pointerX},${y} ${pointerX + pointerWidth},${y} ${pointerX + pointerWidth + pointerDepthX},${y - pointerDepthY} ${pointerX + pointerDepthX},${y - pointerDepthY}`;
+      const pointerSideFaceFromY = (y: number): string =>
+        `${pointerX + pointerWidth},${y} ${pointerX + pointerWidth + pointerDepthX},${y - pointerDepthY} ${pointerX + pointerWidth + pointerDepthX},${y + pointerHeight - pointerDepthY} ${pointerX + pointerWidth},${y + pointerHeight}`;
+      const pointerFrontY = geometry.y - pointerGap - pointerHeight;
+      const pointerMarkup = `
+        <g>
+          <polygon
+            points="${pointerSideFaceFromY(pointerFrontY)}"
+            fill="${barSideFill}"
+            opacity="${Math.max(0.2, intensity * 0.7)}"
+            stroke="${outlineStroke}"
+            stroke-opacity="${pointerStrokeOpacity}"
+            stroke-width="0.8"
+          />
+          <rect
+            x="${pointerX}"
+            y="${pointerFrontY}"
+            width="${pointerWidth}"
+            height="${pointerHeight}"
+            fill="${barFrontFill}"
+            opacity="${Math.min(0.96, intensity + 0.16)}"
+            stroke="${outlineStroke}"
+            stroke-opacity="${pointerStrokeOpacity}"
+            stroke-width="0.8"
+          />
+          <polygon
+            points="${pointerTopFaceFromY(pointerFrontY)}"
+            fill="${barTopFill}"
+            opacity="${Math.min(0.98, intensity + 0.24)}"
+            stroke="${outlineStroke}"
+            stroke-opacity="${pointerStrokeOpacity}"
+            stroke-width="0.8"
+          />
+        </g>
+      `;
+
+      const waveDuration = (2.24 + (index % 9) * 0.17 + (4 - week.intensity) * 0.05).toFixed(2);
+      const waveDelay = `-${((index % 13) * 0.19).toFixed(2)}`;
+
+      if (week.total <= 0) {
+        return `
+      <g shape-rendering="crispEdges">
+        <title>${escapeXml(title)}</title>
+        ${pointerMarkup}
+      </g>
+    `;
+      }
 
       return `
       <g shape-rendering="crispEdges">
         <title>${escapeXml(title)}</title>
         <polygon
-          points="${sideFace}"
+          points="${sideFaceFromY(topFrames[1] ?? geometry.y)}"
           fill="${barSideFill}"
           opacity="${Math.max(0.14, intensity * 0.62)}"
-        />
+          stroke="${outlineStroke}"
+          stroke-opacity="${outlineOpacity}"
+          stroke-width="0.8"
+        >
+          <animate attributeName="points" values="${sideFaceValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+        </polygon>
         <rect
           x="${geometry.x}"
-          y="${geometry.y}"
+          y="${topFrames[1] ?? geometry.y}"
           width="${layout.barWidth}"
-          height="${geometry.height}"
+          height="${heightFrames[1] ?? geometry.height}"
           rx="${themeConfig.barRadius}"
           fill="${barFrontFill}"
           opacity="${intensity}"
-        />
+          stroke="${outlineStroke}"
+          stroke-opacity="${outlineOpacity}"
+          stroke-width="0.8"
+        >
+          <animate attributeName="y" values="${yValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+          <animate attributeName="height" values="${heightValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+        </rect>
         <polygon
-          points="${topFace}"
+          points="${topFaceFromY(topFrames[1] ?? geometry.y)}"
           fill="${barTopFill}"
           opacity="${Math.min(0.97, intensity + 0.18)}"
-        />
+          stroke="${outlineStroke}"
+          stroke-opacity="${outlineOpacity}"
+          stroke-width="0.8"
+        >
+          <animate attributeName="points" values="${topFaceValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+        </polygon>
+        ${pointerMarkup}
         <line
           x1="${geometry.x + BAR_DEPTH_X}"
-          y1="${geometry.y - BAR_DEPTH_Y}"
+          y1="${topFrames[1] ?? geometry.y - BAR_DEPTH_Y}"
           x2="${geometry.x + layout.barWidth + BAR_DEPTH_X}"
-          y2="${geometry.y - BAR_DEPTH_Y}"
+          y2="${topFrames[1] ?? geometry.y - BAR_DEPTH_Y}"
           stroke="${barTopFill}"
-          stroke-opacity="${Math.min(0.98, intensity + 0.22)}"
+          stroke-opacity="${Math.min(0.98, intensity + 0.2)}"
           stroke-width="1"
-        />
+        >
+          <animate attributeName="y1" values="${topFrames.map((y) => (y - BAR_DEPTH_Y).toFixed(2)).join(";")}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+          <animate attributeName="y2" values="${topFrames.map((y) => (y - BAR_DEPTH_Y).toFixed(2)).join(";")}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+        </line>
       </g>
     `;
     })
     .join("\n");
 }
 
-function renderSignalDropLines(
-  points: ChartPoint[],
-  geometries: BarGeometry[],
-  themeConfig: ThemeableConfig,
-  useSpectrumChart: boolean,
-  primarySoft: string
+function renderYAxisLabels(
+  layout: ReturnType<typeof buildLayout>,
+  maxWeekly: number,
+  palette: ThemeableConfig["palette"]
 ): string {
-  return points
-    .map((point, index) => {
-      if (index % 3 !== 0) {
-        return "";
-      }
+  const steps = [1, 0.75, 0.5, 0.25, 0];
 
-      const geometry = geometries[index]!;
-
-      if (point.y >= geometry.y) {
-        return "";
-      }
-
-      const stroke = useSpectrumChart ? spectrumColor(index, points.length, 92, 72) : primarySoft;
-      const opacity = Math.max(0.08, themeConfig.lineGlowOpacity * 0.42);
-
-      return `<line x1="${point.x}" y1="${point.y + 0.4}" x2="${point.x}" y2="${geometry.y}" stroke="${stroke}" stroke-opacity="${opacity}" stroke-width="1" shape-rendering="crispEdges"/>`;
+  return steps
+    .map((progress) => {
+      const value = Math.round(maxWeekly * progress);
+      const y = layout.chartTop + layout.chartHeight * (1 - progress) + 3;
+      const x = layout.margin.left - 8;
+      return `<text x="${x}" y="${y.toFixed(2)}" class="y-axis-label" text-anchor="end" fill="${palette.textDim}" opacity="${progress === 1 ? 0.84 : 0.68}">${value}</text>`;
     })
     .join("\n");
 }
@@ -500,15 +587,8 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const maxWeekly = Math.max(1, maxOf(weekly.map((week) => week.total)));
   const geometries = weekly.map((week, index) => resolveBarGeometry(index, week.total, maxWeekly, layout));
 
-  const points = geometries.map((geometry) => {
-    return { x: geometry.lineX, y: geometry.lineY };
-  });
-
-  const steppedPath = buildSteppedPath(points);
-  const areaPath = buildAreaPath(points, layout.chartBottom);
-
   const bars = renderBars(weekly, geometries, layout, themeConfig, palette.primary, palette.primarySoft, useSpectrumChart);
-  const signalDropLines = renderSignalDropLines(points, geometries, themeConfig, useSpectrumChart, palette.primarySoft);
+  const yAxisLabels = renderYAxisLabels(layout, maxWeekly, palette);
   const monthLabels = renderMonthLabels(
     weekly.length,
     layout.margin.left,
@@ -599,26 +679,8 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   `
     : "";
 
-  const areaFill = useSpectrumChart ? "url(#spectrumAreaGradient)" : "url(#areaGradient)";
-  const lineStroke = useSpectrumChart ? "url(#spectrumStrokeGradient)" : palette.primary;
-  const lineGlowStroke = useSpectrumChart ? "url(#spectrumGlowGradient)" : palette.primarySoft;
-  const pulseStroke = useSpectrumChart ? "url(#spectrumGlowGradient)" : palette.primarySoft;
-  const pulseVisibleLength = useSpectrumChart ? 124 : 96;
-  const pulseTrailLength = Math.min(PULSE_PATH_LENGTH - 64, pulseVisibleLength + 130);
-  const pulseDurationSeconds = Math.max(2.6, themeConfig.sweepDuration * 0.84);
-  const pulseDuration = pulseDurationSeconds.toFixed(2);
-  const pulseTrailDuration = (pulseDurationSeconds * 1.18).toFixed(2);
-  const sweepFrom = layout.margin.left - 16;
-  const sweepTo = layout.width - layout.margin.right + 16;
-  const sweepLineOpacity = useSpectrumChart ? Math.max(themeConfig.sweepOpacity, 0.16) : Math.max(0.11, themeConfig.sweepOpacity * 0.82);
-  const sweepLineGlowOpacity = Math.min(0.4, sweepLineOpacity + 0.1);
-  const sweepLineWidth = useSpectrumChart ? 1.35 : 1.1;
-  const glowBaseOpacity = clamp(themeConfig.lineGlowOpacity, 0.08, 0.9);
-  const glowMinOpacity = Math.max(0.08, glowBaseOpacity * 0.74).toFixed(3);
-  const glowMaxOpacity = Math.min(0.96, glowBaseOpacity * 1.16).toFixed(3);
-  const glowPulseAnimation = themeConfig.animateNoise || themeConfig.animateScanlines
-    ? `<animate attributeName="opacity" values="${glowMinOpacity};${glowMaxOpacity};${glowMinOpacity}" dur="${(themeConfig.sweepDuration * 1.34).toFixed(2)}s" repeatCount="indefinite"/>`
-    : "";
+  const chartBaseGlowOpacity = Math.max(0.22, themeConfig.barMinOpacity * 0.7);
+  const chartBaseLineOpacity = Math.max(0.16, themeConfig.barMinOpacity * 0.55);
 
   const lastWeek = weekly[weekly.length - 1];
   const footerUser = `USER: @${username}`;
@@ -736,6 +798,10 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       letter-spacing: 0.04em;
       opacity: 0.9;
     }
+    .y-axis-label {
+      font: 600 6.7px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      letter-spacing: 0.03em;
+    }
     .dash-metric {
       font: 700 10px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       fill: ${palette.primarySoft};
@@ -768,98 +834,31 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#vignette)" opacity="${themeConfig.vignetteOpacity}"/>
 
   ${monthLabels}
+  ${yAxisLabels}
   ${gridLines}
   ${verticalTicks}
 
-  <path d="${areaPath}" fill="${areaFill}"/>
-
   ${bars}
-  <g>${signalDropLines}</g>
-
-  <path
-    d="${steppedPath}"
-    stroke="${lineStroke}"
-    stroke-width="${themeConfig.lineWidth}"
-    fill="none"
-    stroke-linejoin="miter"
-    stroke-linecap="square"
-    shape-rendering="crispEdges"
-    opacity="0.95"
+  <line
+    x1="${layout.margin.left}"
+    y1="${layout.chartBottom + 0.5}"
+    x2="${layout.width - layout.margin.right}"
+    y2="${layout.chartBottom + 0.5}"
+    stroke="${palette.primarySoft}"
+    stroke-opacity="${chartBaseGlowOpacity}"
+    stroke-width="2.4"
+    filter="url(#phosphorGlow)"
   />
-  <path
-    d="${steppedPath}"
-    stroke="${lineGlowStroke}"
-    stroke-width="${themeConfig.sweepWidth + 1.1}"
-    fill="none"
-    stroke-linejoin="miter"
-    stroke-linecap="square"
-    opacity="${glowMinOpacity}"
-    filter="url(#phosphorGlow)"
-  >${glowPulseAnimation}</path>
-  <path
-    d="${steppedPath}"
-    stroke="${pulseStroke}"
-    stroke-width="${themeConfig.sweepWidth + 1.18}"
-    fill="none"
-    stroke-linejoin="miter"
-    stroke-linecap="square"
-    opacity="${Math.max(0.2, glowBaseOpacity * 0.72)}"
-    filter="url(#phosphorGlow)"
-    pathLength="${PULSE_PATH_LENGTH}"
-    stroke-dasharray="${pulseTrailLength} ${PULSE_PATH_LENGTH - pulseTrailLength}"
-  >
-    <animate
-      attributeName="stroke-dashoffset"
-      values="${PULSE_PATH_LENGTH + 180};180"
-      dur="${pulseTrailDuration}s"
-      repeatCount="indefinite"
-    />
-  </path>
-  <path
-    d="${steppedPath}"
-    stroke="${pulseStroke}"
-    stroke-width="${themeConfig.sweepWidth}"
-    fill="none"
-    stroke-linejoin="miter"
-    stroke-linecap="square"
-    shape-rendering="crispEdges"
-    opacity="0.92"
-    pathLength="${PULSE_PATH_LENGTH}"
-    stroke-dasharray="${pulseVisibleLength} ${PULSE_PATH_LENGTH - pulseVisibleLength}"
-  >
-    <animate
-      attributeName="stroke-dashoffset"
-      values="${PULSE_PATH_LENGTH};0"
-      dur="${pulseDuration}s"
-      repeatCount="indefinite"
-    />
-  </path>
   <line
-    x1="${sweepFrom}"
-    y1="${layout.chartTop - 10}"
-    x2="${sweepFrom}"
-    y2="${layout.chartBottom + 10}"
-    stroke="${pulseStroke}"
-    stroke-opacity="${sweepLineGlowOpacity}"
-    stroke-width="${sweepLineWidth + 2.2}"
-    filter="url(#phosphorGlow)"
-  >
-    <animate attributeName="x1" values="${sweepFrom};${sweepTo}" dur="${pulseDuration}s" repeatCount="indefinite"/>
-    <animate attributeName="x2" values="${sweepFrom};${sweepTo}" dur="${pulseDuration}s" repeatCount="indefinite"/>
-  </line>
-  <line
-    x1="${sweepFrom}"
-    y1="${layout.chartTop - 10}"
-    x2="${sweepFrom}"
-    y2="${layout.chartBottom + 10}"
-    stroke="${pulseStroke}"
-    stroke-opacity="${sweepLineOpacity}"
-    stroke-width="${sweepLineWidth}"
+    x1="${layout.margin.left}"
+    y1="${layout.chartBottom + 0.5}"
+    x2="${layout.width - layout.margin.right}"
+    y2="${layout.chartBottom + 0.5}"
+    stroke="${palette.primary}"
+    stroke-opacity="${chartBaseLineOpacity}"
+    stroke-width="1"
     shape-rendering="crispEdges"
-  >
-    <animate attributeName="x1" values="${sweepFrom};${sweepTo}" dur="${pulseDuration}s" repeatCount="indefinite"/>
-    <animate attributeName="x2" values="${sweepFrom};${sweepTo}" dur="${pulseDuration}s" repeatCount="indefinite"/>
-  </line>
+  />
 
   ${dashboardPanels}
   <g>${dotGrid}</g>
