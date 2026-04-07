@@ -169,111 +169,94 @@ function polarToCartesian(centerX: number, centerY: number, radius: number, angl
   };
 }
 
-function renderLanguageDonut(
+function renderLanguageStackProfile(
   insights: ProfileInsights,
   layout: ReturnType<typeof buildLayout>,
   dashboardTop: number,
   themeConfig: ThemeableConfig,
   useSpectrumChart: boolean
 ): string {
-  const centerX = layout.margin.left + 86;
-  const centerY = dashboardTop + 42;
-  const radius = 27;
-  const strokeWidth = 10;
-  const circumference = 2 * Math.PI * radius;
-  const legendX = centerX + 46;
-  const legendStartY = centerY - 16;
-  const titleY = centerY - 46;
   const hasLanguageData = insights.languages.length > 0 && insights.totalLanguageSize > 0;
-  const baseRingStroke = useSpectrumChart ? "hsl(250, 35%, 45%)" : themeConfig.palette.textDim;
-  const ringDuration = Math.max(3.2, themeConfig.sweepDuration * 1.2).toFixed(2);
+  const titleX = layout.margin.left + 60;
+  const titleY = dashboardTop + 2;
+  const panelX = titleX;
+  const panelY = dashboardTop + 24;
+  const panelWidth = 245;
+  const panelHeight = 66;
+  const topPadding = 7;
+  const rowStep = 11;
+  const barHeight = 7;
+  const nameX = panelX + 8;
+  const barTrackX = panelX + 70;
+  const barTrackEndX = panelX + panelWidth - 34;
+  const barTrackWidth = barTrackEndX - barTrackX;
+  const percentX = panelX + panelWidth - 8;
+
+  const separators = Array.from({ length: 4 }, (_, index) => index + 1)
+    .map((index) => {
+      const y = panelY + topPadding + index * rowStep - 1.5;
+      return `<line x1="${panelX}" x2="${panelX + panelWidth}" y1="${y}" y2="${y}" stroke="${themeConfig.palette.textDim}" stroke-opacity="0.08"/>`;
+    })
+    .join("\n");
 
   if (!hasLanguageData) {
     return `
     <g>
-      <text x="${centerX}" y="${titleY}" class="dash-title" text-anchor="middle">LANGS</text>
-      <circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="none" stroke="${baseRingStroke}" stroke-opacity="0.26" stroke-width="${strokeWidth}"/>
-      <circle cx="${centerX}" cy="${centerY}" r="${radius - strokeWidth * 0.48}" fill="${themeConfig.palette.bg1}" fill-opacity="0.72"/>
-      <text x="${centerX}" y="${centerY + 3}" class="dash-label" text-anchor="middle">NO DATA</text>
+      <text x="${titleX}" y="${titleY}" class="panel-title" text-anchor="start">STACK PROFILE</text>
+      <rect x="${panelX}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="8" fill="${themeConfig.palette.bg1}" fill-opacity="0.18" stroke="${themeConfig.palette.textDim}" stroke-opacity="0.12"/>
+      ${separators}
+      <text x="${panelX + panelWidth / 2}" y="${panelY + panelHeight / 2 + 2}" class="dash-label" text-anchor="middle">NO LANGUAGE DATA</text>
     </g>
     `;
   }
 
-  let consumedLength = 0;
-  const slices = insights.languages
+  const rows = insights.languages.slice(0, 5);
+
+  const rowContent = rows
     .map((language, index) => {
-      const percentage = language.percentage;
-      const length = percentage * circumference;
+      const trackY = panelY + topPadding + index * rowStep;
+      const labelY = trackY + 6;
+      const targetWidth = Math.max(2, Math.round(language.percentage * barTrackWidth));
       const color = language.color || (useSpectrumChart
-        ? spectrumColor(index, insights.languages.length, 86, 62)
+        ? spectrumColor(index, rows.length, 86, 62)
         : themeConfig.palette.primarySoft);
-      const dashOffset = -consumedLength;
-      consumedLength += length;
-      const animationDelay = (index * 0.12).toFixed(2);
+      const pulseMin = Math.max(2, Math.round(targetWidth * 0.74));
+      const pulseMid = Math.max(2, Math.round(targetWidth * 0.87));
+      const pulseDuration = (1.8 + index * 0.22).toFixed(2);
+      const pulseDelay = (index * 0.12).toFixed(2);
+      const themeBlendOpacity = useSpectrumChart ? 0.46 : 0.72;
+      const languageBlendOpacity = useSpectrumChart ? 0.42 : 0.24;
+      const accentOpacity = useSpectrumChart ? 0.68 : 0.54;
+      const segmentCount = Math.max(8, Math.floor(barTrackWidth / 9));
+      const segmentStep = barTrackWidth / segmentCount;
+      const segmentLines = Array.from({ length: segmentCount - 1 }, (_, segmentIndex) => {
+        const x = barTrackX + segmentStep * (segmentIndex + 1);
+        return `M${x} ${trackY}v${barHeight}`;
+      }).join(" ");
 
       return `
-      <circle
-        cx="${centerX}"
-        cy="${centerY}"
-        r="${radius}"
-        fill="none"
-        stroke="${color}"
-        stroke-width="${strokeWidth}"
-        stroke-linecap="butt"
-        stroke-dasharray="${length.toFixed(2)} ${(circumference - length).toFixed(2)}"
-        stroke-dashoffset="${dashOffset.toFixed(2)}"
-        transform="rotate(-90 ${centerX} ${centerY})"
-      >
-        <animate
-          attributeName="stroke-dasharray"
-          values="0 ${circumference.toFixed(2)};${length.toFixed(2)} ${(circumference - length).toFixed(2)}"
-          dur="0.95s"
-          begin="${animationDelay}s"
-          fill="freeze"
-        />
-      </circle>
-      `;
-    })
-    .join("\n");
-
-  const legend = insights.languages
-    .slice(0, 5)
-    .map((language, index) => {
-      const y = legendStartY + index * 10;
-      const color = language.color || (useSpectrumChart
-        ? spectrumColor(index, insights.languages.length, 86, 62)
-        : themeConfig.palette.primarySoft);
-      const width = Math.max(2, Math.round(language.percentage * 40));
-      const delay = (index * 0.12 + 0.22).toFixed(2);
-
-      return `
-      <rect x="${legendX}" y="${y - 5}" width="6" height="6" rx="1" fill="${color}"/>
-      <rect x="${legendX + 10}" y="${y - 5}" width="40" height="4" rx="1.2" fill="${themeConfig.palette.textDim}" fill-opacity="0.18"/>
-      <rect x="${legendX + 10}" y="${y - 5}" width="${width}" height="4" rx="1.2" fill="${color}" fill-opacity="0.9">
-        <animate attributeName="width" values="0;${width}" dur="0.8s" begin="${delay}s" fill="freeze"/>
+      <text x="${nameX}" y="${labelY}" class="tiny-label">${escapeXml(language.name.toUpperCase())}</text>
+      <text x="${percentX}" y="${labelY + 1}" class="dash-label" text-anchor="end">${(language.percentage * 100).toFixed(0)}%</text>
+      <rect x="${barTrackX}" y="${trackY}" width="${barTrackWidth}" height="${barHeight}" rx="1.4" fill="${themeConfig.palette.textDim}" fill-opacity="0.12" shape-rendering="crispEdges"/>
+      <path d="${segmentLines}" stroke="${themeConfig.palette.bg1}" stroke-opacity="0.55" shape-rendering="crispEdges"/>
+      <rect x="${barTrackX - 4}" y="${trackY}" width="2" height="${barHeight}" rx="0.8" fill="${color}" fill-opacity="${accentOpacity}" shape-rendering="crispEdges"/>
+      <rect x="${barTrackX}" y="${trackY}" width="${targetWidth}" height="${barHeight}" rx="1.4" fill="${themeConfig.palette.primarySoft}" fill-opacity="${themeBlendOpacity}" filter="url(#phosphorGlow)" shape-rendering="crispEdges">
+        <animate attributeName="width" values="${pulseMin};${targetWidth};${pulseMid};${targetWidth};${pulseMin}" dur="${pulseDuration}s" begin="${pulseDelay}s" repeatCount="indefinite"/>
       </rect>
-      <text x="${legendX + 53}" y="${y}" class="dash-label">${escapeXml(language.name.toUpperCase())} ${(language.percentage * 100).toFixed(0)}%</text>
+      <rect x="${barTrackX}" y="${trackY}" width="${targetWidth}" height="${barHeight}" rx="1.4" fill="${color}" fill-opacity="${languageBlendOpacity}" shape-rendering="crispEdges">
+        <animate attributeName="width" values="${pulseMin};${targetWidth};${pulseMid};${targetWidth};${pulseMin}" dur="${pulseDuration}s" begin="${pulseDelay}s" repeatCount="indefinite"/>
+      </rect>
       `;
     })
     .join("\n");
 
   return `
-    <g>
-      <text x="${centerX}" y="${titleY}" class="dash-title" text-anchor="middle">LANGS</text>
-      <circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="none" stroke="${baseRingStroke}" stroke-opacity="0.18" stroke-width="${strokeWidth}"/>
-      <g>
-        ${slices}
-        <animateTransform
-          attributeName="transform"
-          type="rotate"
-          values="0 ${centerX} ${centerY};360 ${centerX} ${centerY}"
-          dur="${ringDuration}s"
-          repeatCount="indefinite"
-        />
-      </g>
-      <circle cx="${centerX}" cy="${centerY}" r="${radius - strokeWidth * 0.47}" fill="${themeConfig.palette.bg1}" fill-opacity="0.74"/>
-      ${legend}
-    </g>
+  <g>
+    <text x="${titleX}" y="${titleY}" class="panel-title" text-anchor="start">STACK PROFILE</text>
+    <rect x="${panelX}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="8" fill="${themeConfig.palette.bg1}" fill-opacity="0.18" stroke="${themeConfig.palette.textDim}" stroke-opacity="0.12"/>
+    ${separators}
+    <g shape-rendering="crispEdges">${rowContent}</g>
+  </g>
   `;
 }
 
@@ -284,130 +267,148 @@ function renderActivityRadar(
   themeConfig: ThemeableConfig,
   useSpectrumChart: boolean
 ): string {
-  const centerX = layout.width - layout.margin.right - 112;
-  const centerY = dashboardTop + 42;
-  const radius = 40;
-  const labels = ["COMMIT", "PR", "ISSUE", "REVIEW"];
-  const values = [
-    insights.activity.commits,
-    insights.activity.pullRequests,
-    insights.activity.issues,
-    insights.activity.reviews
-  ];
-  const maxLog = Math.max(1, ...values.map((value) => Math.log10(value + 1)));
-  const metricRadii = values.map((value) => {
+  const dashboardPanelInset = layout.margin.left + 86;
+  const dashboardPanelWidth = 245;
+  const dashboardPanelX = layout.width - dashboardPanelInset - dashboardPanelWidth;
+  const dashboardPanelY = dashboardTop + 24;
+  const activityShiftX = 70;
+  const centerX = dashboardPanelX + dashboardPanelWidth / 2 + activityShiftX;
+  const centerY = dashboardPanelY + 46;
+  const radius = 34;
+  const radarStroke = useSpectrumChart ? "url(#spectrumStrokeGradient)" : themeConfig.palette.primary;
+  const radarFill = useSpectrumChart ? "url(#spectrumAreaGradient)" : "url(#areaGradient)";
+  const radialGuideStroke = useSpectrumChart ? "url(#spectrumStrokeGradient)" : themeConfig.palette.primarySoft;
+  const radarPulseDuration = Math.max(3.4, themeConfig.sweepDuration * 1.12).toFixed(2);
+  const radarSweepDuration = Math.max(2.8, themeConfig.sweepDuration * 0.9).toFixed(2);
+
+  const values = {
+    commit: insights.activity.commits,
+    pr: insights.activity.pullRequests,
+    issue: insights.activity.issues,
+    review: insights.activity.reviews
+  };
+  const totalActivity = values.commit + values.pr + values.issue + values.review;
+  const maxLog = Math.max(1, Math.log10(values.commit + 1), Math.log10(values.pr + 1), Math.log10(values.issue + 1), Math.log10(values.review + 1));
+  const toRadius = (value: number): number => {
     if (value <= 0) {
-      return radius * 0.12;
+      return radius * 0.28;
     }
 
     const normalized = Math.log10(value + 1) / maxLog;
-    return radius * (0.22 + normalized * 0.78);
+    return radius * (0.28 + normalized * 0.72);
+  };
+
+  const radii = {
+    commit: toRadius(values.commit),
+    pr: toRadius(values.pr),
+    issue: toRadius(values.issue),
+    review: toRadius(values.review)
+  };
+
+  const computePoints = (pointRadii: typeof radii) => {
+    const commit = polarToCartesian(centerX, centerY, pointRadii.commit, 270);
+    const pr = polarToCartesian(centerX, centerY, pointRadii.pr, 0);
+    const issue = polarToCartesian(centerX, centerY, pointRadii.issue, 90);
+    const review = polarToCartesian(centerX, centerY, pointRadii.review, 180);
+
+    return {
+      commit,
+      pr,
+      issue,
+      review,
+      polygon: `${commit.x.toFixed(2)},${commit.y.toFixed(2)} ${pr.x.toFixed(2)},${pr.y.toFixed(2)} ${issue.x.toFixed(2)},${issue.y.toFixed(2)} ${review.x.toFixed(2)},${review.y.toFixed(2)}`
+    };
+  };
+
+  const basePoints = computePoints(radii);
+  const pulsePoints = computePoints({
+    commit: Math.min(radius, radii.commit * 1.08),
+    pr: Math.min(radius, radii.pr * 1.08),
+    issue: Math.min(radius, radii.issue * 1.08),
+    review: Math.min(radius, radii.review * 1.08)
   });
-  const axisCount = labels.length;
-  const stepAngle = 360 / axisCount;
-  const angles = labels.map((_, index) => -90 + index * stepAngle);
-  const radarStroke = useSpectrumChart ? "url(#spectrumStrokeGradient)" : themeConfig.palette.primary;
-  const radarFill = useSpectrumChart ? "url(#spectrumAreaGradient)" : "url(#areaGradient)";
-  const radarPulseDuration = Math.max(2.8, themeConfig.sweepDuration * 1.06).toFixed(2);
-  const radarSweepDuration = Math.max(2.6, themeConfig.sweepDuration * 0.86).toFixed(2);
-  const totalActivity = values.reduce((sum, value) => sum + value, 0);
-  const labelGap = 12;
+  const relaxedPoints = computePoints({
+    commit: Math.max(radius * 0.38, radii.commit * 0.9),
+    pr: Math.max(radius * 0.38, radii.pr * 0.9),
+    issue: Math.max(radius * 0.38, radii.issue * 0.9),
+    review: Math.max(radius * 0.38, radii.review * 0.9)
+  });
 
-  const ringPolygons = [0.2, 0.4, 0.6, 0.8, 1]
-    .map((ring) => {
-      const ringPoints = angles
-        .map((angle) => {
-          const point = polarToCartesian(centerX, centerY, radius * ring, angle);
-          return `${point.x.toFixed(2)},${point.y.toFixed(2)}`;
-        })
-        .join(" ");
-      const opacity = ring === 1 ? 0.28 : 0.18;
-
-      return `<polygon points="${ringPoints}" fill="none" stroke="${themeConfig.palette.textDim}" stroke-opacity="${opacity}" stroke-width="1"/>`;
+  const orbitalRings = [14, 24, 34]
+    .map((ring, index) => {
+      const opacity = (0.08 + index * 0.02).toFixed(2);
+      return `<circle cx="${centerX}" cy="${centerY}" r="${ring}" fill="none" stroke="${themeConfig.palette.textDim}" stroke-opacity="${opacity}"/>`;
     })
     .join("\n");
 
-  const axes = angles
-    .map((angle) => {
-      const edge = polarToCartesian(centerX, centerY, radius, angle);
-      return `<line x1="${centerX}" y1="${centerY}" x2="${edge.x.toFixed(2)}" y2="${edge.y.toFixed(2)}" stroke="${themeConfig.palette.textDim}" stroke-opacity="0.24" stroke-width="1"/>`;
-    })
-    .join("\n");
-
-  const leftAxisPoint = polarToCartesian(centerX, centerY, radius, angles[0]!);
-  const topAxisPoint = polarToCartesian(centerX, centerY, radius, angles[1]!);
-  const rightAxisPoint = polarToCartesian(centerX, centerY, radius, angles[2]!);
-  const bottomAxisPoint = polarToCartesian(centerX, centerY, radius, angles[3]!);
-  const commitLabelX = leftAxisPoint.x - labelGap;
-  const issueLabelX = rightAxisPoint.x + labelGap;
-  const sideLabelY = centerY;
-  const prLabelY = topAxisPoint.y - labelGap;
-  const reviewLabelY = bottomAxisPoint.y + labelGap;
-  const headerY = prLabelY - 10;
-  const labelText = [
-    `<text x="${commitLabelX.toFixed(2)}" y="${sideLabelY.toFixed(2)}" class="dash-label" text-anchor="end" dominant-baseline="middle">COMMIT</text>`,
-    `<text x="${centerX}" y="${prLabelY.toFixed(2)}" class="dash-label" text-anchor="middle" dominant-baseline="middle">PR</text>`,
-    `<text x="${issueLabelX.toFixed(2)}" y="${sideLabelY.toFixed(2)}" class="dash-label" text-anchor="start" dominant-baseline="middle">ISSUE</text>`,
-    `<text x="${centerX}" y="${reviewLabelY.toFixed(2)}" class="dash-label" text-anchor="middle" dominant-baseline="middle">REVIEW</text>`
-  ].join("\n");
-
-  const metricPoints = (radii: number[]): string => radii
-    .map((metricRadius, index) => {
-      const point = polarToCartesian(centerX, centerY, metricRadius, angles[index]!);
-      return `${point.x.toFixed(2)},${point.y.toFixed(2)}`;
-    })
-    .join(" ");
-  const basePoints = metricPoints(metricRadii);
-  const pulsePoints = metricPoints(metricRadii.map((value) => Math.min(radius, value * 1.07)));
-  const relaxedPoints = metricPoints(metricRadii.map((value) => Math.max(radius * 0.2, value * 0.9)));
-  const metricNodes = metricRadii
-    .map((metricRadius, index) => {
-      const point = polarToCartesian(centerX, centerY, metricRadius, angles[index]!);
-      const nodeColor = useSpectrumChart
-        ? spectrumColor(index, metricRadii.length, 92, 74)
-        : themeConfig.palette.primarySoft;
-
-      return `
-      <circle cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="2.2" fill="${nodeColor}" opacity="0.92">
-        <animate attributeName="r" values="1.8;2.9;1.8" dur="${(2.2 + index * 0.35).toFixed(2)}s" repeatCount="indefinite"/>
-      </circle>
-      `;
-    })
-    .join("\n");
+  const diagonalRadius = Math.round(radius * 0.71);
+  const crosshair = `M${centerX} ${centerY - radius} L${centerX} ${centerY + radius} M${centerX - radius} ${centerY} L${centerX + radius} ${centerY} M${centerX - diagonalRadius} ${centerY - diagonalRadius} L${centerX + diagonalRadius} ${centerY + diagonalRadius} M${centerX + diagonalRadius} ${centerY - diagonalRadius} L${centerX - diagonalRadius} ${centerY + diagonalRadius}`;
+  const sweepArm = radius - 7;
+  const labelOffset = 12;
+  const labelY = centerY + 3;
+  const prLabelY = centerY - radius - 4;
+  const reviewLabelY = centerY + radius + 12;
+  const commitLabelX = centerX - radius - labelOffset;
+  const issueLabelX = centerX + radius + labelOffset;
+  const headerY = dashboardTop + 2;
+  const subtitleY = headerY + 12;
 
   return `
-    <g>
-      <text x="${centerX}" y="${headerY}" class="dash-label" text-anchor="middle">TOTAL ${totalActivity}</text>
-      ${ringPolygons}
-      ${axes}
-      <line
-        x1="${centerX}"
-        y1="${centerY}"
-        x2="${centerX}"
-        y2="${centerY - radius}"
-        stroke="${themeConfig.palette.primarySoft}"
-        stroke-opacity="0.22"
-        stroke-width="1.15"
-      >
-        <animateTransform
-          attributeName="transform"
-          type="rotate"
-          values="0 ${centerX} ${centerY};360 ${centerX} ${centerY}"
-          dur="${radarSweepDuration}s"
-          repeatCount="indefinite"
-        />
-      </line>
-      <polygon points="${basePoints}" fill="${radarFill}" fill-opacity="0.28" stroke="${radarStroke}" stroke-opacity="0.95" stroke-width="1.6">
-        <animate
-          attributeName="points"
-          values="${basePoints};${pulsePoints};${basePoints};${relaxedPoints};${basePoints}"
-          dur="${radarPulseDuration}s"
-          repeatCount="indefinite"
-        />
-      </polygon>
-      ${metricNodes}
-      ${labelText}
-    </g>
+  <g>
+    <text x="${centerX}" y="${headerY}" class="panel-title" text-anchor="middle">ACTIVITY VECTOR</text>
+    <text x="${centerX}" y="${subtitleY}" class="micro-label" text-anchor="middle">TOTAL ${totalActivity} / CONTRIBUTION SIGNATURE</text>
+
+    <circle cx="${centerX}" cy="${centerY}" r="8" fill="${themeConfig.palette.bg1}" stroke="${themeConfig.palette.textDim}" stroke-opacity="0.18"/>
+    ${orbitalRings}
+    <path d="${crosshair}" stroke="${themeConfig.palette.textDim}" stroke-opacity="0.15" stroke-width="1"/>
+
+    <path d="M${centerX} ${centerY} L${centerX} ${centerY - sweepArm}" stroke="${themeConfig.palette.primarySoft}" stroke-opacity="0.22" stroke-width="1.2">
+      <animateTransform attributeName="transform" type="rotate" values="0 ${centerX} ${centerY};360 ${centerX} ${centerY}" dur="${radarSweepDuration}s" repeatCount="indefinite"/>
+    </path>
+
+    <polygon points="${basePoints.polygon}" fill="${radarFill}" fill-opacity="0.34" stroke="${radarStroke}" stroke-opacity="0.95" stroke-width="1.7" filter="url(#phosphorGlow)">
+      <animate attributeName="points" values="${basePoints.polygon};${pulsePoints.polygon};${basePoints.polygon};${relaxedPoints.polygon};${basePoints.polygon}" dur="${radarPulseDuration}s" repeatCount="indefinite"/>
+    </polygon>
+
+    <line x1="${centerX}" y1="${centerY}" x2="${centerX}" y2="${(centerY - radius).toFixed(2)}" stroke="${radialGuideStroke}" stroke-opacity="0.45" stroke-width="1.9" stroke-linecap="round"/>
+    <line x1="${centerX}" y1="${centerY}" x2="${(centerX - radius).toFixed(2)}" y2="${centerY}" stroke="${radialGuideStroke}" stroke-opacity="0.45" stroke-width="1.9" stroke-linecap="round"/>
+    <line x1="${centerX}" y1="${centerY}" x2="${(centerX + radius).toFixed(2)}" y2="${centerY}" stroke="${radialGuideStroke}" stroke-opacity="0.45" stroke-width="1.9" stroke-linecap="round"/>
+    <line x1="${centerX}" y1="${centerY}" x2="${centerX}" y2="${(centerY + radius).toFixed(2)}" stroke="${radialGuideStroke}" stroke-opacity="0.45" stroke-width="1.9" stroke-linecap="round"/>
+
+    <circle cx="${basePoints.commit.x.toFixed(2)}" cy="${basePoints.commit.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
+      <animate attributeName="r" values="4.4;5.6;4.4" dur="2.2s" repeatCount="indefinite"/>
+      <animate attributeName="fill-opacity" values="0.12;0.24;0.12" dur="2.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="${basePoints.commit.x.toFixed(2)}" cy="${basePoints.commit.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
+      <animate attributeName="r" values="2.1;2.8;2.1" dur="2.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="${basePoints.pr.x.toFixed(2)}" cy="${basePoints.pr.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
+      <animate attributeName="r" values="4.4;5.6;4.4" dur="2.5s" repeatCount="indefinite"/>
+      <animate attributeName="fill-opacity" values="0.12;0.24;0.12" dur="2.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="${basePoints.pr.x.toFixed(2)}" cy="${basePoints.pr.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
+      <animate attributeName="r" values="2.1;2.8;2.1" dur="2.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="${basePoints.issue.x.toFixed(2)}" cy="${basePoints.issue.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
+      <animate attributeName="r" values="4.4;5.6;4.4" dur="2.8s" repeatCount="indefinite"/>
+      <animate attributeName="fill-opacity" values="0.12;0.24;0.12" dur="2.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="${basePoints.issue.x.toFixed(2)}" cy="${basePoints.issue.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
+      <animate attributeName="r" values="2.1;2.8;2.1" dur="2.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="${basePoints.review.x.toFixed(2)}" cy="${basePoints.review.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
+      <animate attributeName="r" values="4.4;5.6;4.4" dur="3.1s" repeatCount="indefinite"/>
+      <animate attributeName="fill-opacity" values="0.12;0.24;0.12" dur="3.1s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="${basePoints.review.x.toFixed(2)}" cy="${basePoints.review.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
+      <animate attributeName="r" values="2.1;2.8;2.1" dur="3.1s" repeatCount="indefinite"/>
+    </circle>
+
+    <text x="${centerX}" y="${prLabelY}" class="dash-label" text-anchor="middle">PR</text>
+    <text x="${commitLabelX}" y="${labelY}" class="dash-label" text-anchor="end">COMMIT</text>
+    <text x="${issueLabelX}" y="${labelY}" class="dash-label">ISSUE</text>
+    <text x="${centerX}" y="${reviewLabelY}" class="dash-label" text-anchor="middle">REVIEW</text>
+  </g>
   `;
 }
 
@@ -425,7 +426,7 @@ function renderDashboardPanels(
   }
 
   return `
-  ${renderLanguageDonut(insights, layout, dashboardTop, themeConfig, useSpectrumChart)}
+  ${renderLanguageStackProfile(insights, layout, dashboardTop, themeConfig, useSpectrumChart)}
   ${renderActivityRadar(insights, layout, dashboardTop, themeConfig, useSpectrumChart)}
   `;
 }
@@ -711,11 +712,29 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       letter-spacing: 0.08em;
       opacity: 0.9;
     }
+    .panel-title {
+      font: 700 8.1px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      fill: ${palette.textDim};
+      letter-spacing: 0.08em;
+      opacity: 0.92;
+    }
     .dash-label {
       font: 600 7.2px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       fill: ${palette.textDim};
       letter-spacing: 0.04em;
       opacity: 0.88;
+    }
+    .micro-label {
+      font: 600 6.6px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      fill: ${palette.textDim};
+      letter-spacing: 0.06em;
+      opacity: 0.74;
+    }
+    .tiny-label {
+      font: 600 6.7px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      fill: ${palette.textDim};
+      letter-spacing: 0.04em;
+      opacity: 0.9;
     }
     .dash-metric {
       font: 700 10px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
