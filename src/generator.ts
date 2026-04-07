@@ -3,6 +3,7 @@ import path from "node:path";
 import type { RuntimeConfig } from "./config/env";
 import { createGitHubGraphQlClient } from "./github/graphqlClient";
 import { fetchContributionCalendar } from "./github/fetchContributionCalendar";
+import { fetchProfileInsights } from "./github/fetchProfileInsights";
 import { optimizeGeneratedSvg } from "./render/optimizeSvg";
 import { renderCrtContributionSvg } from "./render/svgRenderer";
 import {
@@ -32,7 +33,11 @@ export async function generateCrtContributionSvgs(config: RuntimeConfig): Promis
   await fs.mkdir(config.outputDirectory, { recursive: true });
 
   const client = createGitHubGraphQlClient(config.token);
-  const calendar = await fetchContributionCalendar(client, config.username);
+  const calendarPromise = fetchContributionCalendar(client, config.username);
+  const insightsPromise = config.visual.layoutMode === "dashboard"
+    ? fetchProfileInsights(client, config.username).catch(() => null)
+    : Promise.resolve(null);
+  const [calendar, insights] = await Promise.all([calendarPromise, insightsPromise]);
 
   const files: GeneratedThemeFile[] = [];
 
@@ -50,6 +55,7 @@ export async function generateCrtContributionSvgs(config: RuntimeConfig): Promis
         username: config.username,
         themeConfig,
         calendar,
+        insights,
         visual: config.visual
       });
 

@@ -36,8 +36,8 @@ Light files for profile-safe themes:
 ## Project structure
 
 - `src/config` - runtime/env config
-- `src/github` - GraphQL query + client + calendar fetcher
-- `src/model` - contribution calendar types + derived weekly stats
+- `src/github` - GraphQL query + client + calendar + insights fetchers
+- `src/model` - contribution calendar types + weekly + profile insights models
 - `src/render/themes.ts` - themeable configs (palette + style tuning)
 - `src/render/svgRenderer.ts` - final SVG renderer
 - `src/generator.ts` - fetch once + render all themes + write files
@@ -58,6 +58,7 @@ CRT_OUTPUT_DIR=assets
 CRT_THEMES=all
 CRT_SHOW_GRID=false
 CRT_SHOW_STATS=true
+CRT_LAYOUT_MODE=hero
 CRT_MINIFY_SVG=true
 ```
 
@@ -85,11 +86,26 @@ pnpm generate:raw
 
 - `CRT_SHOW_GRID=true|false` toggles chart grid/ticks (default `false`)
 - `CRT_SHOW_STATS=true|false` toggles compact footer stats (default `true`)
+- `CRT_LAYOUT_MODE=hero|dashboard` switches lower panel rendering:
+  - `hero` (default): contribution dot grid
+  - `dashboard`: language donut + activity radar (commits/PRs/issues/reviews)
 
 Footer always keeps:
 
 - `USER: @<username>`
 - `CREDITS: stefashkaa/github-profile-crt`
+
+## Dashboard mode
+
+When `CRT_LAYOUT_MODE=dashboard`, the generator fetches additional profile insights:
+
+- contribution activity: commits, pull requests, issues, reviews
+- language distribution weighted by where your commit contributions happened across repositories
+
+Those values are rendered as:
+
+- compact radar chart (activity mix)
+- donut chart + legend (language split)
 
 ## Theme customization
 
@@ -150,6 +166,31 @@ Workflow file:
 - `.github/workflows/generate-crt-contributions.yml`
 
 It runs on schedule or manually, generates all theme SVGs, and commits updated files.
+
+One-command local run for all configured themes:
+
+```bash
+pnpm generate:dev
+```
+
+## Theme gallery snippet
+
+Use multiple themed outputs in your profile:
+
+```md
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/crt-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="./assets/crt-light.svg">
+    <img alt="CRT theme" src="./assets/crt-dark.svg">
+  </picture>
+</p>
+
+<p align="center">
+  <img alt="Neon theme" src="./assets/neon-dark.svg">
+  <img alt="Rainbow theme" src="./assets/rainbow-dark.svg">
+</p>
+```
 
 ### Recommended repository settings
 

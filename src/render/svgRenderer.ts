@@ -6,6 +6,7 @@ import {
   type ContributionCalendar,
   type WeeklyStats
 } from "../model/calendar";
+import type { ProfileInsights } from "../model/insights";
 import { deriveWeeklyStats } from "../model/weekly";
 import { clamp, maxOf } from "../utils/math";
 import { escapeXml } from "../utils/xml";
@@ -17,6 +18,7 @@ export interface SvgRenderInput {
   username: string;
   themeConfig: ThemeableConfig;
   calendar: ContributionCalendar;
+  insights?: ProfileInsights | null;
   visual: VisualConfig;
 }
 
@@ -158,6 +160,276 @@ function renderSignalDropLines(
     .join("\n");
 }
 
+function polarToCartesian(centerX: number, centerY: number, radius: number, angleDegrees: number): { x: number; y: number } {
+  const angleRadians = (angleDegrees - 90) * (Math.PI / 180);
+
+  return {
+    x: centerX + radius * Math.cos(angleRadians),
+    y: centerY + radius * Math.sin(angleRadians)
+  };
+}
+
+function renderLanguageDonut(
+  insights: ProfileInsights,
+  layout: ReturnType<typeof buildLayout>,
+  dashboardTop: number,
+  themeConfig: ThemeableConfig,
+  useSpectrumChart: boolean
+): string {
+  const centerX = layout.margin.left + 86;
+  const centerY = dashboardTop + 42;
+  const radius = 27;
+  const strokeWidth = 10;
+  const circumference = 2 * Math.PI * radius;
+  const legendX = centerX + 46;
+  const legendStartY = centerY - 16;
+  const titleY = centerY - 46;
+  const hasLanguageData = insights.languages.length > 0 && insights.totalLanguageSize > 0;
+  const baseRingStroke = useSpectrumChart ? "hsl(250, 35%, 45%)" : themeConfig.palette.textDim;
+  const ringDuration = Math.max(3.2, themeConfig.sweepDuration * 1.2).toFixed(2);
+
+  if (!hasLanguageData) {
+    return `
+    <g>
+      <text x="${centerX}" y="${titleY}" class="dash-title" text-anchor="middle">LANGS</text>
+      <circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="none" stroke="${baseRingStroke}" stroke-opacity="0.26" stroke-width="${strokeWidth}"/>
+      <circle cx="${centerX}" cy="${centerY}" r="${radius - strokeWidth * 0.48}" fill="${themeConfig.palette.bg1}" fill-opacity="0.72"/>
+      <text x="${centerX}" y="${centerY + 3}" class="dash-label" text-anchor="middle">NO DATA</text>
+    </g>
+    `;
+  }
+
+  let consumedLength = 0;
+  const slices = insights.languages
+    .map((language, index) => {
+      const percentage = language.percentage;
+      const length = percentage * circumference;
+      const color = language.color || (useSpectrumChart
+        ? spectrumColor(index, insights.languages.length, 86, 62)
+        : themeConfig.palette.primarySoft);
+      const dashOffset = -consumedLength;
+      consumedLength += length;
+      const animationDelay = (index * 0.12).toFixed(2);
+
+      return `
+      <circle
+        cx="${centerX}"
+        cy="${centerY}"
+        r="${radius}"
+        fill="none"
+        stroke="${color}"
+        stroke-width="${strokeWidth}"
+        stroke-linecap="butt"
+        stroke-dasharray="${length.toFixed(2)} ${(circumference - length).toFixed(2)}"
+        stroke-dashoffset="${dashOffset.toFixed(2)}"
+        transform="rotate(-90 ${centerX} ${centerY})"
+      >
+        <animate
+          attributeName="stroke-dasharray"
+          values="0 ${circumference.toFixed(2)};${length.toFixed(2)} ${(circumference - length).toFixed(2)}"
+          dur="0.95s"
+          begin="${animationDelay}s"
+          fill="freeze"
+        />
+      </circle>
+      `;
+    })
+    .join("\n");
+
+  const legend = insights.languages
+    .slice(0, 5)
+    .map((language, index) => {
+      const y = legendStartY + index * 10;
+      const color = language.color || (useSpectrumChart
+        ? spectrumColor(index, insights.languages.length, 86, 62)
+        : themeConfig.palette.primarySoft);
+      const width = Math.max(2, Math.round(language.percentage * 40));
+      const delay = (index * 0.12 + 0.22).toFixed(2);
+
+      return `
+      <rect x="${legendX}" y="${y - 5}" width="6" height="6" rx="1" fill="${color}"/>
+      <rect x="${legendX + 10}" y="${y - 5}" width="40" height="4" rx="1.2" fill="${themeConfig.palette.textDim}" fill-opacity="0.18"/>
+      <rect x="${legendX + 10}" y="${y - 5}" width="${width}" height="4" rx="1.2" fill="${color}" fill-opacity="0.9">
+        <animate attributeName="width" values="0;${width}" dur="0.8s" begin="${delay}s" fill="freeze"/>
+      </rect>
+      <text x="${legendX + 53}" y="${y}" class="dash-label">${escapeXml(language.name.toUpperCase())} ${(language.percentage * 100).toFixed(0)}%</text>
+      `;
+    })
+    .join("\n");
+
+  return `
+    <g>
+      <text x="${centerX}" y="${titleY}" class="dash-title" text-anchor="middle">LANGS</text>
+      <circle cx="${centerX}" cy="${centerY}" r="${radius}" fill="none" stroke="${baseRingStroke}" stroke-opacity="0.18" stroke-width="${strokeWidth}"/>
+      <g>
+        ${slices}
+        <animateTransform
+          attributeName="transform"
+          type="rotate"
+          values="0 ${centerX} ${centerY};360 ${centerX} ${centerY}"
+          dur="${ringDuration}s"
+          repeatCount="indefinite"
+        />
+      </g>
+      <circle cx="${centerX}" cy="${centerY}" r="${radius - strokeWidth * 0.47}" fill="${themeConfig.palette.bg1}" fill-opacity="0.74"/>
+      ${legend}
+    </g>
+  `;
+}
+
+function renderActivityRadar(
+  insights: ProfileInsights,
+  layout: ReturnType<typeof buildLayout>,
+  dashboardTop: number,
+  themeConfig: ThemeableConfig,
+  useSpectrumChart: boolean
+): string {
+  const centerX = layout.width - layout.margin.right - 112;
+  const centerY = dashboardTop + 42;
+  const radius = 40;
+  const labels = ["COMMIT", "PR", "ISSUE", "REVIEW"];
+  const values = [
+    insights.activity.commits,
+    insights.activity.pullRequests,
+    insights.activity.issues,
+    insights.activity.reviews
+  ];
+  const maxLog = Math.max(1, ...values.map((value) => Math.log10(value + 1)));
+  const metricRadii = values.map((value) => {
+    if (value <= 0) {
+      return radius * 0.12;
+    }
+
+    const normalized = Math.log10(value + 1) / maxLog;
+    return radius * (0.22 + normalized * 0.78);
+  });
+  const axisCount = labels.length;
+  const stepAngle = 360 / axisCount;
+  const angles = labels.map((_, index) => -90 + index * stepAngle);
+  const radarStroke = useSpectrumChart ? "url(#spectrumStrokeGradient)" : themeConfig.palette.primary;
+  const radarFill = useSpectrumChart ? "url(#spectrumAreaGradient)" : "url(#areaGradient)";
+  const radarPulseDuration = Math.max(2.8, themeConfig.sweepDuration * 1.06).toFixed(2);
+  const radarSweepDuration = Math.max(2.6, themeConfig.sweepDuration * 0.86).toFixed(2);
+  const totalActivity = values.reduce((sum, value) => sum + value, 0);
+  const labelGap = 12;
+
+  const ringPolygons = [0.2, 0.4, 0.6, 0.8, 1]
+    .map((ring) => {
+      const ringPoints = angles
+        .map((angle) => {
+          const point = polarToCartesian(centerX, centerY, radius * ring, angle);
+          return `${point.x.toFixed(2)},${point.y.toFixed(2)}`;
+        })
+        .join(" ");
+      const opacity = ring === 1 ? 0.28 : 0.18;
+
+      return `<polygon points="${ringPoints}" fill="none" stroke="${themeConfig.palette.textDim}" stroke-opacity="${opacity}" stroke-width="1"/>`;
+    })
+    .join("\n");
+
+  const axes = angles
+    .map((angle) => {
+      const edge = polarToCartesian(centerX, centerY, radius, angle);
+      return `<line x1="${centerX}" y1="${centerY}" x2="${edge.x.toFixed(2)}" y2="${edge.y.toFixed(2)}" stroke="${themeConfig.palette.textDim}" stroke-opacity="0.24" stroke-width="1"/>`;
+    })
+    .join("\n");
+
+  const leftAxisPoint = polarToCartesian(centerX, centerY, radius, angles[0]!);
+  const topAxisPoint = polarToCartesian(centerX, centerY, radius, angles[1]!);
+  const rightAxisPoint = polarToCartesian(centerX, centerY, radius, angles[2]!);
+  const bottomAxisPoint = polarToCartesian(centerX, centerY, radius, angles[3]!);
+  const commitLabelX = leftAxisPoint.x - labelGap;
+  const issueLabelX = rightAxisPoint.x + labelGap;
+  const sideLabelY = centerY;
+  const prLabelY = topAxisPoint.y - labelGap;
+  const reviewLabelY = bottomAxisPoint.y + labelGap;
+  const headerY = prLabelY - 10;
+  const labelText = [
+    `<text x="${commitLabelX.toFixed(2)}" y="${sideLabelY.toFixed(2)}" class="dash-label" text-anchor="end" dominant-baseline="middle">COMMIT</text>`,
+    `<text x="${centerX}" y="${prLabelY.toFixed(2)}" class="dash-label" text-anchor="middle" dominant-baseline="middle">PR</text>`,
+    `<text x="${issueLabelX.toFixed(2)}" y="${sideLabelY.toFixed(2)}" class="dash-label" text-anchor="start" dominant-baseline="middle">ISSUE</text>`,
+    `<text x="${centerX}" y="${reviewLabelY.toFixed(2)}" class="dash-label" text-anchor="middle" dominant-baseline="middle">REVIEW</text>`
+  ].join("\n");
+
+  const metricPoints = (radii: number[]): string => radii
+    .map((metricRadius, index) => {
+      const point = polarToCartesian(centerX, centerY, metricRadius, angles[index]!);
+      return `${point.x.toFixed(2)},${point.y.toFixed(2)}`;
+    })
+    .join(" ");
+  const basePoints = metricPoints(metricRadii);
+  const pulsePoints = metricPoints(metricRadii.map((value) => Math.min(radius, value * 1.07)));
+  const relaxedPoints = metricPoints(metricRadii.map((value) => Math.max(radius * 0.2, value * 0.9)));
+  const metricNodes = metricRadii
+    .map((metricRadius, index) => {
+      const point = polarToCartesian(centerX, centerY, metricRadius, angles[index]!);
+      const nodeColor = useSpectrumChart
+        ? spectrumColor(index, metricRadii.length, 92, 74)
+        : themeConfig.palette.primarySoft;
+
+      return `
+      <circle cx="${point.x.toFixed(2)}" cy="${point.y.toFixed(2)}" r="2.2" fill="${nodeColor}" opacity="0.92">
+        <animate attributeName="r" values="1.8;2.9;1.8" dur="${(2.2 + index * 0.35).toFixed(2)}s" repeatCount="indefinite"/>
+      </circle>
+      `;
+    })
+    .join("\n");
+
+  return `
+    <g>
+      <text x="${centerX}" y="${headerY}" class="dash-label" text-anchor="middle">TOTAL ${totalActivity}</text>
+      ${ringPolygons}
+      ${axes}
+      <line
+        x1="${centerX}"
+        y1="${centerY}"
+        x2="${centerX}"
+        y2="${centerY - radius}"
+        stroke="${themeConfig.palette.primarySoft}"
+        stroke-opacity="0.22"
+        stroke-width="1.15"
+      >
+        <animateTransform
+          attributeName="transform"
+          type="rotate"
+          values="0 ${centerX} ${centerY};360 ${centerX} ${centerY}"
+          dur="${radarSweepDuration}s"
+          repeatCount="indefinite"
+        />
+      </line>
+      <polygon points="${basePoints}" fill="${radarFill}" fill-opacity="0.28" stroke="${radarStroke}" stroke-opacity="0.95" stroke-width="1.6">
+        <animate
+          attributeName="points"
+          values="${basePoints};${pulsePoints};${basePoints};${relaxedPoints};${basePoints}"
+          dur="${radarPulseDuration}s"
+          repeatCount="indefinite"
+        />
+      </polygon>
+      ${metricNodes}
+      ${labelText}
+    </g>
+  `;
+}
+
+function renderDashboardPanels(
+  insights: ProfileInsights | null | undefined,
+  layout: ReturnType<typeof buildLayout>,
+  dashboardTop: number,
+  themeConfig: ThemeableConfig,
+  useSpectrumChart: boolean
+): string {
+  if (!insights) {
+    return `
+    <text x="${layout.width / 2}" y="${dashboardTop + 42}" class="dash-label" text-anchor="middle">INSIGHTS UNAVAILABLE</text>
+    `;
+  }
+
+  return `
+  ${renderLanguageDonut(insights, layout, dashboardTop, themeConfig, useSpectrumChart)}
+  ${renderActivityRadar(insights, layout, dashboardTop, themeConfig, useSpectrumChart)}
+  `;
+}
+
 function renderMonthLabels(
   weeklyLength: number,
   firstX: number,
@@ -213,11 +485,16 @@ function renderDotGrid(
 }
 
 export function renderCrtContributionSvg(input: SvgRenderInput): string {
-  const { username, themeConfig, calendar, visual } = input;
+  const { username, themeConfig, calendar, insights, visual } = input;
   const palette = themeConfig.palette;
   const useSpectrumChart = themeConfig.spectrumChart === true;
-
+  const dashboardMode = visual.layoutMode === "dashboard";
   const layout = buildLayout(calendar.weeks.length);
+  const dashboardTopGap = dashboardMode ? 30 : 0;
+  const dashboardFooterGap = dashboardMode ? 52 : 0;
+  const dashboardTop = layout.heatmapTop + dashboardTopGap;
+  const footerY = layout.footerY + dashboardTopGap + dashboardFooterGap;
+  const canvasHeight = layout.height + dashboardTopGap + dashboardFooterGap;
   const weekly = deriveWeeklyStats(calendar.weeks);
   const maxWeekly = Math.max(1, maxOf(weekly.map((week) => week.total)));
   const geometries = weekly.map((week, index) => resolveBarGeometry(index, week.total, maxWeekly, layout));
@@ -260,7 +537,10 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
         .join("\n")
     : "";
 
-  const dotGrid = renderDotGrid(weekly, layout, palette.primary, useSpectrumChart);
+  const dotGrid = dashboardMode ? "" : renderDotGrid(weekly, layout, palette.primary, useSpectrumChart);
+  const dashboardPanels = dashboardMode
+    ? renderDashboardPanels(insights, layout, dashboardTop, themeConfig, useSpectrumChart)
+    : "";
 
   const noiseAnimation = themeConfig.animateNoise
     ? `
@@ -341,11 +621,11 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
 
   const lastWeek = weekly[weekly.length - 1];
   const footerUser = `USER: @${username}`;
-  const footerStats = `CONTRIBUTIONS: ${calendar.totalContributions} | BEST WEEK: ${maxWeekly} | LAST WEEK: ${lastWeek ? lastWeek.total : 0}`;
+  const footerStats = `CONTRIBUTIONS: ${calendar.totalContributions} | BEST WEEK: ${maxWeekly} | LAST WEEK: ${lastWeek ? lastWeek.total : 0} |`;
   const footerCredits = "CREDITS: stefashkaa/github-profile-crt";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="${layout.width}" height="${layout.height}" viewBox="0 0 ${layout.width} ${layout.height}" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-labelledby="title desc">
+<svg width="${layout.width}" height="${canvasHeight}" viewBox="0 0 ${layout.width} ${canvasHeight}" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-labelledby="title desc">
   <title id="title">${escapeXml(username)} contribution CRT monitor</title>
   <desc id="desc">CRT-style contribution chart generated from GitHub contribution calendar data.</desc>
 
@@ -425,6 +705,30 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       letter-spacing: 0.04em;
       opacity: 0.9;
     }
+    .dash-title {
+      font: 700 8px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      fill: ${palette.textDim};
+      letter-spacing: 0.08em;
+      opacity: 0.9;
+    }
+    .dash-label {
+      font: 600 7.2px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      fill: ${palette.textDim};
+      letter-spacing: 0.04em;
+      opacity: 0.88;
+    }
+    .dash-metric {
+      font: 700 10px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      fill: ${palette.primarySoft};
+      letter-spacing: 0.05em;
+      opacity: 0.94;
+    }
+    .dash-small {
+      font: 600 6.9px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      fill: ${palette.textDim};
+      letter-spacing: 0.03em;
+      opacity: 0.82;
+    }
     .grid {
       stroke: ${palette.primary};
       stroke-opacity: ${themeConfig.gridOpacity};
@@ -439,10 +743,10 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     }
   </style>
 
-  <rect width="${layout.width}" height="${layout.height}" rx="14" fill="url(#bg)"/>
-  <rect width="${layout.width}" height="${layout.height}" rx="14" filter="url(#noiseFilter)" opacity="${themeConfig.noiseOpacity}" fill="${palette.primarySoft}"/>
-  <rect width="${layout.width}" height="${layout.height}" rx="14" fill="url(#scanPattern)" opacity="${themeConfig.scanOpacity}"/>
-  <rect width="${layout.width}" height="${layout.height}" rx="14" fill="url(#vignette)" opacity="${themeConfig.vignetteOpacity}"/>
+  <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#bg)"/>
+  <rect width="${layout.width}" height="${canvasHeight}" rx="14" filter="url(#noiseFilter)" opacity="${themeConfig.noiseOpacity}" fill="${palette.primarySoft}"/>
+  <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#scanPattern)" opacity="${themeConfig.scanOpacity}"/>
+  <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#vignette)" opacity="${themeConfig.vignetteOpacity}"/>
 
   ${monthLabels}
   ${gridLines}
@@ -538,10 +842,11 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     <animate attributeName="x2" values="${sweepFrom};${sweepTo}" dur="${pulseDuration}s" repeatCount="indefinite"/>
   </line>
 
+  ${dashboardPanels}
   <g>${dotGrid}</g>
 
-  <text x="${layout.margin.left}" y="${layout.footerY}" class="footer">${escapeXml(footerUser)}</text>
-  ${visual.showStats ? `<text x="${layout.width / 2}" y="${layout.footerY}" class="footer" text-anchor="middle">${escapeXml(footerStats)}</text>` : ""}
-  <text x="${layout.width - layout.margin.right}" y="${layout.footerY}" class="credit" text-anchor="end">${escapeXml(footerCredits)}</text>
+  <text x="${layout.margin.left}" y="${footerY}" class="footer">${escapeXml(footerUser)}</text>
+  ${visual.showStats ? `<text x="${(layout.width / 2) - 6}" y="${footerY}" class="footer" text-anchor="middle">${escapeXml(footerStats)}</text>` : ""}
+  <text x="${layout.width - layout.margin.right}" y="${footerY}" class="credit" text-anchor="end">${escapeXml(footerCredits)}</text>
 </svg>`;
 }
