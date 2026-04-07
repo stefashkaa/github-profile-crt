@@ -35,7 +35,6 @@ export interface ThemeableConfig {
   vignetteOpacity: number;
   areaOpacity: number;
   gridOpacity: number;
-  verticalTickOpacity: number;
   lineGlowOpacity: number;
   lineWidth: number;
   phosphorBlur: number;
@@ -75,8 +74,7 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     barRadius: 0,
     vignetteOpacity: 0.12,
     areaOpacity: 0.12,
-    gridOpacity: 0.07,
-    verticalTickOpacity: 0.035,
+    gridOpacity: 0.195,
     lineGlowOpacity: 0.2,
     lineWidth: 1.35,
     phosphorBlur: 2
@@ -110,8 +108,7 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     barRadius: 0,
     vignetteOpacity: 0.1,
     areaOpacity: 0.1,
-    gridOpacity: 0.06,
-    verticalTickOpacity: 0.03,
+    gridOpacity: 0.19,
     lineGlowOpacity: 0.19,
     lineWidth: 1.3,
     phosphorBlur: 1.9
@@ -145,8 +142,7 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     barRadius: 0,
     vignetteOpacity: 0.09,
     areaOpacity: 0.1,
-    gridOpacity: 0.05,
-    verticalTickOpacity: 0.024,
+    gridOpacity: 0.184,
     lineGlowOpacity: 0.16,
     lineWidth: 1.25,
     phosphorBlur: 1.85
@@ -180,8 +176,7 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     barRadius: 0,
     vignetteOpacity: 0.11,
     areaOpacity: 0.09,
-    gridOpacity: 0.046,
-    verticalTickOpacity: 0.022,
+    gridOpacity: 0.182,
     lineGlowOpacity: 0.16,
     lineWidth: 1.22,
     phosphorBlur: 1.75
@@ -215,8 +210,7 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     barRadius: 0,
     vignetteOpacity: 0.085,
     areaOpacity: 0.095,
-    gridOpacity: 0.05,
-    verticalTickOpacity: 0.024,
+    gridOpacity: 0.184,
     lineGlowOpacity: 0.17,
     lineWidth: 1.24,
     phosphorBlur: 1.85
@@ -250,8 +244,7 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     barRadius: 0,
     vignetteOpacity: 0.08,
     areaOpacity: 0.08,
-    gridOpacity: 0.038,
-    verticalTickOpacity: 0.018,
+    gridOpacity: 0.178,
     lineGlowOpacity: 0.12,
     lineWidth: 1.15,
     phosphorBlur: 1.6
@@ -285,8 +278,7 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     barRadius: 0,
     vignetteOpacity: 0.13,
     areaOpacity: 0.14,
-    gridOpacity: 0.075,
-    verticalTickOpacity: 0.038,
+    gridOpacity: 0.198,
     lineGlowOpacity: 0.24,
     lineWidth: 1.45,
     phosphorBlur: 2.4
@@ -321,8 +313,7 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     barRadius: 0,
     vignetteOpacity: 0.13,
     areaOpacity: 0.14,
-    gridOpacity: 0.075,
-    verticalTickOpacity: 0.038,
+    gridOpacity: 0.198,
     lineGlowOpacity: 0.24,
     lineWidth: 1.45,
     phosphorBlur: 2.4
@@ -356,8 +347,7 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     barRadius: 0,
     vignetteOpacity: 0.14,
     areaOpacity: 0.16,
-    gridOpacity: 0.09,
-    verticalTickOpacity: 0.045,
+    gridOpacity: 0.205,
     lineGlowOpacity: 0.28,
     lineWidth: 1.5,
     phosphorBlur: 2.8
@@ -391,8 +381,7 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     barRadius: 0,
     vignetteOpacity: 0.16,
     areaOpacity: 0.18,
-    gridOpacity: 0.1,
-    verticalTickOpacity: 0.055,
+    gridOpacity: 0.215,
     lineGlowOpacity: 0.34,
     lineWidth: 1.58,
     phosphorBlur: 3.2
@@ -426,8 +415,7 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     barRadius: 0,
     vignetteOpacity: 0.07,
     areaOpacity: 0.075,
-    gridOpacity: 0.034,
-    verticalTickOpacity: 0.016,
+    gridOpacity: 0.176,
     lineGlowOpacity: 0.11,
     lineWidth: 1.1,
     phosphorBlur: 1.5
@@ -451,8 +439,7 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
     sweepOpacity: 0.09,
     vignetteOpacity: 0.03,
     areaOpacity: 0.055,
-    gridOpacity: 0.048,
-    verticalTickOpacity: 0.03,
+    gridOpacity: 0.19,
     lineGlowOpacity: 0.1
   },
   amber: {
@@ -471,8 +458,7 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
     sweepOpacity: 0.085,
     vignetteOpacity: 0.025,
     areaOpacity: 0.05,
-    gridOpacity: 0.044,
-    verticalTickOpacity: 0.026,
+    gridOpacity: 0.186,
     lineGlowOpacity: 0.095
   },
   ice: {
@@ -491,8 +477,7 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
     sweepOpacity: 0.082,
     vignetteOpacity: 0.022,
     areaOpacity: 0.048,
-    gridOpacity: 0.042,
-    verticalTickOpacity: 0.024,
+    gridOpacity: 0.184,
     lineGlowOpacity: 0.09
   },
   neon: {
@@ -511,8 +496,7 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
     sweepOpacity: 0.078,
     vignetteOpacity: 0.02,
     areaOpacity: 0.046,
-    gridOpacity: 0.04,
-    verticalTickOpacity: 0.022,
+    gridOpacity: 0.182,
     lineGlowOpacity: 0.088
   },
   rainbow: {
@@ -531,8 +515,7 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
     sweepOpacity: 0.078,
     vignetteOpacity: 0.02,
     areaOpacity: 0.046,
-    gridOpacity: 0.04,
-    verticalTickOpacity: 0.022,
+    gridOpacity: 0.182,
     lineGlowOpacity: 0.088
   },
   static: {
@@ -551,8 +534,7 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
     sweepOpacity: 0.06,
     vignetteOpacity: 0.016,
     areaOpacity: 0.038,
-    gridOpacity: 0.032,
-    verticalTickOpacity: 0.018,
+    gridOpacity: 0.178,
     lineGlowOpacity: 0.068
   }
 };

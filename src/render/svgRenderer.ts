@@ -50,7 +50,7 @@ function resolveBarGeometry(
   maxWeekly: number,
   layout: ReturnType<typeof buildLayout>
 ): BarGeometry {
-  const x = layout.margin.left + index * (layout.barWidth + layout.weekGap) + 0.5;
+  const x = layout.margin.left + layout.weekGap / 2 + index * (layout.barWidth + layout.weekGap) + 0.5;
   const safeMaxWeekly = maxWeekly > 0 ? maxWeekly : 1;
   const normalized = total <= 0 ? 0 : total / safeMaxWeekly;
   const height = total <= 0 ? 0 : Math.max(9, normalized * (layout.chartHeight - 8));
@@ -519,19 +519,18 @@ function renderDashboardPanels(
 }
 
 function renderMonthLabels(
-  weeklyLength: number,
+  monthLabels: Array<{ index: number; label: string }>,
   firstX: number,
   step: number,
-  calendar: ContributionCalendar,
+  boundaryShift: number,
+  rightLimit: number,
   y: number
 ): string {
-  const labels = buildMonthLabels(calendar.weeks, calendar.months);
-
-  return labels
-    .filter(({ index }) => index >= 0 && index < weeklyLength)
+  return monthLabels
     .map(({ index, label }) => {
-      const x = firstX + index * step;
-      return `<text x="${x}" y="${y}" class="month">${escapeXml(label)}</text>`;
+      const markerX = firstX + index * step + boundaryShift;
+      const textX = Math.min(rightLimit, markerX + 2.5);
+      return `<text x="${textX.toFixed(2)}" y="${y}" class="month" text-anchor="start">${escapeXml(label)}</text>`;
     })
     .join("\n");
 }
@@ -545,7 +544,11 @@ function renderDotGrid(
   return weekly
     .map((week, weekIndex) => {
       const centerX =
-        layout.margin.left + weekIndex * (layout.barWidth + layout.weekGap) + Math.floor(layout.barWidth / 2) + 0.5;
+        layout.margin.left +
+        layout.weekGap / 2 +
+        weekIndex * (layout.barWidth + layout.weekGap) +
+        Math.floor(layout.barWidth / 2) +
+        0.5;
       const dotColor = useSpectrumChart ? spectrumColor(weekIndex, weekly.length, 88, 56) : primary;
 
       return week.days
@@ -586,14 +589,21 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const weekly = deriveWeeklyStats(calendar.weeks);
   const maxWeekly = Math.max(1, maxOf(weekly.map((week) => week.total)));
   const geometries = weekly.map((week, index) => resolveBarGeometry(index, week.total, maxWeekly, layout));
+  const monthLabelData = buildMonthLabels(calendar.weeks, calendar.months).filter(
+    ({ index }) => index >= 0 && index < weekly.length
+  );
+  const monthStep = layout.barWidth + layout.weekGap;
+  const chartStartX = layout.margin.left + layout.weekGap / 2;
+  const monthBoundaryShift = 0.5 - layout.weekGap / 2;
 
   const bars = renderBars(weekly, geometries, layout, themeConfig, palette.primary, palette.primarySoft, useSpectrumChart);
   const yAxisLabels = renderYAxisLabels(layout, maxWeekly, palette);
   const monthLabels = renderMonthLabels(
-    weekly.length,
-    layout.margin.left,
-    layout.barWidth + layout.weekGap,
-    calendar,
+    monthLabelData,
+    chartStartX,
+    monthStep,
+    monthBoundaryShift,
+    layout.width - layout.margin.right - 4,
     layout.margin.top + layout.headerHeight + layout.subHeaderHeight + 12
   );
 
@@ -601,19 +611,16 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     ? [0, 0.25, 0.5, 0.75, 1]
         .map((progress) => {
           const y = layout.chartTop + layout.chartHeight * progress;
-          return `<line x1="${layout.margin.left}" y1="${y}" x2="${layout.width - layout.margin.right}" y2="${y}" class="grid"/>`;
+          return `<line x1="${layout.margin.left}" y1="${y}" x2="${layout.width - layout.margin.right}" y2="${y}" class="grid-line"/>`;
         })
         .join("\n")
     : "";
 
   const verticalTicks = visual.showGrid
-    ? weekly
-        .filter((_, index) => index % 4 === 0)
-        .map((_, tickIndex) => {
-          const index = tickIndex * 4;
-          const x =
-            layout.margin.left + index * (layout.barWidth + layout.weekGap) + Math.floor(layout.barWidth / 2) + 0.5;
-          return `<line x1="${x}" y1="${layout.chartTop}" x2="${x}" y2="${layout.chartBottom}" class="vtick"/>`;
+    ? monthLabelData
+        .map(({ index }) => {
+          const x = chartStartX + index * monthStep + monthBoundaryShift;
+          return `<line x1="${x}" y1="${layout.chartTop}" x2="${x}" y2="${layout.chartBottom}" class="grid-line"/>`;
         })
         .join("\n")
     : "";
@@ -681,6 +688,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
 
   const chartBaseGlowOpacity = Math.max(0.22, themeConfig.barMinOpacity * 0.7);
   const chartBaseLineOpacity = Math.max(0.16, themeConfig.barMinOpacity * 0.55);
+  const gridStroke = useSpectrumChart ? "hsl(170, 72%, 72%)" : palette.primarySoft;
 
   const lastWeek = weekly[weekly.length - 1];
   const footerUser = `USER: @${username}`;
@@ -814,15 +822,9 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       letter-spacing: 0.03em;
       opacity: 0.82;
     }
-    .grid {
-      stroke: ${palette.primary};
+    .grid-line {
+      stroke: ${gridStroke};
       stroke-opacity: ${themeConfig.gridOpacity};
-      stroke-width: 1;
-      shape-rendering: crispEdges;
-    }
-    .vtick {
-      stroke: ${palette.primary};
-      stroke-opacity: ${themeConfig.verticalTickOpacity};
       stroke-width: 1;
       shape-rendering: crispEdges;
     }
