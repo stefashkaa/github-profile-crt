@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Support request
+    url: https://github.com/stefashkaa/github-profile-crt/issues
+    about: Ask integration or usage questions
+  - name: Security report
+    url: https://github.com/stefashkaa/github-profile-crt/security/advisories/new
+    about: Report vulnerabilities privately

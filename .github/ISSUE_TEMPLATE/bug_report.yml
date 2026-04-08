@@ -1,0 +1,56 @@
+name: Bug report
+description: Report a bug in SVG generation, rendering, or workflow behavior
+title: 'bug: '
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting. Please include enough detail to reproduce.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+      placeholder: The generated SVG has...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Set env ...
+        2. Run `pnpm generate:dev`
+        3. Open assets/crt-dark.svg
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: input
+    id: theme
+    attributes:
+      label: Theme
+      description: Which theme is affected?
+      placeholder: crt, rainbow, winamp...
+
+  - type: input
+    id: env
+    attributes:
+      label: Relevant env config
+      description: Paste non-secret env values
+      placeholder: CRT_YEAR=2024, CRT_SHOW_GRID=true
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Screenshots or SVG snippet
+      description: Add screenshots or relevant SVG fragment
