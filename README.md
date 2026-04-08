@@ -20,17 +20,24 @@ Dark files for all themes:
 - `ruby-dark.svg`
 - `mint-dark.svg`
 - `mono-dark.svg`
+- `winamp-dark.svg`
 - `neon-dark.svg`
 - `rainbow-dark.svg`
 - `chaos-dark.svg`
 - `chaos-max-dark.svg`
 - `static-dark.svg`
-Light files for profile-safe themes:
+Light files:
 - `crt-light.svg`
 - `amber-light.svg`
 - `ice-light.svg`
+- `ruby-light.svg`
+- `mint-light.svg`
+- `mono-light.svg`
+- `winamp-light.svg`
 - `neon-light.svg`
 - `rainbow-light.svg`
+- `chaos-light.svg`
+- `chaos-max-light.svg`
 - `static-light.svg`
 
 ## Project structure
@@ -145,6 +152,7 @@ To add a new theme, append one config object there.
 Special presets included:
 
 - `neon` - magenta/cyan retro neon style
+- `winamp` - classic Winamp-inspired olive/green equalizer vibe
 - `rainbow` - full-spectrum dynamic chart coloring across weeks
 - `chaos` - high-energy mode with aggressive animated noise
 - `chaos-max` - maximum noise and dense fast scanline chaos
@@ -155,8 +163,14 @@ Light-mode adaptive themes included:
 - `crt`
 - `amber`
 - `ice`
+- `ruby`
+- `mint`
+- `mono`
+- `winamp`
 - `neon`
 - `rainbow`
+- `chaos`
+- `chaos-max`
 - `static`
 
 ## GitHub Actions workflow

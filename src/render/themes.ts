@@ -1,4 +1,4 @@
-export type ThemeName = "crt" | "amber" | "ice" | "ruby" | "mint" | "mono" | "neon" | "rainbow" | "chaos" | "chaos-max" | "static" | "custom";
+export type ThemeName = "crt" | "amber" | "ice" | "ruby" | "mint" | "mono" | "winamp" | "neon" | "rainbow" | "chaos" | "chaos-max" | "static" | "custom";
 export type PresetThemeName = Exclude<ThemeName, "custom">;
 export type ThemeMode = "dark" | "light";
 
@@ -278,6 +278,44 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     animateDashboard: true
   },
   {
+    id: "winamp",
+    palette: {
+      bg0: "#070815",
+      bg1: "#0d1020",
+      bg2: "#141b2f",
+      primary: "#72c92f",
+      primarySoft: "#e4ea7a",
+      textDim: "#aeb995",
+      scan: "rgb(114,201,47)"
+    },
+    scanOpacity: 0.072,
+    scanSpacing: 5,
+    scanLineOpacity: 0.16,
+    scanLineDuration: 6.1,
+    animateScanlines: true,
+    noiseOpacity: 0.018,
+    noiseFrequency: 0.88,
+    noiseSeed: 59,
+    animateNoise: true,
+    noiseDuration: 4.2,
+    sweepOpacity: 0.16,
+    sweepWidth: 1.8,
+    sweepDuration: 5.8,
+    barMinOpacity: 0.34,
+    barMaxOpacity: 0.95,
+    barRadius: 0,
+    vignetteOpacity: 0.14,
+    areaOpacity: 0.12,
+    gridOpacity: 0.208,
+    lineGlowOpacity: 0.2,
+    lineWidth: 1.38,
+    phosphorBlur: 2.15,
+    equalizerDurationScale: 0.62,
+    equalizerTravelScale: 1.5,
+    animateEqualizer: true,
+    animateDashboard: true
+  },
+  {
     id: "neon",
     palette: {
       bg0: "#08030f",
@@ -528,6 +566,82 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
     gridOpacity: 0.184,
     lineGlowOpacity: 0.09
   },
+  ruby: {
+    palette: {
+      bg0: "#fff0f2",
+      bg1: "#ffe4e7",
+      bg2: "#f7d7dc",
+      primary: "#b2354a",
+      primarySoft: "#d94b61",
+      textDim: "#8d4a57",
+      scan: "rgb(217,75,97)"
+    },
+    scanOpacity: 0.024,
+    scanLineOpacity: 0.043,
+    noiseOpacity: 0.0048,
+    sweepOpacity: 0.08,
+    vignetteOpacity: 0.02,
+    areaOpacity: 0.046,
+    gridOpacity: 0.183,
+    lineGlowOpacity: 0.09
+  },
+  mint: {
+    palette: {
+      bg0: "#eefdf6",
+      bg1: "#ddf8ed",
+      bg2: "#d0f1e5",
+      primary: "#1b8f67",
+      primarySoft: "#22b27f",
+      textDim: "#397563",
+      scan: "rgb(34,178,127)"
+    },
+    scanOpacity: 0.023,
+    scanLineOpacity: 0.041,
+    noiseOpacity: 0.0046,
+    sweepOpacity: 0.078,
+    vignetteOpacity: 0.02,
+    areaOpacity: 0.045,
+    gridOpacity: 0.182,
+    lineGlowOpacity: 0.087
+  },
+  mono: {
+    palette: {
+      bg0: "#f4f5f6",
+      bg1: "#ebedf0",
+      bg2: "#dde1e6",
+      primary: "#4e5964",
+      primarySoft: "#6e7a87",
+      textDim: "#5e6670",
+      scan: "rgb(110,122,135)"
+    },
+    scanOpacity: 0.02,
+    scanLineOpacity: 0.036,
+    noiseOpacity: 0.0038,
+    sweepOpacity: 0.067,
+    vignetteOpacity: 0.016,
+    areaOpacity: 0.038,
+    gridOpacity: 0.176,
+    lineGlowOpacity: 0.07
+  },
+  winamp: {
+    palette: {
+      bg0: "#f7f9ef",
+      bg1: "#ecf1dd",
+      bg2: "#e1e8cb",
+      primary: "#638b21",
+      primarySoft: "#9eb638",
+      textDim: "#6d7b52",
+      scan: "rgb(99,139,33)"
+    },
+    scanOpacity: 0.024,
+    scanLineOpacity: 0.044,
+    noiseOpacity: 0.0048,
+    sweepOpacity: 0.082,
+    vignetteOpacity: 0.022,
+    areaOpacity: 0.05,
+    gridOpacity: 0.186,
+    lineGlowOpacity: 0.094
+  },
   neon: {
     palette: {
       bg0: "#f7efff",
@@ -546,6 +660,44 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
     areaOpacity: 0.046,
     gridOpacity: 0.182,
     lineGlowOpacity: 0.088
+  },
+  chaos: {
+    palette: {
+      bg0: "#eef9f0",
+      bg1: "#def1e2",
+      bg2: "#d0e8d6",
+      primary: "#1f8f31",
+      primarySoft: "#6fc44c",
+      textDim: "#4e7755",
+      scan: "rgb(31,143,49)"
+    },
+    scanOpacity: 0.03,
+    scanLineOpacity: 0.055,
+    noiseOpacity: 0.0085,
+    sweepOpacity: 0.11,
+    vignetteOpacity: 0.028,
+    areaOpacity: 0.06,
+    gridOpacity: 0.193,
+    lineGlowOpacity: 0.11
+  },
+  "chaos-max": {
+    palette: {
+      bg0: "#ecf8ee",
+      bg1: "#daf0de",
+      bg2: "#cae5d0",
+      primary: "#2d9c17",
+      primarySoft: "#8bd243",
+      textDim: "#567a4a",
+      scan: "rgb(45,156,23)"
+    },
+    scanOpacity: 0.034,
+    scanLineOpacity: 0.062,
+    noiseOpacity: 0.0105,
+    sweepOpacity: 0.125,
+    vignetteOpacity: 0.03,
+    areaOpacity: 0.067,
+    gridOpacity: 0.198,
+    lineGlowOpacity: 0.12
   },
   rainbow: {
     palette: {

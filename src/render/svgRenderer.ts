@@ -77,6 +77,7 @@ function renderBars(
   const animateEqualizer = themeConfig.animateEqualizer;
   const durationScale = clamp(themeConfig.equalizerDurationScale, 0.35, 2.5);
   const travelScale = clamp(themeConfig.equalizerTravelScale, 0, 2.4);
+  const isWinampTheme = themeConfig.id === "winamp";
 
   return weekly
     .map((week, index) => {
@@ -90,12 +91,29 @@ function renderBars(
 
       const title = `${week.firstDay}: ${week.total} contributions | active days: ${week.activeDays} | peak day: ${week.peak}`;
       const hoverTitle = enableHoverAttrs ? `<title>${escapeXml(title)}</title>` : "";
-      const barFrontFill = useSpectrumChart ? spectrumColor(index, weekly.length, 92, 54) : "url(#barGradient)";
-      const barTopFill = useSpectrumChart ? spectrumColor(index, weekly.length, 97, 73) : primarySoft;
-      const barSideFill = useSpectrumChart ? spectrumColor(index, weekly.length, 88, 42) : primary;
-      const outlineStroke = useSpectrumChart ? spectrumColor(index, weekly.length, 98, 80) : primarySoft;
-      const outlineOpacity = Math.min(0.9, Math.max(0.4, intensity + 0.18));
-      const pointerStrokeOpacity = Math.min(0.98, outlineOpacity + 0.06);
+      const barFrontFill = useSpectrumChart
+        ? spectrumColor(index, weekly.length, 92, 54)
+        : (isWinampTheme ? "url(#winampBarGradient)" : "url(#barGradient)");
+      const barTopFill = useSpectrumChart
+        ? spectrumColor(index, weekly.length, 97, 73)
+        : (isWinampTheme ? "url(#winampTopGradient)" : primarySoft);
+      const barSideFill = useSpectrumChart
+        ? spectrumColor(index, weekly.length, 88, 42)
+        : (isWinampTheme ? "url(#winampSideGradient)" : primary);
+      const outlineStroke = useSpectrumChart
+        ? spectrumColor(index, weekly.length, 98, 80)
+        : (isWinampTheme ? "#f0f3fa" : primarySoft);
+      const outlineOpacity = isWinampTheme
+        ? Math.min(0.88, Math.max(0.52, intensity + 0.1))
+        : Math.min(0.9, Math.max(0.4, intensity + 0.18));
+      const pointerStrokeOpacity = isWinampTheme
+        ? 0.9
+        : Math.min(0.98, outlineOpacity + 0.06);
+      const pointerFrontFill = isWinampTheme ? "url(#winampPointerFrontGradient)" : barFrontFill;
+      const pointerTopFill = isWinampTheme ? "#f7f9ff" : barTopFill;
+      const pointerSideFill = isWinampTheme ? "#aeb3c3" : barSideFill;
+      const pointerStroke = isWinampTheme ? "#f8faff" : outlineStroke;
+      const capLineStroke = isWinampTheme ? "#d7deed" : barTopFill;
 
       const bottomY = geometry.y + geometry.height;
       const pointerWidth = Math.max(4, layout.barWidth - 1);
@@ -149,9 +167,9 @@ function renderBars(
         <g>
           <polygon
             points="${pointerSideFaceFromY(pointerFrontY)}"
-            fill="${barSideFill}"
-            opacity="${Math.max(0.2, intensity * 0.7)}"
-            stroke="${outlineStroke}"
+            fill="${pointerSideFill}"
+            opacity="${isWinampTheme ? 0.82 : Math.max(0.2, intensity * 0.7)}"
+            stroke="${pointerStroke}"
             stroke-opacity="${pointerStrokeOpacity}"
             stroke-width="0.8"
           />
@@ -160,17 +178,17 @@ function renderBars(
             y="${pointerFrontY}"
             width="${pointerWidth}"
             height="${pointerHeight}"
-            fill="${barFrontFill}"
-            opacity="${Math.min(0.96, intensity + 0.16)}"
-            stroke="${outlineStroke}"
+            fill="${pointerFrontFill}"
+            opacity="${isWinampTheme ? 0.95 : Math.min(0.96, intensity + 0.16)}"
+            stroke="${pointerStroke}"
             stroke-opacity="${pointerStrokeOpacity}"
             stroke-width="0.8"
           />
           <polygon
             points="${pointerTopFaceFromY(pointerFrontY)}"
-            fill="${barTopFill}"
-            opacity="${Math.min(0.98, intensity + 0.24)}"
-            stroke="${outlineStroke}"
+            fill="${pointerTopFill}"
+            opacity="${isWinampTheme ? 0.98 : Math.min(0.98, intensity + 0.24)}"
+            stroke="${pointerStroke}"
             stroke-opacity="${pointerStrokeOpacity}"
             stroke-width="0.8"
           />
@@ -250,8 +268,8 @@ function renderBars(
           y1="${currentTop - BAR_DEPTH_Y}"
           x2="${geometry.x + layout.barWidth + BAR_DEPTH_X}"
           y2="${currentTop - BAR_DEPTH_Y}"
-          stroke="${barTopFill}"
-          stroke-opacity="${Math.min(0.98, intensity + 0.2)}"
+          stroke="${capLineStroke}"
+          stroke-opacity="${isWinampTheme ? 0.74 : Math.min(0.98, intensity + 0.2)}"
           stroke-width="1"
         >
           ${capLineAnimate}
@@ -587,6 +605,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const { username, themeConfig, calendar, insights, visual } = input;
   const palette = themeConfig.palette;
   const useSpectrumChart = themeConfig.spectrumChart === true;
+  const isWinampTheme = themeConfig.id === "winamp";
   const showDashboard = visual.showStats;
   const layout = buildLayout(calendar.weeks.length);
   const dashboardTopGap = showDashboard ? 30 : 0;
@@ -743,6 +762,40 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   `
     : "";
 
+  const winampDefs = isWinampTheme
+    ? `
+    <linearGradient id="winampBarGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#cc9e36"/>
+      <stop offset="14%" stop-color="#cc9e36"/>
+      <stop offset="14%" stop-color="#c5d03b"/>
+      <stop offset="32%" stop-color="#c5d03b"/>
+      <stop offset="32%" stop-color="#8fd92f"/>
+      <stop offset="52%" stop-color="#8fd92f"/>
+      <stop offset="52%" stop-color="#42cb2a"/>
+      <stop offset="74%" stop-color="#42cb2a"/>
+      <stop offset="74%" stop-color="#23990f"/>
+      <stop offset="100%" stop-color="#16750a"/>
+    </linearGradient>
+
+    <linearGradient id="winampSideGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a7812e"/>
+      <stop offset="24%" stop-color="#9aa830"/>
+      <stop offset="52%" stop-color="#2ea31a"/>
+      <stop offset="100%" stop-color="#125e08"/>
+    </linearGradient>
+
+    <linearGradient id="winampTopGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e0e768"/>
+      <stop offset="100%" stop-color="#bfc746"/>
+    </linearGradient>
+
+    <linearGradient id="winampPointerFrontGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f4f6fc"/>
+      <stop offset="100%" stop-color="#c9cfdb"/>
+    </linearGradient>
+  `
+    : "";
+
   const chartBaseGlowOpacity = Math.max(0.22, themeConfig.barMinOpacity * 0.7);
   const chartBaseLineOpacity = Math.max(0.16, themeConfig.barMinOpacity * 0.55);
   const gridStroke = useSpectrumChart ? "hsl(170, 72%, 72%)" : palette.primarySoft;
@@ -773,6 +826,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <stop offset="0%" stop-color="${palette.primary}" stop-opacity="${themeConfig.areaOpacity}"/>
       <stop offset="100%" stop-color="${palette.primary}" stop-opacity="0"/>
     </linearGradient>
+    ${winampDefs}
     ${spectrumDefs}
 
     <radialGradient id="vignette" cx="50%" cy="50%" r="75%">
