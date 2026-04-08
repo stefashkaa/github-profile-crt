@@ -305,6 +305,17 @@ function polarToCartesian(centerX: number, centerY: number, radius: number, angl
   };
 }
 
+function formatLanguagePercentage(percentage: number): string {
+  const normalized = Number.isFinite(percentage) ? clamp(percentage, 0, 1) : 0;
+  const roundedPercent = Math.round(normalized * 100);
+
+  if (roundedPercent === 0 && normalized > 0) {
+    return "&lt;1%";
+  }
+
+  return `${roundedPercent}%`;
+}
+
 function renderLanguageStackProfile(
   insights: ProfileInsights,
   layout: ReturnType<typeof buildLayout>,
@@ -376,7 +387,7 @@ function renderLanguageStackProfile(
 
       return `
       <text x="${nameX}" y="${labelY}" class="tiny-label">${escapeXml(language.name.toUpperCase())}</text>
-      <text x="${percentX}" y="${labelY + 1}" class="dash-label" text-anchor="end">${(language.percentage * 100).toFixed(0)}%</text>
+      <text x="${percentX}" y="${labelY + 1}" class="dash-label" text-anchor="end">${formatLanguagePercentage(language.percentage)}</text>
       <rect x="${barTrackX}" y="${trackY}" width="${barTrackWidth}" height="${barHeight}" rx="1.4" fill="${themeConfig.palette.textDim}" fill-opacity="0.12" shape-rendering="crispEdges"/>
       <path d="${segmentLines}" stroke="${themeConfig.palette.bg1}" stroke-opacity="0.55" shape-rendering="crispEdges"/>
       <rect x="${barTrackX - 4}" y="${trackY}" width="2" height="${barHeight}" rx="0.8" fill="${color}" fill-opacity="${accentOpacity}" shape-rendering="crispEdges"/>
