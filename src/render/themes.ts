@@ -38,6 +38,10 @@ export interface ThemeableConfig {
   lineGlowOpacity: number;
   lineWidth: number;
   phosphorBlur: number;
+  equalizerDurationScale: number;
+  equalizerTravelScale: number;
+  animateEqualizer: boolean;
+  animateDashboard: boolean;
 }
 
 type ThemeVariantOverride = Partial<Omit<ThemeableConfig, "id" | "palette">> & {
@@ -77,7 +81,11 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     gridOpacity: 0.195,
     lineGlowOpacity: 0.2,
     lineWidth: 1.35,
-    phosphorBlur: 2
+    phosphorBlur: 2,
+    equalizerDurationScale: 1,
+    equalizerTravelScale: 1,
+    animateEqualizer: true,
+    animateDashboard: true
   },
   {
     id: "amber",
@@ -111,7 +119,11 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     gridOpacity: 0.19,
     lineGlowOpacity: 0.19,
     lineWidth: 1.3,
-    phosphorBlur: 1.9
+    phosphorBlur: 1.9,
+    equalizerDurationScale: 1.02,
+    equalizerTravelScale: 0.95,
+    animateEqualizer: true,
+    animateDashboard: true
   },
   {
     id: "ice",
@@ -145,7 +157,11 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     gridOpacity: 0.184,
     lineGlowOpacity: 0.16,
     lineWidth: 1.25,
-    phosphorBlur: 1.85
+    phosphorBlur: 1.85,
+    equalizerDurationScale: 1.08,
+    equalizerTravelScale: 1.05,
+    animateEqualizer: true,
+    animateDashboard: true
   },
   {
     id: "ruby",
@@ -179,7 +195,11 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     gridOpacity: 0.182,
     lineGlowOpacity: 0.16,
     lineWidth: 1.22,
-    phosphorBlur: 1.75
+    phosphorBlur: 1.75,
+    equalizerDurationScale: 1.03,
+    equalizerTravelScale: 1.02,
+    animateEqualizer: true,
+    animateDashboard: true
   },
   {
     id: "mint",
@@ -213,7 +233,11 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     gridOpacity: 0.184,
     lineGlowOpacity: 0.17,
     lineWidth: 1.24,
-    phosphorBlur: 1.85
+    phosphorBlur: 1.85,
+    equalizerDurationScale: 0.95,
+    equalizerTravelScale: 1.06,
+    animateEqualizer: true,
+    animateDashboard: true
   },
   {
     id: "mono",
@@ -247,7 +271,11 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     gridOpacity: 0.178,
     lineGlowOpacity: 0.12,
     lineWidth: 1.15,
-    phosphorBlur: 1.6
+    phosphorBlur: 1.6,
+    equalizerDurationScale: 1.1,
+    equalizerTravelScale: 0.9,
+    animateEqualizer: true,
+    animateDashboard: true
   },
   {
     id: "neon",
@@ -281,7 +309,11 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     gridOpacity: 0.198,
     lineGlowOpacity: 0.24,
     lineWidth: 1.45,
-    phosphorBlur: 2.4
+    phosphorBlur: 2.4,
+    equalizerDurationScale: 0.72,
+    equalizerTravelScale: 1.28,
+    animateEqualizer: true,
+    animateDashboard: true
   },
   {
     id: "rainbow",
@@ -316,7 +348,11 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     gridOpacity: 0.198,
     lineGlowOpacity: 0.24,
     lineWidth: 1.45,
-    phosphorBlur: 2.4
+    phosphorBlur: 2.4,
+    equalizerDurationScale: 0.74,
+    equalizerTravelScale: 1.34,
+    animateEqualizer: true,
+    animateDashboard: true
   },
   {
     id: "chaos",
@@ -350,7 +386,11 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     gridOpacity: 0.205,
     lineGlowOpacity: 0.28,
     lineWidth: 1.5,
-    phosphorBlur: 2.8
+    phosphorBlur: 2.8,
+    equalizerDurationScale: 0.58,
+    equalizerTravelScale: 1.55,
+    animateEqualizer: true,
+    animateDashboard: true
   },
   {
     id: "chaos-max",
@@ -384,7 +424,11 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     gridOpacity: 0.215,
     lineGlowOpacity: 0.34,
     lineWidth: 1.58,
-    phosphorBlur: 3.2
+    phosphorBlur: 3.2,
+    equalizerDurationScale: 0.44,
+    equalizerTravelScale: 1.9,
+    animateEqualizer: true,
+    animateDashboard: true
   },
   {
     id: "static",
@@ -397,12 +441,12 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
       textDim: "#9eb6bb",
       scan: "rgb(166,246,255)"
     },
-    scanOpacity: 0.04,
+    scanOpacity: 0,
     scanSpacing: 7,
-    scanLineOpacity: 0.08,
+    scanLineOpacity: 0,
     scanLineDuration: 9,
     animateScanlines: false,
-    noiseOpacity: 0.009,
+    noiseOpacity: 0,
     noiseFrequency: 0.52,
     noiseSeed: 41,
     animateNoise: false,
@@ -418,7 +462,11 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     gridOpacity: 0.176,
     lineGlowOpacity: 0.11,
     lineWidth: 1.1,
-    phosphorBlur: 1.5
+    phosphorBlur: 1.5,
+    equalizerDurationScale: 1,
+    equalizerTravelScale: 0,
+    animateEqualizer: false,
+    animateDashboard: false
   }
 ];
 
@@ -528,9 +576,9 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
       textDim: "#4c6874",
       scan: "rgb(63,143,170)"
     },
-    scanOpacity: 0.018,
-    scanLineOpacity: 0.034,
-    noiseOpacity: 0.0038,
+    scanOpacity: 0,
+    scanLineOpacity: 0,
+    noiseOpacity: 0,
     sweepOpacity: 0.06,
     vignetteOpacity: 0.016,
     areaOpacity: 0.038,

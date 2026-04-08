@@ -73,6 +73,9 @@ function renderBars(
   useSpectrumChart: boolean
 ): string {
   const maxBarHeight = layout.chartHeight - 6;
+  const animateEqualizer = themeConfig.animateEqualizer;
+  const durationScale = clamp(themeConfig.equalizerDurationScale, 0.35, 2.5);
+  const travelScale = clamp(themeConfig.equalizerTravelScale, 0, 2.4);
 
   return weekly
     .map((week, index) => {
@@ -103,11 +106,24 @@ function renderBars(
         4,
         Math.min(maxBarHeight, Math.floor(geometry.height + pointerGap - requiredPointerClearance))
       );
-      const pulseAmplitude = clamp(Math.round(animationPeakHeight * 0.16), 1, 7);
-      const lowHeight = Math.max(4, animationPeakHeight - pulseAmplitude);
-      const midHeight = Math.max(4, animationPeakHeight - Math.max(1, Math.floor(pulseAmplitude * 0.5)));
-      const heightFrames = [lowHeight, midHeight, animationPeakHeight, midHeight, lowHeight];
+      const motionFactor = 0.12 + 0.1 * travelScale;
+      const maxPulse = Math.max(2, Math.round(4 + 6 * travelScale));
+      const pulseAmplitude = animateEqualizer
+        ? clamp(Math.round(animationPeakHeight * motionFactor), 1, maxPulse)
+        : 0;
+      const lowHeight = animateEqualizer
+        ? Math.max(4, animationPeakHeight - pulseAmplitude)
+        : animationPeakHeight;
+      const midHeight = animateEqualizer
+        ? Math.max(4, animationPeakHeight - Math.max(1, Math.floor(pulseAmplitude * 0.5)))
+        : animationPeakHeight;
+      const heightFrames = animateEqualizer
+        ? [lowHeight, midHeight, animationPeakHeight, midHeight, lowHeight]
+        : [animationPeakHeight];
       const topFrames = heightFrames.map((height) => bottomY - height);
+      const baseFrameIndex = Math.floor(topFrames.length / 2);
+      const currentTop = topFrames[baseFrameIndex] ?? geometry.y;
+      const currentHeight = heightFrames[baseFrameIndex] ?? geometry.height;
 
       const topFaceFromY = (y: number): string =>
         `${geometry.x},${y} ${geometry.x + layout.barWidth},${y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${y - BAR_DEPTH_Y} ${geometry.x + BAR_DEPTH_X},${y - BAR_DEPTH_Y}`;
@@ -159,8 +175,26 @@ function renderBars(
         </g>
       `;
 
-      const waveDuration = (2.24 + (index % 9) * 0.17 + (4 - week.intensity) * 0.05).toFixed(2);
-      const waveDelay = `-${((index % 13) * 0.19).toFixed(2)}`;
+      const waveDuration = ((1.58 + (index % 9) * 0.13 + (4 - week.intensity) * 0.03) * durationScale).toFixed(2);
+      const waveDelay = animateEqualizer ? `-${((index % 13) * 0.19).toFixed(2)}` : "0s";
+      const sideFaceAnimate = animateEqualizer
+        ? `<animate attributeName="points" values="${sideFaceValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>`
+        : "";
+      const barBodyAnimate = animateEqualizer
+        ? `
+          <animate attributeName="y" values="${yValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+          <animate attributeName="height" values="${heightValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+        `
+        : "";
+      const topFaceAnimate = animateEqualizer
+        ? `<animate attributeName="points" values="${topFaceValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>`
+        : "";
+      const capLineAnimate = animateEqualizer
+        ? `
+          <animate attributeName="y1" values="${topFrames.map((y) => (y - BAR_DEPTH_Y).toFixed(2)).join(";")}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+          <animate attributeName="y2" values="${topFrames.map((y) => (y - BAR_DEPTH_Y).toFixed(2)).join(";")}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+        `
+        : "";
 
       if (week.total <= 0) {
         return `
@@ -175,20 +209,20 @@ function renderBars(
       <g shape-rendering="crispEdges">
         <title>${escapeXml(title)}</title>
         <polygon
-          points="${sideFaceFromY(topFrames[1] ?? geometry.y)}"
+          points="${sideFaceFromY(currentTop)}"
           fill="${barSideFill}"
           opacity="${Math.max(0.14, intensity * 0.62)}"
           stroke="${outlineStroke}"
           stroke-opacity="${outlineOpacity}"
           stroke-width="0.8"
         >
-          <animate attributeName="points" values="${sideFaceValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+          ${sideFaceAnimate}
         </polygon>
         <rect
           x="${geometry.x}"
-          y="${topFrames[1] ?? geometry.y}"
+          y="${currentTop}"
           width="${layout.barWidth}"
-          height="${heightFrames[1] ?? geometry.height}"
+          height="${currentHeight}"
           rx="${themeConfig.barRadius}"
           fill="${barFrontFill}"
           opacity="${intensity}"
@@ -196,31 +230,29 @@ function renderBars(
           stroke-opacity="${outlineOpacity}"
           stroke-width="0.8"
         >
-          <animate attributeName="y" values="${yValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
-          <animate attributeName="height" values="${heightValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+          ${barBodyAnimate}
         </rect>
         <polygon
-          points="${topFaceFromY(topFrames[1] ?? geometry.y)}"
+          points="${topFaceFromY(currentTop)}"
           fill="${barTopFill}"
           opacity="${Math.min(0.97, intensity + 0.18)}"
           stroke="${outlineStroke}"
           stroke-opacity="${outlineOpacity}"
           stroke-width="0.8"
         >
-          <animate attributeName="points" values="${topFaceValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+          ${topFaceAnimate}
         </polygon>
         ${pointerMarkup}
         <line
           x1="${geometry.x + BAR_DEPTH_X}"
-          y1="${topFrames[1] ?? geometry.y - BAR_DEPTH_Y}"
+          y1="${currentTop - BAR_DEPTH_Y}"
           x2="${geometry.x + layout.barWidth + BAR_DEPTH_X}"
-          y2="${topFrames[1] ?? geometry.y - BAR_DEPTH_Y}"
+          y2="${currentTop - BAR_DEPTH_Y}"
           stroke="${barTopFill}"
           stroke-opacity="${Math.min(0.98, intensity + 0.2)}"
           stroke-width="1"
         >
-          <animate attributeName="y1" values="${topFrames.map((y) => (y - BAR_DEPTH_Y).toFixed(2)).join(";")}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
-          <animate attributeName="y2" values="${topFrames.map((y) => (y - BAR_DEPTH_Y).toFixed(2)).join(";")}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+          ${capLineAnimate}
         </line>
       </g>
     `;
@@ -262,6 +294,7 @@ function renderLanguageStackProfile(
   useSpectrumChart: boolean
 ): string {
   const hasLanguageData = insights.languages.length > 0 && insights.totalLanguageSize > 0;
+  const animateDashboard = themeConfig.animateDashboard;
   const titleX = layout.margin.left + 60;
   const titleY = dashboardTop + 2;
   const panelX = titleX;
@@ -309,6 +342,9 @@ function renderLanguageStackProfile(
       const pulseMid = Math.max(2, Math.round(targetWidth * 0.87));
       const pulseDuration = (1.8 + index * 0.22).toFixed(2);
       const pulseDelay = (index * 0.12).toFixed(2);
+      const pulseAnimation = animateDashboard
+        ? `<animate attributeName="width" values="${pulseMin};${targetWidth};${pulseMid};${targetWidth};${pulseMin}" dur="${pulseDuration}s" begin="${pulseDelay}s" repeatCount="indefinite"/>`
+        : "";
       const themeBlendOpacity = useSpectrumChart ? 0.46 : 0.72;
       const languageBlendOpacity = useSpectrumChart ? 0.42 : 0.24;
       const accentOpacity = useSpectrumChart ? 0.68 : 0.54;
@@ -326,10 +362,10 @@ function renderLanguageStackProfile(
       <path d="${segmentLines}" stroke="${themeConfig.palette.bg1}" stroke-opacity="0.55" shape-rendering="crispEdges"/>
       <rect x="${barTrackX - 4}" y="${trackY}" width="2" height="${barHeight}" rx="0.8" fill="${color}" fill-opacity="${accentOpacity}" shape-rendering="crispEdges"/>
       <rect x="${barTrackX}" y="${trackY}" width="${targetWidth}" height="${barHeight}" rx="1.4" fill="${themeConfig.palette.primarySoft}" fill-opacity="${themeBlendOpacity}" filter="url(#phosphorGlow)" shape-rendering="crispEdges">
-        <animate attributeName="width" values="${pulseMin};${targetWidth};${pulseMid};${targetWidth};${pulseMin}" dur="${pulseDuration}s" begin="${pulseDelay}s" repeatCount="indefinite"/>
+        ${pulseAnimation}
       </rect>
       <rect x="${barTrackX}" y="${trackY}" width="${targetWidth}" height="${barHeight}" rx="1.4" fill="${color}" fill-opacity="${languageBlendOpacity}" shape-rendering="crispEdges">
-        <animate attributeName="width" values="${pulseMin};${targetWidth};${pulseMid};${targetWidth};${pulseMin}" dur="${pulseDuration}s" begin="${pulseDelay}s" repeatCount="indefinite"/>
+        ${pulseAnimation}
       </rect>
       `;
     })
@@ -360,11 +396,24 @@ function renderActivityRadar(
   const centerX = dashboardPanelX + dashboardPanelWidth / 2 + activityShiftX;
   const centerY = dashboardPanelY + 46;
   const radius = 34;
+  const animateDashboard = themeConfig.animateDashboard;
   const radarStroke = useSpectrumChart ? "url(#spectrumStrokeGradient)" : themeConfig.palette.primary;
   const radarFill = useSpectrumChart ? "url(#spectrumAreaGradient)" : "url(#areaGradient)";
   const radialGuideStroke = useSpectrumChart ? "url(#spectrumStrokeGradient)" : themeConfig.palette.primarySoft;
   const radarPulseDuration = Math.max(3.4, themeConfig.sweepDuration * 1.12).toFixed(2);
   const radarSweepDuration = Math.max(2.8, themeConfig.sweepDuration * 0.9).toFixed(2);
+  const sweepRotateAnimation = animateDashboard
+    ? `<animateTransform attributeName="transform" type="rotate" values="0 ${centerX} ${centerY};360 ${centerX} ${centerY}" dur="${radarSweepDuration}s" repeatCount="indefinite"/>`
+    : "";
+  const outerPointAnimation = (duration: string): string => animateDashboard
+    ? `
+      <animate attributeName="r" values="4.4;5.6;4.4" dur="${duration}" repeatCount="indefinite"/>
+      <animate attributeName="fill-opacity" values="0.12;0.24;0.12" dur="${duration}" repeatCount="indefinite"/>
+    `
+    : "";
+  const innerPointAnimation = (duration: string): string => animateDashboard
+    ? `<animate attributeName="r" values="2.1;2.8;2.1" dur="${duration}" repeatCount="indefinite"/>`
+    : "";
 
   const values = {
     commit: insights.activity.commits,
@@ -418,6 +467,9 @@ function renderActivityRadar(
     issue: Math.max(radius * 0.38, radii.issue * 0.9),
     review: Math.max(radius * 0.38, radii.review * 0.9)
   });
+  const polygonPulseAnimation = animateDashboard
+    ? `<animate attributeName="points" values="${basePoints.polygon};${pulsePoints.polygon};${basePoints.polygon};${relaxedPoints.polygon};${basePoints.polygon}" dur="${radarPulseDuration}s" repeatCount="indefinite"/>`
+    : "";
 
   const orbitalRings = [14, 24, 34]
     .map((ring, index) => {
@@ -448,11 +500,11 @@ function renderActivityRadar(
     <path d="${crosshair}" stroke="${themeConfig.palette.textDim}" stroke-opacity="0.15" stroke-width="1"/>
 
     <path d="M${centerX} ${centerY} L${centerX} ${centerY - sweepArm}" stroke="${themeConfig.palette.primarySoft}" stroke-opacity="0.22" stroke-width="1.2">
-      <animateTransform attributeName="transform" type="rotate" values="0 ${centerX} ${centerY};360 ${centerX} ${centerY}" dur="${radarSweepDuration}s" repeatCount="indefinite"/>
+      ${sweepRotateAnimation}
     </path>
 
     <polygon points="${basePoints.polygon}" fill="${radarFill}" fill-opacity="0.34" stroke="${radarStroke}" stroke-opacity="0.95" stroke-width="1.7" filter="url(#phosphorGlow)">
-      <animate attributeName="points" values="${basePoints.polygon};${pulsePoints.polygon};${basePoints.polygon};${relaxedPoints.polygon};${basePoints.polygon}" dur="${radarPulseDuration}s" repeatCount="indefinite"/>
+      ${polygonPulseAnimation}
     </polygon>
 
     <line x1="${centerX}" y1="${centerY}" x2="${centerX}" y2="${(centerY - radius).toFixed(2)}" stroke="${radialGuideStroke}" stroke-opacity="0.45" stroke-width="1.9" stroke-linecap="round"/>
@@ -461,32 +513,28 @@ function renderActivityRadar(
     <line x1="${centerX}" y1="${centerY}" x2="${centerX}" y2="${(centerY + radius).toFixed(2)}" stroke="${radialGuideStroke}" stroke-opacity="0.45" stroke-width="1.9" stroke-linecap="round"/>
 
     <circle cx="${basePoints.commit.x.toFixed(2)}" cy="${basePoints.commit.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
-      <animate attributeName="r" values="4.4;5.6;4.4" dur="2.2s" repeatCount="indefinite"/>
-      <animate attributeName="fill-opacity" values="0.12;0.24;0.12" dur="2.2s" repeatCount="indefinite"/>
+      ${outerPointAnimation("2.2s")}
     </circle>
     <circle cx="${basePoints.commit.x.toFixed(2)}" cy="${basePoints.commit.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
-      <animate attributeName="r" values="2.1;2.8;2.1" dur="2.2s" repeatCount="indefinite"/>
+      ${innerPointAnimation("2.2s")}
     </circle>
     <circle cx="${basePoints.pr.x.toFixed(2)}" cy="${basePoints.pr.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
-      <animate attributeName="r" values="4.4;5.6;4.4" dur="2.5s" repeatCount="indefinite"/>
-      <animate attributeName="fill-opacity" values="0.12;0.24;0.12" dur="2.5s" repeatCount="indefinite"/>
+      ${outerPointAnimation("2.5s")}
     </circle>
     <circle cx="${basePoints.pr.x.toFixed(2)}" cy="${basePoints.pr.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
-      <animate attributeName="r" values="2.1;2.8;2.1" dur="2.5s" repeatCount="indefinite"/>
+      ${innerPointAnimation("2.5s")}
     </circle>
     <circle cx="${basePoints.issue.x.toFixed(2)}" cy="${basePoints.issue.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
-      <animate attributeName="r" values="4.4;5.6;4.4" dur="2.8s" repeatCount="indefinite"/>
-      <animate attributeName="fill-opacity" values="0.12;0.24;0.12" dur="2.8s" repeatCount="indefinite"/>
+      ${outerPointAnimation("2.8s")}
     </circle>
     <circle cx="${basePoints.issue.x.toFixed(2)}" cy="${basePoints.issue.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
-      <animate attributeName="r" values="2.1;2.8;2.1" dur="2.8s" repeatCount="indefinite"/>
+      ${innerPointAnimation("2.8s")}
     </circle>
     <circle cx="${basePoints.review.x.toFixed(2)}" cy="${basePoints.review.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
-      <animate attributeName="r" values="4.4;5.6;4.4" dur="3.1s" repeatCount="indefinite"/>
-      <animate attributeName="fill-opacity" values="0.12;0.24;0.12" dur="3.1s" repeatCount="indefinite"/>
+      ${outerPointAnimation("3.1s")}
     </circle>
     <circle cx="${basePoints.review.x.toFixed(2)}" cy="${basePoints.review.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
-      <animate attributeName="r" values="2.1;2.8;2.1" dur="3.1s" repeatCount="indefinite"/>
+      ${innerPointAnimation("3.1s")}
     </circle>
 
     <text x="${centerX}" y="${prLabelY}" class="dash-label" text-anchor="middle">PR</text>
@@ -591,7 +639,10 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     ? renderDashboardPanels(insights, layout, dashboardTop, themeConfig, useSpectrumChart)
     : "";
 
-  const noiseAnimation = themeConfig.animateNoise
+  const includeNoiseLayer = themeConfig.noiseOpacity > 0;
+  const includeScanLayer = themeConfig.scanOpacity > 0;
+
+  const noiseAnimation = includeNoiseLayer && themeConfig.animateNoise
     ? `
       <animate
         xlink:href="#noiseTurbulence"
@@ -602,7 +653,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     `
     : "";
 
-  const scanPatternAnimation = themeConfig.animateScanlines
+  const scanPatternAnimation = includeScanLayer && themeConfig.animateScanlines
     ? `
       <animateTransform
         attributeName="patternTransform"
@@ -611,6 +662,40 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
         dur="${themeConfig.scanLineDuration}s"
         repeatCount="indefinite"/>
     `
+    : "";
+
+  const noiseFilterDef = includeNoiseLayer
+    ? `
+    <filter id="noiseFilter">
+      <feTurbulence
+        id="noiseTurbulence"
+        type="fractalNoise"
+        baseFrequency="${themeConfig.noiseFrequency}"
+        numOctaves="1"
+        seed="${themeConfig.noiseSeed}"
+        stitchTiles="stitch"
+        result="noise"/>
+      ${noiseAnimation}
+      <feColorMatrix
+        in="noise"
+        type="matrix"
+        values="
+          1 0 0 0 0
+          0 1 0 0 0
+          0 0 1 0 0
+          0 0 0 1 0"/>
+    </filter>
+  `
+    : "";
+
+  const scanPatternDef = includeScanLayer
+    ? `
+    <pattern id="scanPattern" width="${themeConfig.scanSpacing}" height="${themeConfig.scanSpacing}" patternUnits="userSpaceOnUse">
+      ${scanPatternAnimation}
+      <rect width="${themeConfig.scanSpacing}" height="${Math.max(1, themeConfig.scanSpacing - 2)}" fill="transparent"/>
+      <rect y="${Math.max(1, themeConfig.scanSpacing - 2)}" width="${themeConfig.scanSpacing}" height="1" fill="${palette.scan}"/>
+    </pattern>
+  `
     : "";
 
   const spectrumDefs = useSpectrumChart
@@ -692,31 +777,8 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       </feMerge>
     </filter>
 
-    <filter id="noiseFilter">
-      <feTurbulence
-        id="noiseTurbulence"
-        type="fractalNoise"
-        baseFrequency="${themeConfig.noiseFrequency}"
-        numOctaves="1"
-        seed="${themeConfig.noiseSeed}"
-        stitchTiles="stitch"
-        result="noise"/>
-      ${noiseAnimation}
-      <feColorMatrix
-        in="noise"
-        type="matrix"
-        values="
-          1 0 0 0 0
-          0 1 0 0 0
-          0 0 1 0 0
-          0 0 0 1 0"/>
-    </filter>
-
-    <pattern id="scanPattern" width="${themeConfig.scanSpacing}" height="${themeConfig.scanSpacing}" patternUnits="userSpaceOnUse">
-      ${scanPatternAnimation}
-      <rect width="${themeConfig.scanSpacing}" height="${Math.max(1, themeConfig.scanSpacing - 2)}" fill="transparent"/>
-      <rect y="${Math.max(1, themeConfig.scanSpacing - 2)}" width="${themeConfig.scanSpacing}" height="1" fill="${palette.scan}"/>
-    </pattern>
+    ${noiseFilterDef}
+    ${scanPatternDef}
   </defs>
 
   <style>
@@ -792,8 +854,8 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   </style>
 
   <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#bg)"/>
-  <rect width="${layout.width}" height="${canvasHeight}" rx="14" filter="url(#noiseFilter)" opacity="${themeConfig.noiseOpacity}" fill="${palette.primarySoft}"/>
-  <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#scanPattern)" opacity="${themeConfig.scanOpacity}"/>
+  ${includeNoiseLayer ? `<rect width="${layout.width}" height="${canvasHeight}" rx="14" filter="url(#noiseFilter)" opacity="${themeConfig.noiseOpacity}" fill="${palette.primarySoft}"/>` : ""}
+  ${includeScanLayer ? `<rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#scanPattern)" opacity="${themeConfig.scanOpacity}"/>` : ""}
   <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#vignette)" opacity="${themeConfig.vignetteOpacity}"/>
 
   ${monthLabels}
