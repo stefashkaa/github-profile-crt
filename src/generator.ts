@@ -34,7 +34,7 @@ export async function generateCrtContributionSvgs(config: RuntimeConfig): Promis
 
   const client = createGitHubGraphQlClient(config.token);
   const calendarPromise = fetchContributionCalendar(client, config.username);
-  const insightsPromise = config.visual.layoutMode === "dashboard"
+  const insightsPromise = config.visual.showStats
     ? fetchProfileInsights(client, config.username).catch(() => null)
     : Promise.resolve(null);
   const [calendar, insights] = await Promise.all([calendarPromise, insightsPromise]);

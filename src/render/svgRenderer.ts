@@ -1,8 +1,6 @@
 import type { VisualConfig } from "../config/env";
 import {
   buildMonthLabels,
-  formatDateShort,
-  levelOpacity,
   type ContributionCalendar,
   type WeeklyStats
 } from "../model/calendar";
@@ -535,57 +533,21 @@ function renderMonthLabels(
     .join("\n");
 }
 
-function renderDotGrid(
-  weekly: WeeklyStats[],
-  layout: ReturnType<typeof buildLayout>,
-  primary: string,
-  useSpectrumChart: boolean
-): string {
-  return weekly
-    .map((week, weekIndex) => {
-      const centerX =
-        layout.margin.left +
-        layout.weekGap / 2 +
-        weekIndex * (layout.barWidth + layout.weekGap) +
-        Math.floor(layout.barWidth / 2) +
-        0.5;
-      const dotColor = useSpectrumChart ? spectrumColor(weekIndex, weekly.length, 88, 56) : primary;
-
-      return week.days
-        .map((day, row) => {
-          const centerY = layout.heatmapTop + row * layout.heatmapGap;
-
-          return `
-        <rect
-          x="${centerX - 2}"
-          y="${centerY - 2}"
-          width="4"
-          height="4"
-          rx="0.8"
-          fill="${dotColor}"
-          opacity="${levelOpacity(day.contributionLevel)}"
-          shape-rendering="crispEdges"
-        >
-          <title>${escapeXml(`${formatDateShort(day.date)} | ${day.contributionCount} contributions`)}</title>
-        </rect>
-      `;
-        })
-        .join("\n");
-    })
-    .join("\n");
-}
-
 export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const { username, themeConfig, calendar, insights, visual } = input;
   const palette = themeConfig.palette;
   const useSpectrumChart = themeConfig.spectrumChart === true;
-  const dashboardMode = visual.layoutMode === "dashboard";
+  const showDashboard = visual.showStats;
   const layout = buildLayout(calendar.weeks.length);
-  const dashboardTopGap = dashboardMode ? 30 : 0;
-  const dashboardFooterGap = dashboardMode ? 52 : 0;
+  const dashboardTopGap = showDashboard ? 30 : 0;
+  const dashboardFooterGap = showDashboard ? 52 : 0;
   const dashboardTop = layout.heatmapTop + dashboardTopGap;
-  const footerY = layout.footerY + dashboardTopGap + dashboardFooterGap;
-  const canvasHeight = layout.height + dashboardTopGap + dashboardFooterGap;
+  const footerY = showDashboard
+    ? layout.footerY + dashboardTopGap + dashboardFooterGap
+    : layout.chartBottom + 28;
+  const canvasHeight = showDashboard
+    ? layout.height + dashboardTopGap + dashboardFooterGap
+    : footerY + layout.margin.bottom;
   const weekly = deriveWeeklyStats(calendar.weeks);
   const maxWeekly = Math.max(1, maxOf(weekly.map((week) => week.total)));
   const geometries = weekly.map((week, index) => resolveBarGeometry(index, week.total, maxWeekly, layout));
@@ -625,8 +587,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
         .join("\n")
     : "";
 
-  const dotGrid = dashboardMode ? "" : renderDotGrid(weekly, layout, palette.primary, useSpectrumChart);
-  const dashboardPanels = dashboardMode
+  const dashboardPanels = showDashboard
     ? renderDashboardPanels(insights, layout, dashboardTop, themeConfig, useSpectrumChart)
     : "";
 
@@ -863,10 +824,9 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   />
 
   ${dashboardPanels}
-  <g>${dotGrid}</g>
 
   <text x="${layout.margin.left}" y="${footerY}" class="footer">${escapeXml(footerUser)}</text>
-  ${visual.showStats ? `<text x="${(layout.width / 2) - 6}" y="${footerY}" class="footer" text-anchor="middle">${escapeXml(footerStats)}</text>` : ""}
+  ${visual.showStatsFooter ? `<text x="${(layout.width / 2) - 6}" y="${footerY}" class="footer" text-anchor="middle">${escapeXml(footerStats)}</text>` : ""}
   <text x="${layout.width - layout.margin.right}" y="${footerY}" class="credit" text-anchor="end">${escapeXml(footerCredits)}</text>
 </svg>`;
 }

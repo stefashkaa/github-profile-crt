@@ -56,9 +56,9 @@ GITHUB_TOKEN=ghp_xxx
 GITHUB_USER=your-github-username
 CRT_OUTPUT_DIR=assets
 CRT_THEMES=all
-CRT_SHOW_GRID=false
+CRT_SHOW_GRID=true
 CRT_SHOW_STATS=true
-CRT_LAYOUT_MODE=hero
+CRT_SHOW_STATS_FOOTER=true
 CRT_MINIFY_SVG=true
 ```
 
@@ -84,20 +84,18 @@ pnpm generate:raw
 
 ## Visual toggles
 
-- `CRT_SHOW_GRID=true|false` toggles chart grid/ticks (default `false`)
-- `CRT_SHOW_STATS=true|false` toggles compact footer stats (default `true`)
-- `CRT_LAYOUT_MODE=hero|dashboard` switches lower panel rendering:
-  - `hero` (default): contribution dot grid
-  - `dashboard`: language donut + activity radar (commits/PRs/issues/reviews)
+- `CRT_SHOW_GRID=true|false` toggles chart grid/ticks (default `true`)
+- `CRT_SHOW_STATS=true|false` toggles dashboard widgets (stack profile + activity vector) (default `true`)
+- `CRT_SHOW_STATS_FOOTER=true|false` toggles compact footer stats line (default `true`)
 
 Footer always keeps:
 
 - `USER: @<username>`
 - `CREDITS: stefashkaa/github-profile-crt`
 
-## Dashboard mode
+## Dashboard widgets
 
-When `CRT_LAYOUT_MODE=dashboard`, the generator fetches additional profile insights:
+When `CRT_SHOW_STATS=true`, the generator fetches additional profile insights:
 
 - contribution activity: commits, pull requests, issues, reviews
 - language distribution weighted by where your commit contributions happened across repositories
@@ -105,7 +103,7 @@ When `CRT_LAYOUT_MODE=dashboard`, the generator fetches additional profile insig
 Those values are rendered as:
 
 - compact radar chart (activity mix)
-- donut chart + legend (language split)
+- segmented stack profile (language split)
 
 ## Theme customization
 

@@ -17,12 +17,10 @@ import {
   type ThemeableConfig
 } from "../render/themes";
 
-export type LayoutMode = "hero" | "dashboard";
-
 export interface VisualConfig {
   showGrid: boolean;
+  showStatsFooter: boolean;
   showStats: boolean;
-  layoutMode: LayoutMode;
 }
 
 export interface RuntimeConfig {
@@ -57,16 +55,10 @@ const PALETTE_ENV_SUFFIXES: Array<{ key: keyof ThemePalette; suffix: string }> =
 ];
 
 function visualConfigFromEnv(env: EnvSource): VisualConfig {
-  const modeRaw = stringEnv(env, "CRT_LAYOUT_MODE", "hero").trim().toLowerCase();
-
-  if (modeRaw !== "hero" && modeRaw !== "dashboard") {
-    throw new Error('Invalid CRT_LAYOUT_MODE. Valid values: "hero", "dashboard"');
-  }
-
   return {
-    showGrid: booleanEnv(env, "CRT_SHOW_GRID", false),
-    showStats: booleanEnv(env, "CRT_SHOW_STATS", true),
-    layoutMode: modeRaw
+    showGrid: booleanEnv(env, "CRT_SHOW_GRID", true),
+    showStatsFooter: booleanEnv(env, "CRT_SHOW_STATS_FOOTER", true),
+    showStats: booleanEnv(env, "CRT_SHOW_STATS", true)
   };
 }
 
