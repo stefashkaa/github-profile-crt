@@ -1,4 +1,10 @@
-export { loadRuntimeConfig, type ResolvedThemeConfig, type RuntimeConfig, type VisualConfig } from "./config/env";
+export {
+  loadRuntimeConfig,
+  type ContributionWindow,
+  type ResolvedThemeConfig,
+  type RuntimeConfig,
+  type VisualConfig
+} from "./config/env";
 export { generateCrtContributionSvgs, type GeneratedThemeFile, type GenerationResult } from "./generator";
 export { renderCrtContributionSvg, type SvgRenderInput } from "./render/svgRenderer";
 export {

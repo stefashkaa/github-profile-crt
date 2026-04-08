@@ -33,9 +33,19 @@ export async function generateCrtContributionSvgs(config: RuntimeConfig): Promis
   await fs.mkdir(config.outputDirectory, { recursive: true });
 
   const client = createGitHubGraphQlClient(config.token);
-  const calendarPromise = fetchContributionCalendar(client, config.username);
+  const calendarPromise = fetchContributionCalendar(
+    client,
+    config.username,
+    config.contributionWindow.from,
+    config.contributionWindow.to
+  );
   const insightsPromise = config.visual.showStats
-    ? fetchProfileInsights(client, config.username).catch(() => null)
+    ? fetchProfileInsights(
+      client,
+      config.username,
+      config.contributionWindow.from,
+      config.contributionWindow.to
+    ).catch(() => null)
     : Promise.resolve(null);
   const [calendar, insights] = await Promise.all([calendarPromise, insightsPromise]);
 

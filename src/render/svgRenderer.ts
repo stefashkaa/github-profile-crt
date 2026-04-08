@@ -802,7 +802,16 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
 
   const lastWeek = weekly[weekly.length - 1];
   const footerUser = `USER: @${username}`;
-  const footerStats = `CONTRIBUTIONS: ${calendar.totalContributions} | BEST WEEK: ${maxWeekly} | LAST WEEK: ${lastWeek ? lastWeek.total : 0} |`;
+  const footerStatsParts = [
+    `CONTRIBUTIONS: ${calendar.totalContributions}`,
+    `BEST WEEK: ${maxWeekly}`
+  ];
+
+  if (visual.showLastWeekInFooter) {
+    footerStatsParts.push(`LAST WEEK: ${lastWeek ? lastWeek.total : 0}`);
+  }
+
+  const footerStats = `| ${footerStatsParts.join(" | ")} |`;
   const footerCredits = "CREDITS: stefashkaa/github-profile-crt";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -953,7 +962,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   ${dashboardPanels}
 
   <text x="${layout.margin.left}" y="${footerY}" class="footer">${escapeXml(footerUser)}</text>
-  ${visual.showStatsFooter ? `<text x="${(layout.width / 2) - 6}" y="${footerY}" class="footer" text-anchor="middle">${escapeXml(footerStats)}</text>` : ""}
+  ${visual.showStatsFooter ? `<text x="${(layout.width / 2) - 12}" y="${footerY}" class="footer" text-anchor="middle">${escapeXml(footerStats)}</text>` : ""}
   <text x="${layout.width - layout.margin.right}" y="${footerY}" class="credit" text-anchor="end">${escapeXml(footerCredits)}</text>
 </svg>`;
 }

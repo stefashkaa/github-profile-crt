@@ -51,12 +51,16 @@ function fallbackLanguageColor(name: string): string {
 
 export async function fetchProfileInsights(
   client: GraphQlClient,
-  username: string
+  username: string,
+  from: string,
+  to: string
 ): Promise<ProfileInsights> {
   const data = await client.request<ProfileInsightsQueryResponse>(
     profileInsightsQuery,
     {
       login: username,
+      from,
+      to,
       repositoryLimit: DEFAULT_REPOSITORY_LIMIT,
       languageLimit: DEFAULT_LANGUAGE_LIMIT_PER_REPOSITORY
     }

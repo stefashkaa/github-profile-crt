@@ -68,6 +68,7 @@ CRT_SHOW_STATS=true
 CRT_SHOW_STATS_FOOTER=true
 CRT_ENABLE_HOVER_ATTRS=false
 CRT_MINIFY_SVG=true
+CRT_YEAR=2026 # better to leave unset for current-year rolling window
 ```
 
 ## Generate locally
@@ -96,6 +97,13 @@ pnpm generate:raw
 - `CRT_SHOW_STATS=true|false` toggles dashboard widgets (stack profile + activity vector) (default `true`)
 - `CRT_SHOW_STATS_FOOTER=true|false` toggles compact footer stats line (default `true`)
 - `CRT_ENABLE_HOVER_ATTRS=true|false` toggles per-bar hover `<title>` metadata (default `false` for smaller SVGs & GitHub profile use, where SVG isn't hoverable anyway)
+
+## Data window
+
+- `CRT_YEAR=<current year OR unset>` renders a rolling 12-month window: current month of previous year -> current month of current year.
+- `CRT_YEAR=<past year>` renders Jan -> Dec of that selected year.
+- Default: `CRT_YEAR` is current UTC year.
+- Footer behavior: `LAST WEEK` is shown only in current-year rolling mode and hidden for fixed past-year mode.
 
 Footer always keeps:
 

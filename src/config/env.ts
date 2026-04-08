@@ -2,6 +2,7 @@ import path from "node:path";
 import process from "node:process";
 import {
   booleanEnv,
+  integerEnv,
   optionalStringEnv,
   stringEnv,
   type EnvSource
@@ -22,6 +23,14 @@ export interface VisualConfig {
   showStatsFooter: boolean;
   showStats: boolean;
   enableHoverAttrs: boolean;
+  showLastWeekInFooter: boolean;
+}
+
+export interface ContributionWindow {
+  year: number;
+  from: string;
+  to: string;
+  mode: "rolling" | "calendar";
 }
 
 export interface RuntimeConfig {
@@ -30,6 +39,7 @@ export interface RuntimeConfig {
   outputDirectory: string;
   minifySvg: boolean;
   visual: VisualConfig;
+  contributionWindow: ContributionWindow;
   themes: ResolvedThemeConfig[];
 }
 
@@ -41,6 +51,7 @@ export interface ResolvedThemeConfig {
 
 const DEFAULT_OUTPUT_DIRECTORY = "assets";
 const DEFAULT_THEMES = "all";
+const MIN_SUPPORTED_YEAR = 2008;
 
 const THEME_TOKEN_ALL = "all";
 const THEME_TOKEN_CUSTOM = "custom";
@@ -55,12 +66,13 @@ const PALETTE_ENV_SUFFIXES: Array<{ key: keyof ThemePalette; suffix: string }> =
   { key: "scan", suffix: "SCAN" }
 ];
 
-function visualConfigFromEnv(env: EnvSource): VisualConfig {
+function visualConfigFromEnv(env: EnvSource, showLastWeekInFooter: boolean): VisualConfig {
   return {
     showGrid: booleanEnv(env, "CRT_SHOW_GRID", true),
     showStatsFooter: booleanEnv(env, "CRT_SHOW_STATS_FOOTER", true),
     showStats: booleanEnv(env, "CRT_SHOW_STATS", true),
-    enableHoverAttrs: booleanEnv(env, "CRT_ENABLE_HOVER_ATTRS", false)
+    enableHoverAttrs: booleanEnv(env, "CRT_ENABLE_HOVER_ATTRS", false),
+    showLastWeekInFooter
   };
 }
 
@@ -252,6 +264,31 @@ function resolveThemesFromEnv(env: EnvSource): ResolvedThemeConfig[] {
   return selectedThemes;
 }
 
+function resolveContributionWindow(year: number, now: Date): ContributionWindow {
+  const currentYear = now.getUTCFullYear();
+
+  if (year === currentYear) {
+    const currentMonth = now.getUTCMonth();
+    const from = new Date(Date.UTC(currentYear - 1, currentMonth, 1, 0, 0, 0));
+    return {
+      year,
+      from: from.toISOString(),
+      to: now.toISOString(),
+      mode: "rolling"
+    };
+  }
+
+  const from = new Date(Date.UTC(year, 0, 1, 0, 0, 0));
+  const to = new Date(Date.UTC(year, 11, 31, 23, 59, 59));
+
+  return {
+    year,
+    from: from.toISOString(),
+    to: to.toISOString(),
+    mode: "calendar"
+  };
+}
+
 export function loadRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
   const username = optionalStringEnv(env, "GITHUB_USER");
   const token = optionalStringEnv(env, "GITHUB_TOKEN");
@@ -265,13 +302,25 @@ export function loadRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
   }
 
   const outputTarget = stringEnv(env, "CRT_OUTPUT_DIR", DEFAULT_OUTPUT_DIRECTORY);
+  const now = new Date();
+  const currentYear = now.getUTCFullYear();
+  const year = integerEnv(env, "CRT_YEAR", currentYear);
+
+  if (year < MIN_SUPPORTED_YEAR || year > currentYear) {
+    throw new Error(
+      `Invalid CRT_YEAR "${year}". Expected a year between ${MIN_SUPPORTED_YEAR} and ${currentYear}.`
+    );
+  }
+
+  const contributionWindow = resolveContributionWindow(year, now);
 
   return {
     username,
     token,
     outputDirectory: path.resolve(outputTarget),
     minifySvg: booleanEnv(env, "CRT_MINIFY_SVG", true),
-    visual: visualConfigFromEnv(env),
+    visual: visualConfigFromEnv(env, contributionWindow.mode === "rolling"),
+    contributionWindow,
     themes: resolveThemesFromEnv(env)
   };
 }

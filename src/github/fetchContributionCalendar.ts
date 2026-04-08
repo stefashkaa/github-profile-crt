@@ -12,11 +12,17 @@ interface ContributionCalendarQueryResponse {
 
 export async function fetchContributionCalendar(
   client: GraphQlClient,
-  username: string
+  username: string,
+  from: string,
+  to: string
 ): Promise<ContributionCalendar> {
   const data = await client.request<ContributionCalendarQueryResponse>(
     contributionCalendarQuery,
-    { login: username }
+    {
+      login: username,
+      from,
+      to
+    }
   );
 
   if (!data.user) {

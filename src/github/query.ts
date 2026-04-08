@@ -1,7 +1,7 @@
 export const contributionCalendarQuery = `
-query($login: String!) {
+query($login: String!, $from: DateTime!, $to: DateTime!) {
   user(login: $login) {
-    contributionsCollection {
+    contributionsCollection(from: $from, to: $to) {
       contributionCalendar {
         totalContributions
         weeks {
@@ -26,9 +26,9 @@ query($login: String!) {
 `;
 
 export const profileInsightsQuery = `
-query($login: String!, $repositoryLimit: Int!, $languageLimit: Int!) {
+query($login: String!, $from: DateTime!, $to: DateTime!, $repositoryLimit: Int!, $languageLimit: Int!) {
   user(login: $login) {
-    contributionsCollection {
+    contributionsCollection(from: $from, to: $to) {
       totalCommitContributions
       totalIssueContributions
       totalPullRequestContributions
