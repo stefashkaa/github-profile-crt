@@ -4,6 +4,25 @@
   "private": true,
   "type": "module",
   "description": "Generate CRT-style GitHub contribution SVGs for profile README files.",
+  "license": "MIT",
+  "homepage": "https://github.com/stefashkaa/github-profile-crt#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stefashkaa/github-profile-crt.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stefashkaa/github-profile-crt/issues"
+  },
+  "keywords": [
+    "github",
+    "github-profile",
+    "svg",
+    "contributions",
+    "readme",
+    "crt",
+    "themes",
+    "automation"
+  ],
   "engines": {
     "node": ">=20"
   },
