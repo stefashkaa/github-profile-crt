@@ -11,18 +11,37 @@
   "scripts": {
     "build": "vite build",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
     "generate": "pnpm build && node dist/cli.js",
     "generate:dev": "tsx src/cli.ts",
-    "generate:raw": "CRT_MINIFY_SVG=false tsx src/cli.ts"
+    "generate:raw": "CRT_MINIFY_SVG=false tsx src/cli.ts",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": "prettier --write"
   },
   "dependencies": {
     "dotenv": "^17.4.1",
     "svgo": "^4.0.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^25.5.2",
+    "eslint": "^10.2.0",
+    "globals": "^17.4.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
+    "typescript-eslint": "^8.58.1",
     "vite": "^8.0.5"
   }
 }

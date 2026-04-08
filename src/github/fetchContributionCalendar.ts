@@ -1,6 +1,6 @@
-import type { ContributionCalendar } from "../model/calendar";
-import type { GraphQlClient } from "./graphqlClient";
-import { contributionCalendarQuery } from "./query";
+import type { ContributionCalendar } from '../model/calendar';
+import type { GraphQlClient } from './graphqlClient';
+import { contributionCalendarQuery } from './query';
 
 interface ContributionCalendarQueryResponse {
   user: {
@@ -16,17 +16,14 @@ export async function fetchContributionCalendar(
   from: string,
   to: string
 ): Promise<ContributionCalendar> {
-  const data = await client.request<ContributionCalendarQueryResponse>(
-    contributionCalendarQuery,
-    {
-      login: username,
-      from,
-      to
-    }
-  );
+  const data = await client.request<ContributionCalendarQueryResponse>(contributionCalendarQuery, {
+    login: username,
+    from,
+    to
+  });
 
   if (!data.user) {
-    throw new Error(`GitHub user \"${username}\" was not found`);
+    throw new Error(`GitHub user "${username}" was not found`);
   }
 
   return data.user.contributionsCollection.contributionCalendar;

@@ -14,6 +14,7 @@ Generate CRT-style GitHub contribution SVGs for multiple visual themes in one ru
 With `CRT_THEMES=all` (default), each run creates all theme variants at once in `assets/` (or your configured output dir):
 
 Dark files for all themes:
+
 - `crt-dark.svg`
 - `amber-dark.svg`
 - `ice-dark.svg`
@@ -26,7 +27,7 @@ Dark files for all themes:
 - `chaos-dark.svg`
 - `chaos-max-dark.svg`
 - `static-dark.svg`
-Light files:
+  Light files:
 - `crt-light.svg`
 - `amber-light.svg`
 - `ice-light.svg`
@@ -90,6 +91,24 @@ Generate without SVG optimization:
 ```bash
 pnpm generate:raw
 ```
+
+## Code quality
+
+Quality tooling is configured with latest `eslint`, `prettier`, `husky`, and `lint-staged`.
+
+Useful commands:
+
+```bash
+pnpm lint
+pnpm lint:fix
+pnpm format
+pnpm format:check
+```
+
+Git hooks:
+
+- `pre-commit` runs `pnpm lint-staged`
+- setup is automatic after install via `pnpm prepare`
 
 ## Visual toggles
 
