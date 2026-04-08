@@ -1,6 +1,5 @@
 import type { VisualConfig } from "../config/env";
 import {
-  buildMonthLabels,
   type ContributionCalendar,
   type WeeklyStats
 } from "../model/calendar";
@@ -585,20 +584,44 @@ function renderDashboardPanels(
 }
 
 function renderMonthLabels(
-  monthLabels: Array<{ index: number; label: string }>,
-  firstX: number,
-  step: number,
-  boundaryShift: number,
+  monthPositions: Array<{ label: string; year: number; x: number }>,
+  y: number
+): string {
+  return monthPositions
+    .map(({ label, x }) => {
+      return `<text x="${x.toFixed(2)}" y="${y}" class="month" text-anchor="middle">${escapeXml(label)}</text>`;
+    })
+    .join("\n");
+}
+
+function renderYearLabels(
+  monthPositions: Array<{ label: string; year: number; x: number }>,
+  leftLimit: number,
   rightLimit: number,
   y: number
 ): string {
-  return monthLabels
-    .map(({ index, label }) => {
-      const markerX = firstX + index * step + boundaryShift;
-      const textX = Math.min(rightLimit, markerX + 2.5);
-      return `<text x="${textX.toFixed(2)}" y="${y}" class="month" text-anchor="start">${escapeXml(label)}</text>`;
-    })
-    .join("\n");
+  if (monthPositions.length === 0) {
+    return "";
+  }
+
+  const labels: string[] = [];
+  let index = 0;
+
+  while (index < monthPositions.length) {
+    const year = monthPositions[index]!.year;
+    const yearX = clamp(monthPositions[index]!.x, leftLimit, rightLimit);
+
+    labels.push(`<text x="${yearX.toFixed(2)}" y="${y}" class="year-label" text-anchor="middle">${year}</text>`);
+
+    let nextIndex = index + 1;
+    while (nextIndex < monthPositions.length && monthPositions[nextIndex]!.year === year) {
+      nextIndex += 1;
+    }
+
+    index = nextIndex;
+  }
+
+  return labels.join("\n");
 }
 
 export function renderCrtContributionSvg(input: SvgRenderInput): string {
@@ -620,12 +643,56 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const weekly = deriveWeeklyStats(calendar.weeks);
   const maxWeekly = Math.max(1, maxOf(weekly.map((week) => week.total)));
   const geometries = weekly.map((week, index) => resolveBarGeometry(index, week.total, maxWeekly, layout));
-  const monthLabelData = buildMonthLabels(calendar.weeks, calendar.months).filter(
-    ({ index }) => index >= 0 && index < weekly.length
-  );
+  const monthMarkers = calendar.months
+    .map((month) => {
+      const monthStartDate = new Date(month.firstDay);
+      const index = calendar.weeks.findIndex((week) => new Date(week.firstDay) >= monthStartDate);
+
+      if (index < 0 || index >= weekly.length) {
+        return null;
+      }
+
+      return {
+        index,
+        label: month.name.slice(0, 3).toUpperCase(),
+        year: month.year
+      };
+    })
+    .filter((marker): marker is { index: number; label: string; year: number } => marker !== null);
   const monthStep = layout.barWidth + layout.weekGap;
   const chartStartX = layout.margin.left + layout.weekGap / 2;
   const monthBoundaryShift = 0.5 - layout.weekGap / 2;
+  const chartRightBoundaryX = layout.width - layout.margin.right;
+  const monthBoundaryXs = monthMarkers.map(({ index }) => chartStartX + index * monthStep + monthBoundaryShift);
+  const monthLabelY = layout.margin.top + layout.headerHeight + layout.subHeaderHeight + 12;
+  const yearLabelY = monthLabelY - 14;
+  const monthLeftLimit = layout.margin.left + 12;
+  const monthRightLimit = layout.width - layout.margin.right - 12;
+  const yearLeftLimit = layout.margin.left + 18;
+  const yearRightLimit = layout.width - layout.margin.right - 18;
+  const monthPositions = monthMarkers.map(({ label, year }, markerIndex) => {
+    const startBoundaryX = monthBoundaryXs[markerIndex] ?? monthBoundaryXs[0] ?? 0;
+    const endBoundaryX = monthBoundaryXs[markerIndex + 1] ?? chartRightBoundaryX;
+    const segmentWidth = Math.max(0, endBoundaryX - startBoundaryX);
+    let centerX = startBoundaryX + segmentWidth / 2;
+    const isLastMarker = markerIndex === monthMarkers.length - 1;
+    const isIncompleteTailMonth = isLastMarker && segmentWidth < monthStep * 1.5;
+
+    if (isIncompleteTailMonth) {
+      const rightBias = Math.min(9, Math.max(3, monthStep * 0.2 + (monthStep * 1.5 - segmentWidth) * 0.18));
+      centerX += rightBias;
+    }
+
+    const labelRightLimit = isIncompleteTailMonth
+      ? layout.width - layout.margin.right + 6
+      : monthRightLimit;
+
+    return {
+      label,
+      year,
+      x: clamp(centerX, monthLeftLimit, labelRightLimit)
+    };
+  });
 
   const bars = renderBars(
     weekly,
@@ -639,12 +706,14 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   );
   const yAxisLabels = renderYAxisLabels(layout, maxWeekly, palette);
   const monthLabels = renderMonthLabels(
-    monthLabelData,
-    chartStartX,
-    monthStep,
-    monthBoundaryShift,
-    layout.width - layout.margin.right - 4,
-    layout.margin.top + layout.headerHeight + layout.subHeaderHeight + 12
+    monthPositions,
+    monthLabelY
+  );
+  const yearLabels = renderYearLabels(
+    monthPositions,
+    yearLeftLimit,
+    yearRightLimit,
+    yearLabelY
   );
 
   const gridLines = visual.showGrid
@@ -657,10 +726,10 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     : "";
 
   const verticalTicks = visual.showGrid
-    ? monthLabelData
-        .map(({ index }) => {
-          const x = chartStartX + index * monthStep + monthBoundaryShift;
-          return `<line x1="${x}" y1="${layout.chartTop}" x2="${x}" y2="${layout.chartBottom}" class="grid-line"/>`;
+    ? [...monthBoundaryXs, chartRightBoundaryX]
+        .filter((x, index, all) => index === 0 || Math.abs(x - all[index - 1]!) > 0.01)
+        .map((x) => {
+          return `<line x1="${x.toFixed(2)}" y1="${layout.chartTop}" x2="${x.toFixed(2)}" y2="${layout.chartBottom}" class="grid-line"/>`;
         })
         .join("\n")
     : "";
@@ -861,6 +930,12 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       fill: ${palette.textDim};
       letter-spacing: 0.10em;
     }
+    .year-label {
+      font: 700 10px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      fill: ${palette.primarySoft};
+      letter-spacing: 0.08em;
+      opacity: 0.95;
+    }
     .credit {
       font: 600 8.25px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       fill: ${palette.textDim};
@@ -932,6 +1007,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   ${includeScanLayer ? `<rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#scanPattern)" opacity="${themeConfig.scanOpacity}"/>` : ""}
   <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#vignette)" opacity="${themeConfig.vignetteOpacity}"/>
 
+  ${yearLabels}
   ${monthLabels}
   ${yAxisLabels}
   ${gridLines}
