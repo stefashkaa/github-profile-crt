@@ -59,6 +59,7 @@ CRT_THEMES=all
 CRT_SHOW_GRID=true
 CRT_SHOW_STATS=true
 CRT_SHOW_STATS_FOOTER=true
+CRT_ENABLE_HOVER_ATTRS=false
 CRT_MINIFY_SVG=true
 ```
 
@@ -87,6 +88,7 @@ pnpm generate:raw
 - `CRT_SHOW_GRID=true|false` toggles chart grid/ticks (default `true`)
 - `CRT_SHOW_STATS=true|false` toggles dashboard widgets (stack profile + activity vector) (default `true`)
 - `CRT_SHOW_STATS_FOOTER=true|false` toggles compact footer stats line (default `true`)
+- `CRT_ENABLE_HOVER_ATTRS=true|false` toggles per-bar hover `<title>` metadata (default `false` for smaller SVGs & GitHub profile use, where SVG isn't hoverable anyway)
 
 Footer always keeps:
 

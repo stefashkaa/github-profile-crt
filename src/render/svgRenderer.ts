@@ -70,7 +70,8 @@ function renderBars(
   themeConfig: ThemeableConfig,
   primary: string,
   primarySoft: string,
-  useSpectrumChart: boolean
+  useSpectrumChart: boolean,
+  enableHoverAttrs: boolean
 ): string {
   const maxBarHeight = layout.chartHeight - 6;
   const animateEqualizer = themeConfig.animateEqualizer;
@@ -88,6 +89,7 @@ function renderBars(
       );
 
       const title = `${week.firstDay}: ${week.total} contributions | active days: ${week.activeDays} | peak day: ${week.peak}`;
+      const hoverTitle = enableHoverAttrs ? `<title>${escapeXml(title)}</title>` : "";
       const barFrontFill = useSpectrumChart ? spectrumColor(index, weekly.length, 92, 54) : "url(#barGradient)";
       const barTopFill = useSpectrumChart ? spectrumColor(index, weekly.length, 97, 73) : primarySoft;
       const barSideFill = useSpectrumChart ? spectrumColor(index, weekly.length, 88, 42) : primary;
@@ -199,7 +201,7 @@ function renderBars(
       if (week.total <= 0) {
         return `
       <g shape-rendering="crispEdges">
-        <title>${escapeXml(title)}</title>
+        ${hoverTitle}
         ${pointerMarkup}
       </g>
     `;
@@ -207,7 +209,7 @@ function renderBars(
 
       return `
       <g shape-rendering="crispEdges">
-        <title>${escapeXml(title)}</title>
+        ${hoverTitle}
         <polygon
           points="${sideFaceFromY(currentTop)}"
           fill="${barSideFill}"
@@ -606,7 +608,16 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const chartStartX = layout.margin.left + layout.weekGap / 2;
   const monthBoundaryShift = 0.5 - layout.weekGap / 2;
 
-  const bars = renderBars(weekly, geometries, layout, themeConfig, palette.primary, palette.primarySoft, useSpectrumChart);
+  const bars = renderBars(
+    weekly,
+    geometries,
+    layout,
+    themeConfig,
+    palette.primary,
+    palette.primarySoft,
+    useSpectrumChart,
+    visual.enableHoverAttrs
+  );
   const yAxisLabels = renderYAxisLabels(layout, maxWeekly, palette);
   const monthLabels = renderMonthLabels(
     monthLabelData,

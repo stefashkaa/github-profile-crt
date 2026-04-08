@@ -21,6 +21,7 @@ export interface VisualConfig {
   showGrid: boolean;
   showStatsFooter: boolean;
   showStats: boolean;
+  enableHoverAttrs: boolean;
 }
 
 export interface RuntimeConfig {
@@ -58,7 +59,8 @@ function visualConfigFromEnv(env: EnvSource): VisualConfig {
   return {
     showGrid: booleanEnv(env, "CRT_SHOW_GRID", true),
     showStatsFooter: booleanEnv(env, "CRT_SHOW_STATS_FOOTER", true),
-    showStats: booleanEnv(env, "CRT_SHOW_STATS", true)
+    showStats: booleanEnv(env, "CRT_SHOW_STATS", true),
+    enableHoverAttrs: booleanEnv(env, "CRT_ENABLE_HOVER_ATTRS", false)
   };
 }
 
