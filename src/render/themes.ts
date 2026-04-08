@@ -1,6 +1,19 @@
-export type ThemeName = "crt" | "amber" | "ice" | "ruby" | "mint" | "mono" | "winamp" | "neon" | "rainbow" | "chaos" | "chaos-max" | "static" | "custom";
-export type PresetThemeName = Exclude<ThemeName, "custom">;
-export type ThemeMode = "dark" | "light";
+export type ThemeName =
+  | 'crt'
+  | 'amber'
+  | 'ice'
+  | 'ruby'
+  | 'mint'
+  | 'mono'
+  | 'winamp'
+  | 'neon'
+  | 'rainbow'
+  | 'chaos'
+  | 'chaos-max'
+  | 'static'
+  | 'custom';
+export type PresetThemeName = Exclude<ThemeName, 'custom'>;
+export type ThemeMode = 'dark' | 'light';
 
 export interface ThemePalette {
   bg0: string;
@@ -44,21 +57,21 @@ export interface ThemeableConfig {
   animateDashboard: boolean;
 }
 
-type ThemeVariantOverride = Partial<Omit<ThemeableConfig, "id" | "palette">> & {
+type ThemeVariantOverride = Partial<Omit<ThemeableConfig, 'id' | 'palette'>> & {
   palette?: Partial<ThemePalette>;
 };
 
 const THEMEABLE_CONFIGS: ThemeableConfig[] = [
   {
-    id: "crt",
+    id: 'crt',
     palette: {
-      bg0: "#030603",
-      bg1: "#071107",
-      bg2: "#0a160a",
-      primary: "#20ff24",
-      primarySoft: "#9cff9f",
-      textDim: "#77b67a",
-      scan: "rgb(32,255,36)"
+      bg0: '#030603',
+      bg1: '#071107',
+      bg2: '#0a160a',
+      primary: '#20ff24',
+      primarySoft: '#9cff9f',
+      textDim: '#77b67a',
+      scan: 'rgb(32,255,36)'
     },
     scanOpacity: 0.085,
     scanSpacing: 6,
@@ -88,15 +101,15 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     animateDashboard: true
   },
   {
-    id: "amber",
+    id: 'amber',
     palette: {
-      bg0: "#0f0b05",
-      bg1: "#161006",
-      bg2: "#1c1307",
-      primary: "#ffb347",
-      primarySoft: "#ffcc80",
-      textDim: "#c29b62",
-      scan: "rgb(255,179,71)"
+      bg0: '#0f0b05',
+      bg1: '#161006',
+      bg2: '#1c1307',
+      primary: '#ffb347',
+      primarySoft: '#ffcc80',
+      textDim: '#c29b62',
+      scan: 'rgb(255,179,71)'
     },
     scanOpacity: 0.07,
     scanSpacing: 6,
@@ -126,15 +139,15 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     animateDashboard: true
   },
   {
-    id: "ice",
+    id: 'ice',
     palette: {
-      bg0: "#020712",
-      bg1: "#05101f",
-      bg2: "#071628",
-      primary: "#4ad6ff",
-      primarySoft: "#b7f1ff",
-      textDim: "#7db3c4",
-      scan: "rgb(74,214,255)"
+      bg0: '#020712',
+      bg1: '#05101f',
+      bg2: '#071628',
+      primary: '#4ad6ff',
+      primarySoft: '#b7f1ff',
+      textDim: '#7db3c4',
+      scan: 'rgb(74,214,255)'
     },
     scanOpacity: 0.065,
     scanSpacing: 7,
@@ -164,15 +177,15 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     animateDashboard: true
   },
   {
-    id: "ruby",
+    id: 'ruby',
     palette: {
-      bg0: "#100304",
-      bg1: "#180607",
-      bg2: "#22090b",
-      primary: "#ff4a4a",
-      primarySoft: "#ffc1b0",
-      textDim: "#d78f86",
-      scan: "rgb(255,74,74)"
+      bg0: '#100304',
+      bg1: '#180607',
+      bg2: '#22090b',
+      primary: '#ff4a4a',
+      primarySoft: '#ffc1b0',
+      textDim: '#d78f86',
+      scan: 'rgb(255,74,74)'
     },
     scanOpacity: 0.058,
     scanSpacing: 6,
@@ -202,15 +215,15 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     animateDashboard: true
   },
   {
-    id: "mint",
+    id: 'mint',
     palette: {
-      bg0: "#03110d",
-      bg1: "#052018",
-      bg2: "#073126",
-      primary: "#4dffb2",
-      primarySoft: "#beffe2",
-      textDim: "#84c7aa",
-      scan: "rgb(77,255,178)"
+      bg0: '#03110d',
+      bg1: '#052018',
+      bg2: '#073126',
+      primary: '#4dffb2',
+      primarySoft: '#beffe2',
+      textDim: '#84c7aa',
+      scan: 'rgb(77,255,178)'
     },
     scanOpacity: 0.07,
     scanSpacing: 7,
@@ -240,15 +253,15 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     animateDashboard: true
   },
   {
-    id: "mono",
+    id: 'mono',
     palette: {
-      bg0: "#080808",
-      bg1: "#0f0f0f",
-      bg2: "#151515",
-      primary: "#d8d8d8",
-      primarySoft: "#ffffff",
-      textDim: "#9c9c9c",
-      scan: "rgb(216,216,216)"
+      bg0: '#080808',
+      bg1: '#0f0f0f',
+      bg2: '#151515',
+      primary: '#d8d8d8',
+      primarySoft: '#ffffff',
+      textDim: '#9c9c9c',
+      scan: 'rgb(216,216,216)'
     },
     scanOpacity: 0.05,
     scanSpacing: 8,
@@ -278,15 +291,15 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     animateDashboard: true
   },
   {
-    id: "winamp",
+    id: 'winamp',
     palette: {
-      bg0: "#070815",
-      bg1: "#0d1020",
-      bg2: "#141b2f",
-      primary: "#72c92f",
-      primarySoft: "#e4ea7a",
-      textDim: "#aeb995",
-      scan: "rgb(114,201,47)"
+      bg0: '#070815',
+      bg1: '#0d1020',
+      bg2: '#141b2f',
+      primary: '#72c92f',
+      primarySoft: '#e4ea7a',
+      textDim: '#aeb995',
+      scan: 'rgb(114,201,47)'
     },
     scanOpacity: 0.072,
     scanSpacing: 5,
@@ -316,15 +329,15 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     animateDashboard: true
   },
   {
-    id: "neon",
+    id: 'neon',
     palette: {
-      bg0: "#08030f",
-      bg1: "#12071f",
-      bg2: "#1b0a2e",
-      primary: "#ff4fd8",
-      primarySoft: "#6be8ff",
-      textDim: "#b8a3ff",
-      scan: "rgb(255,79,216)"
+      bg0: '#08030f',
+      bg1: '#12071f',
+      bg2: '#1b0a2e',
+      primary: '#ff4fd8',
+      primarySoft: '#6be8ff',
+      textDim: '#b8a3ff',
+      scan: 'rgb(255,79,216)'
     },
     scanOpacity: 0.08,
     scanSpacing: 5,
@@ -354,16 +367,16 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     animateDashboard: true
   },
   {
-    id: "rainbow",
+    id: 'rainbow',
     spectrumChart: true,
     palette: {
-      bg0: "#08030f",
-      bg1: "#12071f",
-      bg2: "#1b0a2e",
-      primary: "#ff4fd8",
-      primarySoft: "#6be8ff",
-      textDim: "#b8a3ff",
-      scan: "rgb(255,79,216)"
+      bg0: '#08030f',
+      bg1: '#12071f',
+      bg2: '#1b0a2e',
+      primary: '#ff4fd8',
+      primarySoft: '#6be8ff',
+      textDim: '#b8a3ff',
+      scan: 'rgb(255,79,216)'
     },
     scanOpacity: 0.08,
     scanSpacing: 5,
@@ -393,15 +406,15 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     animateDashboard: true
   },
   {
-    id: "chaos",
+    id: 'chaos',
     palette: {
-      bg0: "#020304",
-      bg1: "#061019",
-      bg2: "#0a1a2a",
-      primary: "#6cff3d",
-      primarySoft: "#f5ff9a",
-      textDim: "#a3d198",
-      scan: "rgb(108,255,61)"
+      bg0: '#020304',
+      bg1: '#061019',
+      bg2: '#0a1a2a',
+      primary: '#6cff3d',
+      primarySoft: '#f5ff9a',
+      textDim: '#a3d198',
+      scan: 'rgb(108,255,61)'
     },
     scanOpacity: 0.11,
     scanSpacing: 5,
@@ -431,15 +444,15 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     animateDashboard: true
   },
   {
-    id: "chaos-max",
+    id: 'chaos-max',
     palette: {
-      bg0: "#010203",
-      bg1: "#081322",
-      bg2: "#0c1f35",
-      primary: "#8fff00",
-      primarySoft: "#f7ff73",
-      textDim: "#b8db89",
-      scan: "rgb(143,255,0)"
+      bg0: '#010203',
+      bg1: '#081322',
+      bg2: '#0c1f35',
+      primary: '#8fff00',
+      primarySoft: '#f7ff73',
+      textDim: '#b8db89',
+      scan: 'rgb(143,255,0)'
     },
     scanOpacity: 0.16,
     scanSpacing: 3,
@@ -469,15 +482,15 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
     animateDashboard: true
   },
   {
-    id: "static",
+    id: 'static',
     palette: {
-      bg0: "#07090c",
-      bg1: "#0d1418",
-      bg2: "#141d21",
-      primary: "#a6f6ff",
-      primarySoft: "#d9fcff",
-      textDim: "#9eb6bb",
-      scan: "rgb(166,246,255)"
+      bg0: '#07090c',
+      bg1: '#0d1418',
+      bg2: '#141d21',
+      primary: '#a6f6ff',
+      primarySoft: '#d9fcff',
+      textDim: '#9eb6bb',
+      scan: 'rgb(166,246,255)'
     },
     scanOpacity: 0,
     scanSpacing: 7,
@@ -511,13 +524,13 @@ const THEMEABLE_CONFIGS: ThemeableConfig[] = [
 const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = {
   crt: {
     palette: {
-      bg0: "#edf7ed",
-      bg1: "#ddf0dd",
-      bg2: "#d2e9d2",
-      primary: "#1d7f2a",
-      primarySoft: "#2da83d",
-      textDim: "#2f6e3b",
-      scan: "rgb(45,168,61)"
+      bg0: '#edf7ed',
+      bg1: '#ddf0dd',
+      bg2: '#d2e9d2',
+      primary: '#1d7f2a',
+      primarySoft: '#2da83d',
+      textDim: '#2f6e3b',
+      scan: 'rgb(45,168,61)'
     },
     scanOpacity: 0.028,
     scanLineOpacity: 0.05,
@@ -530,13 +543,13 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
   },
   amber: {
     palette: {
-      bg0: "#fff5e7",
-      bg1: "#fcecd5",
-      bg2: "#f5dfbf",
-      primary: "#a45c00",
-      primarySoft: "#d88418",
-      textDim: "#8a622f",
-      scan: "rgb(216,132,24)"
+      bg0: '#fff5e7',
+      bg1: '#fcecd5',
+      bg2: '#f5dfbf',
+      primary: '#a45c00',
+      primarySoft: '#d88418',
+      textDim: '#8a622f',
+      scan: 'rgb(216,132,24)'
     },
     scanOpacity: 0.024,
     scanLineOpacity: 0.045,
@@ -549,13 +562,13 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
   },
   ice: {
     palette: {
-      bg0: "#edf6ff",
-      bg1: "#deefff",
-      bg2: "#d2e7fb",
-      primary: "#0f6ea2",
-      primarySoft: "#1f91cf",
-      textDim: "#336a88",
-      scan: "rgb(31,145,207)"
+      bg0: '#edf6ff',
+      bg1: '#deefff',
+      bg2: '#d2e7fb',
+      primary: '#0f6ea2',
+      primarySoft: '#1f91cf',
+      textDim: '#336a88',
+      scan: 'rgb(31,145,207)'
     },
     scanOpacity: 0.024,
     scanLineOpacity: 0.042,
@@ -568,13 +581,13 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
   },
   ruby: {
     palette: {
-      bg0: "#fff0f2",
-      bg1: "#ffe4e7",
-      bg2: "#f7d7dc",
-      primary: "#b2354a",
-      primarySoft: "#d94b61",
-      textDim: "#8d4a57",
-      scan: "rgb(217,75,97)"
+      bg0: '#fff0f2',
+      bg1: '#ffe4e7',
+      bg2: '#f7d7dc',
+      primary: '#b2354a',
+      primarySoft: '#d94b61',
+      textDim: '#8d4a57',
+      scan: 'rgb(217,75,97)'
     },
     scanOpacity: 0.024,
     scanLineOpacity: 0.043,
@@ -587,13 +600,13 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
   },
   mint: {
     palette: {
-      bg0: "#eefdf6",
-      bg1: "#ddf8ed",
-      bg2: "#d0f1e5",
-      primary: "#1b8f67",
-      primarySoft: "#22b27f",
-      textDim: "#397563",
-      scan: "rgb(34,178,127)"
+      bg0: '#eefdf6',
+      bg1: '#ddf8ed',
+      bg2: '#d0f1e5',
+      primary: '#1b8f67',
+      primarySoft: '#22b27f',
+      textDim: '#397563',
+      scan: 'rgb(34,178,127)'
     },
     scanOpacity: 0.023,
     scanLineOpacity: 0.041,
@@ -606,13 +619,13 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
   },
   mono: {
     palette: {
-      bg0: "#f4f5f6",
-      bg1: "#ebedf0",
-      bg2: "#dde1e6",
-      primary: "#4e5964",
-      primarySoft: "#6e7a87",
-      textDim: "#5e6670",
-      scan: "rgb(110,122,135)"
+      bg0: '#f4f5f6',
+      bg1: '#ebedf0',
+      bg2: '#dde1e6',
+      primary: '#4e5964',
+      primarySoft: '#6e7a87',
+      textDim: '#5e6670',
+      scan: 'rgb(110,122,135)'
     },
     scanOpacity: 0.02,
     scanLineOpacity: 0.036,
@@ -625,13 +638,13 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
   },
   winamp: {
     palette: {
-      bg0: "#f7f9ef",
-      bg1: "#ecf1dd",
-      bg2: "#e1e8cb",
-      primary: "#638b21",
-      primarySoft: "#9eb638",
-      textDim: "#6d7b52",
-      scan: "rgb(99,139,33)"
+      bg0: '#f7f9ef',
+      bg1: '#ecf1dd',
+      bg2: '#e1e8cb',
+      primary: '#638b21',
+      primarySoft: '#9eb638',
+      textDim: '#6d7b52',
+      scan: 'rgb(99,139,33)'
     },
     scanOpacity: 0.024,
     scanLineOpacity: 0.044,
@@ -644,13 +657,13 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
   },
   neon: {
     palette: {
-      bg0: "#f7efff",
-      bg1: "#eedffd",
-      bg2: "#e3d0f8",
-      primary: "#b334a0",
-      primarySoft: "#1a88bc",
-      textDim: "#6e5593",
-      scan: "rgb(179,52,160)"
+      bg0: '#f7efff',
+      bg1: '#eedffd',
+      bg2: '#e3d0f8',
+      primary: '#b334a0',
+      primarySoft: '#1a88bc',
+      textDim: '#6e5593',
+      scan: 'rgb(179,52,160)'
     },
     scanOpacity: 0.022,
     scanLineOpacity: 0.041,
@@ -663,13 +676,13 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
   },
   chaos: {
     palette: {
-      bg0: "#eef9f0",
-      bg1: "#def1e2",
-      bg2: "#d0e8d6",
-      primary: "#1f8f31",
-      primarySoft: "#6fc44c",
-      textDim: "#4e7755",
-      scan: "rgb(31,143,49)"
+      bg0: '#eef9f0',
+      bg1: '#def1e2',
+      bg2: '#d0e8d6',
+      primary: '#1f8f31',
+      primarySoft: '#6fc44c',
+      textDim: '#4e7755',
+      scan: 'rgb(31,143,49)'
     },
     scanOpacity: 0.03,
     scanLineOpacity: 0.055,
@@ -680,15 +693,15 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
     gridOpacity: 0.193,
     lineGlowOpacity: 0.11
   },
-  "chaos-max": {
+  'chaos-max': {
     palette: {
-      bg0: "#ecf8ee",
-      bg1: "#daf0de",
-      bg2: "#cae5d0",
-      primary: "#2d9c17",
-      primarySoft: "#8bd243",
-      textDim: "#567a4a",
-      scan: "rgb(45,156,23)"
+      bg0: '#ecf8ee',
+      bg1: '#daf0de',
+      bg2: '#cae5d0',
+      primary: '#2d9c17',
+      primarySoft: '#8bd243',
+      textDim: '#567a4a',
+      scan: 'rgb(45,156,23)'
     },
     scanOpacity: 0.034,
     scanLineOpacity: 0.062,
@@ -701,13 +714,13 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
   },
   rainbow: {
     palette: {
-      bg0: "#f7efff",
-      bg1: "#eedffd",
-      bg2: "#e3d0f8",
-      primary: "#b334a0",
-      primarySoft: "#1a88bc",
-      textDim: "#6e5593",
-      scan: "rgb(179,52,160)"
+      bg0: '#f7efff',
+      bg1: '#eedffd',
+      bg2: '#e3d0f8',
+      primary: '#b334a0',
+      primarySoft: '#1a88bc',
+      textDim: '#6e5593',
+      scan: 'rgb(179,52,160)'
     },
     scanOpacity: 0.022,
     scanLineOpacity: 0.041,
@@ -720,13 +733,13 @@ const LIGHT_THEME_OVERRIDES: Partial<Record<ThemeName, ThemeVariantOverride>> = 
   },
   static: {
     palette: {
-      bg0: "#f4f7f9",
-      bg1: "#e9f0f4",
-      bg2: "#dde8ee",
-      primary: "#2f6f84",
-      primarySoft: "#3f8faa",
-      textDim: "#4c6874",
-      scan: "rgb(63,143,170)"
+      bg0: '#f4f7f9',
+      bg1: '#e9f0f4',
+      bg2: '#dde8ee',
+      primary: '#2f6f84',
+      primarySoft: '#3f8faa',
+      textDim: '#4c6874',
+      scan: 'rgb(63,143,170)'
     },
     scanOpacity: 0,
     scanLineOpacity: 0,
@@ -769,11 +782,11 @@ export function getThemeConfigById(themeId: PresetThemeName): ThemeableConfig | 
 }
 
 export function supportedModesForTheme(themeId: ThemeName): ThemeMode[] {
-  return LIGHT_THEME_OVERRIDES[themeId] ? ["dark", "light"] : ["dark"];
+  return LIGHT_THEME_OVERRIDES[themeId] ? ['dark', 'light'] : ['dark'];
 }
 
 export function themeConfigForMode(themeConfig: ThemeableConfig, mode: ThemeMode): ThemeableConfig {
-  if (mode === "dark") {
+  if (mode === 'dark') {
     return themeConfig;
   }
 
@@ -781,9 +794,9 @@ export function themeConfigForMode(themeConfig: ThemeableConfig, mode: ThemeMode
 }
 
 export function defaultThemeId(): ThemeName {
-  return "crt";
+  return 'crt';
 }
 
-export function outputFileNameForTheme(themeId: ThemeName, mode: ThemeMode = "dark"): string {
+export function outputFileNameForTheme(themeId: ThemeName, mode: ThemeMode = 'dark'): string {
   return `${themeId}-${mode}.svg`;
 }

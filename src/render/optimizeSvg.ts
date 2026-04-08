@@ -1,4 +1,4 @@
-import { optimize } from "svgo";
+import { optimize } from 'svgo';
 
 export interface SvgOptimizationOptions {
   multipass: boolean;
@@ -13,7 +13,7 @@ export function optimizeGeneratedSvg(svg: string, options: SvgOptimizationOption
     },
     plugins: [
       {
-        name: "preset-default",
+        name: 'preset-default',
         params: {
           overrides: {
             cleanupIds: false,
@@ -22,7 +22,7 @@ export function optimizeGeneratedSvg(svg: string, options: SvgOptimizationOption
           }
         }
       },
-      "sortAttrs"
+      'sortAttrs'
     ]
   });
 

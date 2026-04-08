@@ -17,4 +17,3 @@ export interface ProfileInsights {
   languages: LanguageSlice[];
   totalLanguageSize: number;
 }
-

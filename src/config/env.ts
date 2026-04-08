@@ -1,12 +1,6 @@
-import path from "node:path";
-import process from "node:process";
-import {
-  booleanEnv,
-  integerEnv,
-  optionalStringEnv,
-  stringEnv,
-  type EnvSource
-} from "../utils/env";
+import path from 'node:path';
+import process from 'node:process';
+import { booleanEnv, integerEnv, optionalStringEnv, stringEnv, type EnvSource } from '../utils/env';
 import {
   getThemeConfigById,
   presetThemeNames,
@@ -16,7 +10,7 @@ import {
   type ThemeName,
   type ThemePalette,
   type ThemeableConfig
-} from "../render/themes";
+} from '../render/themes';
 
 export interface VisualConfig {
   showGrid: boolean;
@@ -30,7 +24,7 @@ export interface ContributionWindow {
   year: number;
   from: string;
   to: string;
-  mode: "rolling" | "calendar";
+  mode: 'rolling' | 'calendar';
 }
 
 export interface RuntimeConfig {
@@ -49,29 +43,29 @@ export interface ResolvedThemeConfig {
   light?: ThemeableConfig;
 }
 
-const DEFAULT_OUTPUT_DIRECTORY = "assets";
-const DEFAULT_THEMES = "all";
+const DEFAULT_OUTPUT_DIRECTORY = 'assets';
+const DEFAULT_THEMES = 'all';
 const MIN_SUPPORTED_YEAR = 2008;
 
-const THEME_TOKEN_ALL = "all";
-const THEME_TOKEN_CUSTOM = "custom";
+const THEME_TOKEN_ALL = 'all';
+const THEME_TOKEN_CUSTOM = 'custom';
 
 const PALETTE_ENV_SUFFIXES: Array<{ key: keyof ThemePalette; suffix: string }> = [
-  { key: "bg0", suffix: "BG0" },
-  { key: "bg1", suffix: "BG1" },
-  { key: "bg2", suffix: "BG2" },
-  { key: "primary", suffix: "PRIMARY" },
-  { key: "primarySoft", suffix: "PRIMARY_SOFT" },
-  { key: "textDim", suffix: "TEXT_DIM" },
-  { key: "scan", suffix: "SCAN" }
+  { key: 'bg0', suffix: 'BG0' },
+  { key: 'bg1', suffix: 'BG1' },
+  { key: 'bg2', suffix: 'BG2' },
+  { key: 'primary', suffix: 'PRIMARY' },
+  { key: 'primarySoft', suffix: 'PRIMARY_SOFT' },
+  { key: 'textDim', suffix: 'TEXT_DIM' },
+  { key: 'scan', suffix: 'SCAN' }
 ];
 
 function visualConfigFromEnv(env: EnvSource, showLastWeekInFooter: boolean): VisualConfig {
   return {
-    showGrid: booleanEnv(env, "CRT_SHOW_GRID", true),
-    showStatsFooter: booleanEnv(env, "CRT_SHOW_STATS_FOOTER", true),
-    showStats: booleanEnv(env, "CRT_SHOW_STATS", true),
-    enableHoverAttrs: booleanEnv(env, "CRT_ENABLE_HOVER_ATTRS", false),
+    showGrid: booleanEnv(env, 'CRT_SHOW_GRID', true),
+    showStatsFooter: booleanEnv(env, 'CRT_SHOW_STATS_FOOTER', true),
+    showStats: booleanEnv(env, 'CRT_SHOW_STATS', true),
+    enableHoverAttrs: booleanEnv(env, 'CRT_ENABLE_HOVER_ATTRS', false),
     showLastWeekInFooter
   };
 }
@@ -100,7 +94,7 @@ function parseThemeTokens(raw: string): string[] {
   }
 
   const tokens = normalized
-    .split(",")
+    .split(',')
     .map((token) => token.trim())
     .filter((token) => token.length > 0);
 
@@ -134,12 +128,12 @@ function mergePalette(base: ThemePalette, overrides: Partial<ThemePalette>): The
 }
 
 function resolveCustomThemeConfig(env: EnvSource): ResolvedThemeConfig {
-  const customBase = stringEnv(env, "CRT_CUSTOM_BASE_THEME", "crt").trim().toLowerCase();
+  const customBase = stringEnv(env, 'CRT_CUSTOM_BASE_THEME', 'crt').trim().toLowerCase();
   const presetNames = new Set<PresetThemeName>(presetThemeNames());
 
   if (!presetNames.has(customBase as PresetThemeName)) {
     throw new Error(
-      `Invalid CRT_CUSTOM_BASE_THEME "${customBase}". Valid preset themes: ${presetThemeNames().join(", ")}`
+      `Invalid CRT_CUSTOM_BASE_THEME "${customBase}". Valid preset themes: ${presetThemeNames().join(', ')}`
     );
   }
 
@@ -150,28 +144,28 @@ function resolveCustomThemeConfig(env: EnvSource): ResolvedThemeConfig {
     throw new Error(`Unknown custom base theme "${baseThemeId}"`);
   }
 
-  const baseSupportsLight = supportedModesForTheme(baseThemeId).includes("light");
-  const baseLight = baseSupportsLight ? themeConfigForMode(baseDark, "light") : undefined;
+  const baseSupportsLight = supportedModesForTheme(baseThemeId).includes('light');
+  const baseLight = baseSupportsLight ? themeConfigForMode(baseDark, 'light') : undefined;
 
-  const darkPaletteOverrides = readPaletteOverrides(env, "CRT_CUSTOM");
-  const lightPaletteOverrides = readPaletteOverrides(env, "CRT_CUSTOM_LIGHT");
+  const darkPaletteOverrides = readPaletteOverrides(env, 'CRT_CUSTOM');
+  const lightPaletteOverrides = readPaletteOverrides(env, 'CRT_CUSTOM_LIGHT');
 
   const darkPalette = mergePalette(baseDark.palette, darkPaletteOverrides);
-  const customSpectrumChart = booleanEnv(env, "CRT_CUSTOM_SPECTRUM_CHART", baseDark.spectrumChart === true);
+  const customSpectrumChart = booleanEnv(env, 'CRT_CUSTOM_SPECTRUM_CHART', baseDark.spectrumChart === true);
 
   const dark: ThemeableConfig = {
     ...baseDark,
-    id: "custom",
+    id: 'custom',
     spectrumChart: customSpectrumChart,
     palette: darkPalette
   };
 
   const hasLightOverrides = hasPaletteOverrides(lightPaletteOverrides);
-  const enableCustomLight = booleanEnv(env, "CRT_CUSTOM_ENABLE_LIGHT", hasLightOverrides);
+  const enableCustomLight = booleanEnv(env, 'CRT_CUSTOM_ENABLE_LIGHT', hasLightOverrides);
 
   if (!enableCustomLight) {
     return {
-      id: "custom",
+      id: 'custom',
       dark
     };
   }
@@ -182,13 +176,13 @@ function resolveCustomThemeConfig(env: EnvSource): ResolvedThemeConfig {
 
   const light: ThemeableConfig = {
     ...lightBaseConfig,
-    id: "custom",
+    id: 'custom',
     spectrumChart: customSpectrumChart,
     palette: lightPalette
   };
 
   return {
-    id: "custom",
+    id: 'custom',
     dark,
     light
   };
@@ -199,7 +193,7 @@ function resolveThemesFromEnv(env: EnvSource): ResolvedThemeConfig[] {
   const presetSet = new Set<PresetThemeName>(presets);
   const validThemeTokens = [...presets, THEME_TOKEN_CUSTOM, THEME_TOKEN_ALL];
 
-  const tokens = parseThemeTokens(stringEnv(env, "CRT_THEMES", DEFAULT_THEMES));
+  const tokens = parseThemeTokens(stringEnv(env, 'CRT_THEMES', DEFAULT_THEMES));
   const includeCustom = tokens.includes(THEME_TOKEN_CUSTOM);
   const includeAllPresets = tokens.includes(THEME_TOKEN_ALL);
 
@@ -209,9 +203,7 @@ function resolveThemesFromEnv(env: EnvSource): ResolvedThemeConfig[] {
     }
 
     if (!presetSet.has(token as PresetThemeName)) {
-      throw new Error(
-        `Invalid CRT_THEMES value "${token}". Valid values: ${validThemeTokens.join(", ")}`
-      );
+      throw new Error(`Invalid CRT_THEMES value "${token}". Valid values: ${validThemeTokens.join(', ')}`);
     }
   }
 
@@ -236,8 +228,8 @@ function resolveThemesFromEnv(env: EnvSource): ResolvedThemeConfig[] {
       throw new Error(`Unknown preset theme "${themeId}"`);
     }
 
-    const supportsLight = supportedModesForTheme(themeId).includes("light");
-    const light = supportsLight ? themeConfigForMode(dark, "light") : undefined;
+    const supportsLight = supportedModesForTheme(themeId).includes('light');
+    const light = supportsLight ? themeConfigForMode(dark, 'light') : undefined;
 
     return light
       ? {
@@ -246,9 +238,9 @@ function resolveThemesFromEnv(env: EnvSource): ResolvedThemeConfig[] {
           light
         }
       : {
-      id: themeId,
-      dark
-    };
+          id: themeId,
+          dark
+        };
   });
 
   if (includeCustom) {
@@ -256,9 +248,7 @@ function resolveThemesFromEnv(env: EnvSource): ResolvedThemeConfig[] {
   }
 
   if (selectedThemes.length === 0) {
-    throw new Error(
-      `CRT_THEMES did not resolve any themes. Valid values: ${validThemeTokens.join(", ")}`
-    );
+    throw new Error(`CRT_THEMES did not resolve any themes. Valid values: ${validThemeTokens.join(', ')}`);
   }
 
   return selectedThemes;
@@ -274,7 +264,7 @@ function resolveContributionWindow(year: number, now: Date): ContributionWindow 
       year,
       from: from.toISOString(),
       to: now.toISOString(),
-      mode: "rolling"
+      mode: 'rolling'
     };
   }
 
@@ -285,31 +275,29 @@ function resolveContributionWindow(year: number, now: Date): ContributionWindow 
     year,
     from: from.toISOString(),
     to: to.toISOString(),
-    mode: "calendar"
+    mode: 'calendar'
   };
 }
 
 export function loadRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
-  const username = optionalStringEnv(env, "GITHUB_USER");
-  const token = optionalStringEnv(env, "GITHUB_TOKEN");
+  const username = optionalStringEnv(env, 'GITHUB_USER');
+  const token = optionalStringEnv(env, 'GITHUB_TOKEN');
 
   if (!token) {
-    throw new Error("Missing GITHUB_TOKEN");
+    throw new Error('Missing GITHUB_TOKEN');
   }
 
   if (!(username && username.trim())) {
-    throw new Error("GITHUB_USER cannot be empty if provided");
+    throw new Error('GITHUB_USER cannot be empty if provided');
   }
 
-  const outputTarget = stringEnv(env, "CRT_OUTPUT_DIR", DEFAULT_OUTPUT_DIRECTORY);
+  const outputTarget = stringEnv(env, 'CRT_OUTPUT_DIR', DEFAULT_OUTPUT_DIRECTORY);
   const now = new Date();
   const currentYear = now.getUTCFullYear();
-  const year = integerEnv(env, "CRT_YEAR", currentYear);
+  const year = integerEnv(env, 'CRT_YEAR', currentYear);
 
   if (year < MIN_SUPPORTED_YEAR || year > currentYear) {
-    throw new Error(
-      `Invalid CRT_YEAR "${year}". Expected a year between ${MIN_SUPPORTED_YEAR} and ${currentYear}.`
-    );
+    throw new Error(`Invalid CRT_YEAR "${year}". Expected a year between ${MIN_SUPPORTED_YEAR} and ${currentYear}.`);
   }
 
   const contributionWindow = resolveContributionWindow(year, now);
@@ -318,8 +306,8 @@ export function loadRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
     username,
     token,
     outputDirectory: path.resolve(outputTarget),
-    minifySvg: booleanEnv(env, "CRT_MINIFY_SVG", true),
-    visual: visualConfigFromEnv(env, contributionWindow.mode === "rolling"),
+    minifySvg: booleanEnv(env, 'CRT_MINIFY_SVG', true),
+    visual: visualConfigFromEnv(env, contributionWindow.mode === 'rolling'),
     contributionWindow,
     themes: resolveThemesFromEnv(env)
   };

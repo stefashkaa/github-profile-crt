@@ -1,6 +1,6 @@
-import type { ProfileInsights } from "../model/insights";
-import type { GraphQlClient } from "./graphqlClient";
-import { profileInsightsQuery } from "./query";
+import type { ProfileInsights } from '../model/insights';
+import type { GraphQlClient } from './graphqlClient';
+import { profileInsightsQuery } from './query';
 
 const DEFAULT_REPOSITORY_LIMIT = 80;
 const DEFAULT_LANGUAGE_LIMIT_PER_REPOSITORY = 8;
@@ -55,16 +55,13 @@ export async function fetchProfileInsights(
   from: string,
   to: string
 ): Promise<ProfileInsights> {
-  const data = await client.request<ProfileInsightsQueryResponse>(
-    profileInsightsQuery,
-    {
-      login: username,
-      from,
-      to,
-      repositoryLimit: DEFAULT_REPOSITORY_LIMIT,
-      languageLimit: DEFAULT_LANGUAGE_LIMIT_PER_REPOSITORY
-    }
-  );
+  const data = await client.request<ProfileInsightsQueryResponse>(profileInsightsQuery, {
+    login: username,
+    from,
+    to,
+    repositoryLimit: DEFAULT_REPOSITORY_LIMIT,
+    languageLimit: DEFAULT_LANGUAGE_LIMIT_PER_REPOSITORY
+  });
 
   if (!data.user) {
     throw new Error(`GitHub user "${username}" was not found`);
@@ -83,7 +80,7 @@ export async function fetchProfileInsights(
     const languageEdges = repository.languages?.edges ?? [];
 
     if (languageEdges.length === 0) {
-      const fallbackLanguage = repository.primaryLanguage?.name ?? "Other";
+      const fallbackLanguage = repository.primaryLanguage?.name ?? 'Other';
       const fallbackColor = repository.primaryLanguage?.color ?? fallbackLanguageColor(fallbackLanguage);
       const current = languageMap.get(fallbackLanguage);
 
@@ -125,11 +122,9 @@ export async function fetchProfileInsights(
 
   if (sortedLanguages.length > MAX_LANGUAGE_SLICES) {
     const top = sortedLanguages.slice(0, MAX_LANGUAGE_SLICES - 1);
-    const otherSize = sortedLanguages
-      .slice(MAX_LANGUAGE_SLICES - 1)
-      .reduce((sum, language) => sum + language.size, 0);
+    const otherSize = sortedLanguages.slice(MAX_LANGUAGE_SLICES - 1).reduce((sum, language) => sum + language.size, 0);
     sortedLanguages.length = 0;
-    sortedLanguages.push(...top, { name: "Other", size: otherSize, color: "#8b949e" });
+    sortedLanguages.push(...top, { name: 'Other', size: otherSize, color: '#8b949e' });
   }
 
   return {

@@ -5,7 +5,7 @@ export interface ChartPoint {
 
 export function buildSteppedPath(points: ChartPoint[]): string {
   if (points.length === 0) {
-    return "";
+    return '';
   }
 
   const firstPoint = points[0]!;
@@ -23,7 +23,7 @@ export function buildSteppedPath(points: ChartPoint[]): string {
 
 export function buildAreaPath(points: ChartPoint[], baseY: number): string {
   if (points.length === 0) {
-    return "";
+    return '';
   }
 
   const firstPoint = points[0]!;

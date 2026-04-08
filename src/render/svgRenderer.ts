@@ -1,14 +1,11 @@
-import type { VisualConfig } from "../config/env";
-import {
-  type ContributionCalendar,
-  type WeeklyStats
-} from "../model/calendar";
-import type { ProfileInsights } from "../model/insights";
-import { deriveWeeklyStats } from "../model/weekly";
-import { clamp, maxOf } from "../utils/math";
-import { escapeXml } from "../utils/xml";
-import { buildLayout } from "./layout";
-import type { ThemeableConfig } from "./themes";
+import type { VisualConfig } from '../config/env';
+import { type ContributionCalendar, type WeeklyStats } from '../model/calendar';
+import type { ProfileInsights } from '../model/insights';
+import { deriveWeeklyStats } from '../model/weekly';
+import { clamp, maxOf } from '../utils/math';
+import { escapeXml } from '../utils/xml';
+import { buildLayout } from './layout';
+import type { ThemeableConfig } from './themes';
 
 export interface SvgRenderInput {
   username: string;
@@ -76,7 +73,7 @@ function renderBars(
   const animateEqualizer = themeConfig.animateEqualizer;
   const durationScale = clamp(themeConfig.equalizerDurationScale, 0.35, 2.5);
   const travelScale = clamp(themeConfig.equalizerTravelScale, 0, 2.4);
-  const isWinampTheme = themeConfig.id === "winamp";
+  const isWinampTheme = themeConfig.id === 'winamp';
 
   return weekly
     .map((week, index) => {
@@ -89,30 +86,36 @@ function renderBars(
       );
 
       const title = `${week.firstDay}: ${week.total} contributions | active days: ${week.activeDays} | peak day: ${week.peak}`;
-      const hoverTitle = enableHoverAttrs ? `<title>${escapeXml(title)}</title>` : "";
+      const hoverTitle = enableHoverAttrs ? `<title>${escapeXml(title)}</title>` : '';
       const barFrontFill = useSpectrumChart
         ? spectrumColor(index, weekly.length, 92, 54)
-        : (isWinampTheme ? "url(#winampBarGradient)" : "url(#barGradient)");
+        : isWinampTheme
+          ? 'url(#winampBarGradient)'
+          : 'url(#barGradient)';
       const barTopFill = useSpectrumChart
         ? spectrumColor(index, weekly.length, 97, 73)
-        : (isWinampTheme ? "url(#winampTopGradient)" : primarySoft);
+        : isWinampTheme
+          ? 'url(#winampTopGradient)'
+          : primarySoft;
       const barSideFill = useSpectrumChart
         ? spectrumColor(index, weekly.length, 88, 42)
-        : (isWinampTheme ? "url(#winampSideGradient)" : primary);
+        : isWinampTheme
+          ? 'url(#winampSideGradient)'
+          : primary;
       const outlineStroke = useSpectrumChart
         ? spectrumColor(index, weekly.length, 98, 80)
-        : (isWinampTheme ? "#f0f3fa" : primarySoft);
+        : isWinampTheme
+          ? '#f0f3fa'
+          : primarySoft;
       const outlineOpacity = isWinampTheme
         ? Math.min(0.88, Math.max(0.52, intensity + 0.1))
         : Math.min(0.9, Math.max(0.4, intensity + 0.18));
-      const pointerStrokeOpacity = isWinampTheme
-        ? 0.9
-        : Math.min(0.98, outlineOpacity + 0.06);
-      const pointerFrontFill = isWinampTheme ? "url(#winampPointerFrontGradient)" : barFrontFill;
-      const pointerTopFill = isWinampTheme ? "#f7f9ff" : barTopFill;
-      const pointerSideFill = isWinampTheme ? "#aeb3c3" : barSideFill;
-      const pointerStroke = isWinampTheme ? "#f8faff" : outlineStroke;
-      const capLineStroke = isWinampTheme ? "#d7deed" : barTopFill;
+      const pointerStrokeOpacity = isWinampTheme ? 0.9 : Math.min(0.98, outlineOpacity + 0.06);
+      const pointerFrontFill = isWinampTheme ? 'url(#winampPointerFrontGradient)' : barFrontFill;
+      const pointerTopFill = isWinampTheme ? '#f7f9ff' : barTopFill;
+      const pointerSideFill = isWinampTheme ? '#aeb3c3' : barSideFill;
+      const pointerStroke = isWinampTheme ? '#f8faff' : outlineStroke;
+      const capLineStroke = isWinampTheme ? '#d7deed' : barTopFill;
 
       const bottomY = geometry.y + geometry.height;
       const pointerWidth = Math.max(4, layout.barWidth - 1);
@@ -127,12 +130,8 @@ function renderBars(
       );
       const motionFactor = 0.12 + 0.1 * travelScale;
       const maxPulse = Math.max(2, Math.round(4 + 6 * travelScale));
-      const pulseAmplitude = animateEqualizer
-        ? clamp(Math.round(animationPeakHeight * motionFactor), 1, maxPulse)
-        : 0;
-      const lowHeight = animateEqualizer
-        ? Math.max(4, animationPeakHeight - pulseAmplitude)
-        : animationPeakHeight;
+      const pulseAmplitude = animateEqualizer ? clamp(Math.round(animationPeakHeight * motionFactor), 1, maxPulse) : 0;
+      const lowHeight = animateEqualizer ? Math.max(4, animationPeakHeight - pulseAmplitude) : animationPeakHeight;
       const midHeight = animateEqualizer
         ? Math.max(4, animationPeakHeight - Math.max(1, Math.floor(pulseAmplitude * 0.5)))
         : animationPeakHeight;
@@ -149,10 +148,10 @@ function renderBars(
       const sideFaceFromY = (y: number): string =>
         `${geometry.x + layout.barWidth},${y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${y - BAR_DEPTH_Y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${bottomY - BAR_DEPTH_Y} ${geometry.x + layout.barWidth},${bottomY}`;
 
-      const yValues = topFrames.map((value) => value.toFixed(2)).join(";");
-      const heightValues = heightFrames.map((value) => value.toFixed(2)).join(";");
-      const topFaceValues = topFrames.map((y) => topFaceFromY(y)).join(";");
-      const sideFaceValues = topFrames.map((y) => sideFaceFromY(y)).join(";");
+      const yValues = topFrames.map((value) => value.toFixed(2)).join(';');
+      const heightValues = heightFrames.map((value) => value.toFixed(2)).join(';');
+      const topFaceValues = topFrames.map((y) => topFaceFromY(y)).join(';');
+      const sideFaceValues = topFrames.map((y) => sideFaceFromY(y)).join(';');
 
       const pointerDepthX = Math.max(1.3, BAR_DEPTH_X - 0.2);
       const pointerDepthY = Math.max(1.3, BAR_DEPTH_Y - 0.2);
@@ -195,25 +194,25 @@ function renderBars(
       `;
 
       const waveDuration = ((1.58 + (index % 9) * 0.13 + (4 - week.intensity) * 0.03) * durationScale).toFixed(2);
-      const waveDelay = animateEqualizer ? `-${((index % 13) * 0.19).toFixed(2)}` : "0s";
+      const waveDelay = animateEqualizer ? `-${((index % 13) * 0.19).toFixed(2)}` : '0s';
       const sideFaceAnimate = animateEqualizer
         ? `<animate attributeName="points" values="${sideFaceValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>`
-        : "";
+        : '';
       const barBodyAnimate = animateEqualizer
         ? `
           <animate attributeName="y" values="${yValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
           <animate attributeName="height" values="${heightValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
         `
-        : "";
+        : '';
       const topFaceAnimate = animateEqualizer
         ? `<animate attributeName="points" values="${topFaceValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>`
-        : "";
+        : '';
       const capLineAnimate = animateEqualizer
         ? `
-          <animate attributeName="y1" values="${topFrames.map((y) => (y - BAR_DEPTH_Y).toFixed(2)).join(";")}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
-          <animate attributeName="y2" values="${topFrames.map((y) => (y - BAR_DEPTH_Y).toFixed(2)).join(";")}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+          <animate attributeName="y1" values="${topFrames.map((y) => (y - BAR_DEPTH_Y).toFixed(2)).join(';')}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
+          <animate attributeName="y2" values="${topFrames.map((y) => (y - BAR_DEPTH_Y).toFixed(2)).join(';')}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
         `
-        : "";
+        : '';
 
       if (week.total <= 0) {
         return `
@@ -276,13 +275,13 @@ function renderBars(
       </g>
     `;
     })
-    .join("\n");
+    .join('\n');
 }
 
 function renderYAxisLabels(
   layout: ReturnType<typeof buildLayout>,
   maxWeekly: number,
-  palette: ThemeableConfig["palette"]
+  palette: ThemeableConfig['palette']
 ): string {
   const steps = [1, 0.75, 0.5, 0.25, 0];
 
@@ -293,10 +292,15 @@ function renderYAxisLabels(
       const x = layout.margin.left - 8;
       return `<text x="${x}" y="${y.toFixed(2)}" class="y-axis-label" text-anchor="end" fill="${palette.textDim}" opacity="${progress === 1 ? 0.84 : 0.68}">${value}</text>`;
     })
-    .join("\n");
+    .join('\n');
 }
 
-function polarToCartesian(centerX: number, centerY: number, radius: number, angleDegrees: number): { x: number; y: number } {
+function polarToCartesian(
+  centerX: number,
+  centerY: number,
+  radius: number,
+  angleDegrees: number
+): { x: number; y: number } {
   const angleRadians = (angleDegrees - 90) * (Math.PI / 180);
 
   return {
@@ -310,7 +314,7 @@ function formatLanguagePercentage(percentage: number): string {
   const roundedPercent = Math.round(normalized * 100);
 
   if (roundedPercent === 0 && normalized > 0) {
-    return "&lt;1%";
+    return '&lt;1%';
   }
 
   return `${roundedPercent}%`;
@@ -345,7 +349,7 @@ function renderLanguageStackProfile(
       const y = panelY + topPadding + index * rowStep - 1.5;
       return `<line x1="${panelX}" x2="${panelX + panelWidth}" y1="${y}" y2="${y}" stroke="${themeConfig.palette.textDim}" stroke-opacity="0.08"/>`;
     })
-    .join("\n");
+    .join('\n');
 
   if (!hasLanguageData) {
     return `
@@ -365,16 +369,16 @@ function renderLanguageStackProfile(
       const trackY = panelY + topPadding + index * rowStep;
       const labelY = trackY + 6;
       const targetWidth = Math.max(2, Math.round(language.percentage * barTrackWidth));
-      const color = language.color || (useSpectrumChart
-        ? spectrumColor(index, rows.length, 86, 62)
-        : themeConfig.palette.primarySoft);
+      const color =
+        language.color ||
+        (useSpectrumChart ? spectrumColor(index, rows.length, 86, 62) : themeConfig.palette.primarySoft);
       const pulseMin = Math.max(2, Math.round(targetWidth * 0.74));
       const pulseMid = Math.max(2, Math.round(targetWidth * 0.87));
       const pulseDuration = (1.8 + index * 0.22).toFixed(2);
       const pulseDelay = (index * 0.12).toFixed(2);
       const pulseAnimation = animateDashboard
         ? `<animate attributeName="width" values="${pulseMin};${targetWidth};${pulseMid};${targetWidth};${pulseMin}" dur="${pulseDuration}s" begin="${pulseDelay}s" repeatCount="indefinite"/>`
-        : "";
+        : '';
       const themeBlendOpacity = useSpectrumChart ? 0.46 : 0.72;
       const languageBlendOpacity = useSpectrumChart ? 0.42 : 0.24;
       const accentOpacity = useSpectrumChart ? 0.68 : 0.54;
@@ -383,7 +387,7 @@ function renderLanguageStackProfile(
       const segmentLines = Array.from({ length: segmentCount - 1 }, (_, segmentIndex) => {
         const x = barTrackX + segmentStep * (segmentIndex + 1);
         return `M${x} ${trackY}v${barHeight}`;
-      }).join(" ");
+      }).join(' ');
 
       return `
       <text x="${nameX}" y="${labelY}" class="tiny-label">${escapeXml(language.name.toUpperCase())}</text>
@@ -399,7 +403,7 @@ function renderLanguageStackProfile(
       </rect>
       `;
     })
-    .join("\n");
+    .join('\n');
 
   return `
   <g>
@@ -427,23 +431,25 @@ function renderActivityRadar(
   const centerY = dashboardPanelY + 46;
   const radius = 34;
   const animateDashboard = themeConfig.animateDashboard;
-  const radarStroke = useSpectrumChart ? "url(#spectrumStrokeGradient)" : themeConfig.palette.primary;
-  const radarFill = useSpectrumChart ? "url(#spectrumAreaGradient)" : "url(#areaGradient)";
-  const radialGuideStroke = useSpectrumChart ? "url(#spectrumStrokeGradient)" : themeConfig.palette.primarySoft;
+  const radarStroke = useSpectrumChart ? 'url(#spectrumStrokeGradient)' : themeConfig.palette.primary;
+  const radarFill = useSpectrumChart ? 'url(#spectrumAreaGradient)' : 'url(#areaGradient)';
+  const radialGuideStroke = useSpectrumChart ? 'url(#spectrumStrokeGradient)' : themeConfig.palette.primarySoft;
   const radarPulseDuration = Math.max(3.4, themeConfig.sweepDuration * 1.12).toFixed(2);
   const radarSweepDuration = Math.max(2.8, themeConfig.sweepDuration * 0.9).toFixed(2);
   const sweepRotateAnimation = animateDashboard
     ? `<animateTransform attributeName="transform" type="rotate" values="0 ${centerX} ${centerY};360 ${centerX} ${centerY}" dur="${radarSweepDuration}s" repeatCount="indefinite"/>`
-    : "";
-  const outerPointAnimation = (duration: string): string => animateDashboard
-    ? `
+    : '';
+  const outerPointAnimation = (duration: string): string =>
+    animateDashboard
+      ? `
       <animate attributeName="r" values="4.4;5.6;4.4" dur="${duration}" repeatCount="indefinite"/>
       <animate attributeName="fill-opacity" values="0.12;0.24;0.12" dur="${duration}" repeatCount="indefinite"/>
     `
-    : "";
-  const innerPointAnimation = (duration: string): string => animateDashboard
-    ? `<animate attributeName="r" values="2.1;2.8;2.1" dur="${duration}" repeatCount="indefinite"/>`
-    : "";
+      : '';
+  const innerPointAnimation = (duration: string): string =>
+    animateDashboard
+      ? `<animate attributeName="r" values="2.1;2.8;2.1" dur="${duration}" repeatCount="indefinite"/>`
+      : '';
 
   const values = {
     commit: insights.activity.commits,
@@ -452,7 +458,13 @@ function renderActivityRadar(
     review: insights.activity.reviews
   };
   const totalActivity = values.commit + values.pr + values.issue + values.review;
-  const maxLog = Math.max(1, Math.log10(values.commit + 1), Math.log10(values.pr + 1), Math.log10(values.issue + 1), Math.log10(values.review + 1));
+  const maxLog = Math.max(
+    1,
+    Math.log10(values.commit + 1),
+    Math.log10(values.pr + 1),
+    Math.log10(values.issue + 1),
+    Math.log10(values.review + 1)
+  );
   const toRadius = (value: number): number => {
     if (value <= 0) {
       return radius * 0.28;
@@ -499,14 +511,14 @@ function renderActivityRadar(
   });
   const polygonPulseAnimation = animateDashboard
     ? `<animate attributeName="points" values="${basePoints.polygon};${pulsePoints.polygon};${basePoints.polygon};${relaxedPoints.polygon};${basePoints.polygon}" dur="${radarPulseDuration}s" repeatCount="indefinite"/>`
-    : "";
+    : '';
 
   const orbitalRings = [14, 24, 34]
     .map((ring, index) => {
       const opacity = (0.08 + index * 0.02).toFixed(2);
       return `<circle cx="${centerX}" cy="${centerY}" r="${ring}" fill="none" stroke="${themeConfig.palette.textDim}" stroke-opacity="${opacity}"/>`;
     })
-    .join("\n");
+    .join('\n');
 
   const diagonalRadius = Math.round(radius * 0.71);
   const crosshair = `M${centerX} ${centerY - radius} L${centerX} ${centerY + radius} M${centerX - radius} ${centerY} L${centerX + radius} ${centerY} M${centerX - diagonalRadius} ${centerY - diagonalRadius} L${centerX + diagonalRadius} ${centerY + diagonalRadius} M${centerX + diagonalRadius} ${centerY - diagonalRadius} L${centerX - diagonalRadius} ${centerY + diagonalRadius}`;
@@ -543,28 +555,28 @@ function renderActivityRadar(
     <line x1="${centerX}" y1="${centerY}" x2="${centerX}" y2="${(centerY + radius).toFixed(2)}" stroke="${radialGuideStroke}" stroke-opacity="0.45" stroke-width="1.9" stroke-linecap="round"/>
 
     <circle cx="${basePoints.commit.x.toFixed(2)}" cy="${basePoints.commit.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
-      ${outerPointAnimation("2.2s")}
+      ${outerPointAnimation('2.2s')}
     </circle>
     <circle cx="${basePoints.commit.x.toFixed(2)}" cy="${basePoints.commit.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
-      ${innerPointAnimation("2.2s")}
+      ${innerPointAnimation('2.2s')}
     </circle>
     <circle cx="${basePoints.pr.x.toFixed(2)}" cy="${basePoints.pr.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
-      ${outerPointAnimation("2.5s")}
+      ${outerPointAnimation('2.5s')}
     </circle>
     <circle cx="${basePoints.pr.x.toFixed(2)}" cy="${basePoints.pr.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
-      ${innerPointAnimation("2.5s")}
+      ${innerPointAnimation('2.5s')}
     </circle>
     <circle cx="${basePoints.issue.x.toFixed(2)}" cy="${basePoints.issue.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
-      ${outerPointAnimation("2.8s")}
+      ${outerPointAnimation('2.8s')}
     </circle>
     <circle cx="${basePoints.issue.x.toFixed(2)}" cy="${basePoints.issue.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
-      ${innerPointAnimation("2.8s")}
+      ${innerPointAnimation('2.8s')}
     </circle>
     <circle cx="${basePoints.review.x.toFixed(2)}" cy="${basePoints.review.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
-      ${outerPointAnimation("3.1s")}
+      ${outerPointAnimation('3.1s')}
     </circle>
     <circle cx="${basePoints.review.x.toFixed(2)}" cy="${basePoints.review.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
-      ${innerPointAnimation("3.1s")}
+      ${innerPointAnimation('3.1s')}
     </circle>
 
     <text x="${centerX}" y="${prLabelY}" class="dash-label" text-anchor="middle">PR</text>
@@ -594,15 +606,12 @@ function renderDashboardPanels(
   `;
 }
 
-function renderMonthLabels(
-  monthPositions: Array<{ label: string; year: number; x: number }>,
-  y: number
-): string {
+function renderMonthLabels(monthPositions: Array<{ label: string; year: number; x: number }>, y: number): string {
   return monthPositions
     .map(({ label, x }) => {
       return `<text x="${x.toFixed(2)}" y="${y}" class="month" text-anchor="middle">${escapeXml(label)}</text>`;
     })
-    .join("\n");
+    .join('\n');
 }
 
 function renderYearLabels(
@@ -612,7 +621,7 @@ function renderYearLabels(
   y: number
 ): string {
   if (monthPositions.length === 0) {
-    return "";
+    return '';
   }
 
   const labels: string[] = [];
@@ -632,22 +641,20 @@ function renderYearLabels(
     index = nextIndex;
   }
 
-  return labels.join("\n");
+  return labels.join('\n');
 }
 
 export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const { username, themeConfig, calendar, insights, visual } = input;
   const palette = themeConfig.palette;
   const useSpectrumChart = themeConfig.spectrumChart === true;
-  const isWinampTheme = themeConfig.id === "winamp";
+  const isWinampTheme = themeConfig.id === 'winamp';
   const showDashboard = visual.showStats;
   const layout = buildLayout(calendar.weeks.length);
   const dashboardTopGap = showDashboard ? 30 : 0;
   const dashboardFooterGap = showDashboard ? 52 : 0;
   const dashboardTop = layout.heatmapTop + dashboardTopGap;
-  const footerY = showDashboard
-    ? layout.footerY + dashboardTopGap + dashboardFooterGap
-    : layout.chartBottom + 28;
+  const footerY = showDashboard ? layout.footerY + dashboardTopGap + dashboardFooterGap : layout.chartBottom + 28;
   const canvasHeight = showDashboard
     ? layout.height + dashboardTopGap + dashboardFooterGap
     : footerY + layout.margin.bottom;
@@ -694,9 +701,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       centerX += rightBias;
     }
 
-    const labelRightLimit = isIncompleteTailMonth
-      ? layout.width - layout.margin.right + 6
-      : monthRightLimit;
+    const labelRightLimit = isIncompleteTailMonth ? layout.width - layout.margin.right + 6 : monthRightLimit;
 
     return {
       label,
@@ -716,16 +721,8 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     visual.enableHoverAttrs
   );
   const yAxisLabels = renderYAxisLabels(layout, maxWeekly, palette);
-  const monthLabels = renderMonthLabels(
-    monthPositions,
-    monthLabelY
-  );
-  const yearLabels = renderYearLabels(
-    monthPositions,
-    yearLeftLimit,
-    yearRightLimit,
-    yearLabelY
-  );
+  const monthLabels = renderMonthLabels(monthPositions, monthLabelY);
+  const yearLabels = renderYearLabels(monthPositions, yearLeftLimit, yearRightLimit, yearLabelY);
 
   const gridLines = visual.showGrid
     ? [0, 0.25, 0.5, 0.75, 1]
@@ -733,8 +730,8 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
           const y = layout.chartTop + layout.chartHeight * progress;
           return `<line x1="${layout.margin.left}" y1="${y}" x2="${layout.width - layout.margin.right}" y2="${y}" class="grid-line"/>`;
         })
-        .join("\n")
-    : "";
+        .join('\n')
+    : '';
 
   const verticalTicks = visual.showGrid
     ? [...monthBoundaryXs, chartRightBoundaryX]
@@ -742,18 +739,19 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
         .map((x) => {
           return `<line x1="${x.toFixed(2)}" y1="${layout.chartTop}" x2="${x.toFixed(2)}" y2="${layout.chartBottom}" class="grid-line"/>`;
         })
-        .join("\n")
-    : "";
+        .join('\n')
+    : '';
 
   const dashboardPanels = showDashboard
     ? renderDashboardPanels(insights, layout, dashboardTop, themeConfig, useSpectrumChart)
-    : "";
+    : '';
 
   const includeNoiseLayer = themeConfig.noiseOpacity > 0;
   const includeScanLayer = themeConfig.scanOpacity > 0;
 
-  const noiseAnimation = includeNoiseLayer && themeConfig.animateNoise
-    ? `
+  const noiseAnimation =
+    includeNoiseLayer && themeConfig.animateNoise
+      ? `
       <animate
         xlink:href="#noiseTurbulence"
         attributeName="baseFrequency"
@@ -761,10 +759,11 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
         dur="${themeConfig.noiseDuration}s"
         repeatCount="indefinite"/>
     `
-    : "";
+      : '';
 
-  const scanPatternAnimation = includeScanLayer && themeConfig.animateScanlines
-    ? `
+  const scanPatternAnimation =
+    includeScanLayer && themeConfig.animateScanlines
+      ? `
       <animateTransform
         attributeName="patternTransform"
         type="translate"
@@ -772,7 +771,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
         dur="${themeConfig.scanLineDuration}s"
         repeatCount="indefinite"/>
     `
-    : "";
+      : '';
 
   const noiseFilterDef = includeNoiseLayer
     ? `
@@ -796,7 +795,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
           0 0 0 1 0"/>
     </filter>
   `
-    : "";
+    : '';
 
   const scanPatternDef = includeScanLayer
     ? `
@@ -806,7 +805,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <rect y="${Math.max(1, themeConfig.scanSpacing - 2)}" width="${themeConfig.scanSpacing}" height="1" fill="${palette.scan}"/>
     </pattern>
   `
-    : "";
+    : '';
 
   const spectrumDefs = useSpectrumChart
     ? `
@@ -840,7 +839,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <stop offset="100%" stop-color="hsl(300, 92%, 62%)" stop-opacity="${(themeConfig.areaOpacity * 0.85).toFixed(3)}"/>
     </linearGradient>
   `
-    : "";
+    : '';
 
   const winampDefs = isWinampTheme
     ? `
@@ -874,25 +873,22 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <stop offset="100%" stop-color="#c9cfdb"/>
     </linearGradient>
   `
-    : "";
+    : '';
 
   const chartBaseGlowOpacity = Math.max(0.22, themeConfig.barMinOpacity * 0.7);
   const chartBaseLineOpacity = Math.max(0.16, themeConfig.barMinOpacity * 0.55);
-  const gridStroke = useSpectrumChart ? "hsl(170, 72%, 72%)" : palette.primarySoft;
+  const gridStroke = useSpectrumChart ? 'hsl(170, 72%, 72%)' : palette.primarySoft;
 
   const lastWeek = weekly[weekly.length - 1];
   const footerUser = `USER: @${username}`;
-  const footerStatsParts = [
-    `CONTRIBUTIONS: ${calendar.totalContributions}`,
-    `BEST WEEK: ${maxWeekly}`
-  ];
+  const footerStatsParts = [`CONTRIBUTIONS: ${calendar.totalContributions}`, `BEST WEEK: ${maxWeekly}`];
 
   if (visual.showLastWeekInFooter) {
     footerStatsParts.push(`LAST WEEK: ${lastWeek ? lastWeek.total : 0}`);
   }
 
-  const footerStats = `| ${footerStatsParts.join(" | ")} |`;
-  const footerCredits = "CREDITS: stefashkaa/github-profile-crt";
+  const footerStats = `| ${footerStatsParts.join(' | ')} |`;
+  const footerCredits = 'CREDITS: stefashkaa/github-profile-crt';
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${layout.width}" height="${canvasHeight}" viewBox="0 0 ${layout.width} ${canvasHeight}" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-labelledby="title desc">
@@ -1014,8 +1010,8 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   </style>
 
   <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#bg)"/>
-  ${includeNoiseLayer ? `<rect width="${layout.width}" height="${canvasHeight}" rx="14" filter="url(#noiseFilter)" opacity="${themeConfig.noiseOpacity}" fill="${palette.primarySoft}"/>` : ""}
-  ${includeScanLayer ? `<rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#scanPattern)" opacity="${themeConfig.scanOpacity}"/>` : ""}
+  ${includeNoiseLayer ? `<rect width="${layout.width}" height="${canvasHeight}" rx="14" filter="url(#noiseFilter)" opacity="${themeConfig.noiseOpacity}" fill="${palette.primarySoft}"/>` : ''}
+  ${includeScanLayer ? `<rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#scanPattern)" opacity="${themeConfig.scanOpacity}"/>` : ''}
   <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#vignette)" opacity="${themeConfig.vignetteOpacity}"/>
 
   ${yearLabels}
@@ -1049,7 +1045,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   ${dashboardPanels}
 
   <text x="${layout.margin.left}" y="${footerY}" class="footer">${escapeXml(footerUser)}</text>
-  ${visual.showStatsFooter ? `<text x="${(layout.width / 2) - 12}" y="${footerY}" class="footer" text-anchor="middle">${escapeXml(footerStats)}</text>` : ""}
+  ${visual.showStatsFooter ? `<text x="${layout.width / 2 - 12}" y="${footerY}" class="footer" text-anchor="middle">${escapeXml(footerStats)}</text>` : ''}
   <text x="${layout.width - layout.margin.right}" y="${footerY}" class="credit" text-anchor="end">${escapeXml(footerCredits)}</text>
 </svg>`;
 }

@@ -1,17 +1,12 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-import type { RuntimeConfig } from "./config/env";
-import { createGitHubGraphQlClient } from "./github/graphqlClient";
-import { fetchContributionCalendar } from "./github/fetchContributionCalendar";
-import { fetchProfileInsights } from "./github/fetchProfileInsights";
-import { optimizeGeneratedSvg } from "./render/optimizeSvg";
-import { renderCrtContributionSvg } from "./render/svgRenderer";
-import {
-  outputFileNameForTheme,
-  type ThemeMode,
-  type ThemeName,
-  type ThemeableConfig
-} from "./render/themes";
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import type { RuntimeConfig } from './config/env';
+import { createGitHubGraphQlClient } from './github/graphqlClient';
+import { fetchContributionCalendar } from './github/fetchContributionCalendar';
+import { fetchProfileInsights } from './github/fetchProfileInsights';
+import { optimizeGeneratedSvg } from './render/optimizeSvg';
+import { renderCrtContributionSvg } from './render/svgRenderer';
+import { outputFileNameForTheme, type ThemeMode, type ThemeName, type ThemeableConfig } from './render/themes';
 
 export interface GeneratedThemeFile {
   themeId: ThemeName;
@@ -40,12 +35,9 @@ export async function generateCrtContributionSvgs(config: RuntimeConfig): Promis
     config.contributionWindow.to
   );
   const insightsPromise = config.visual.showStats
-    ? fetchProfileInsights(
-      client,
-      config.username,
-      config.contributionWindow.from,
-      config.contributionWindow.to
-    ).catch(() => null)
+    ? fetchProfileInsights(client, config.username, config.contributionWindow.from, config.contributionWindow.to).catch(
+        () => null
+      )
     : Promise.resolve(null);
   const [calendar, insights] = await Promise.all([calendarPromise, insightsPromise]);
 
@@ -53,11 +45,11 @@ export async function generateCrtContributionSvgs(config: RuntimeConfig): Promis
 
   for (const resolvedTheme of config.themes) {
     const variants: Array<{ mode: ThemeMode; themeConfig: ThemeableConfig }> = [
-      { mode: "dark", themeConfig: resolvedTheme.dark }
+      { mode: 'dark', themeConfig: resolvedTheme.dark }
     ];
 
     if (resolvedTheme.light) {
-      variants.push({ mode: "light", themeConfig: resolvedTheme.light });
+      variants.push({ mode: 'light', themeConfig: resolvedTheme.light });
     }
 
     for (const { mode, themeConfig } of variants) {
@@ -69,19 +61,17 @@ export async function generateCrtContributionSvgs(config: RuntimeConfig): Promis
         visual: config.visual
       });
 
-      const finalSvg = config.minifySvg
-        ? optimizeGeneratedSvg(rawSvg, { multipass: true })
-        : rawSvg;
+      const finalSvg = config.minifySvg ? optimizeGeneratedSvg(rawSvg, { multipass: true }) : rawSvg;
 
       const outputPath = path.join(config.outputDirectory, outputFileNameForTheme(resolvedTheme.id, mode));
-      await fs.writeFile(outputPath, finalSvg, "utf8");
+      await fs.writeFile(outputPath, finalSvg, 'utf8');
 
       files.push({
         themeId: resolvedTheme.id,
         mode,
         outputPath,
-        sizeBeforeOptimization: Buffer.byteLength(rawSvg, "utf8"),
-        finalSize: Buffer.byteLength(finalSvg, "utf8")
+        sizeBeforeOptimization: Buffer.byteLength(rawSvg, 'utf8'),
+        finalSize: Buffer.byteLength(finalSvg, 'utf8')
       });
     }
   }

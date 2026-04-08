@@ -15,7 +15,7 @@ export function numberEnv(env: EnvSource, name: string, fallback: number): numbe
 
 export function integerEnv(env: EnvSource, name: string, fallback: number): number {
   const raw = readEnv(env, name);
-  const value = Number.parseInt(raw ?? "", 10);
+  const value = Number.parseInt(raw ?? '', 10);
   return Number.isFinite(value) ? value : fallback;
 }
 
@@ -26,7 +26,7 @@ export function booleanEnv(env: EnvSource, name: string, fallback: boolean): boo
     return fallback;
   }
 
-  return ["1", "true", "yes", "on"].includes(raw.toLowerCase());
+  return ['1', 'true', 'yes', 'on'].includes(raw.toLowerCase());
 }
 
 export function optionalStringEnv(env: EnvSource, name: string): string | undefined {

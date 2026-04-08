@@ -1,6 +1,6 @@
-import type { ContributionWeek, WeeklyStats } from "./calendar";
-import { levelWeight } from "./calendar";
-import { average, maxOf } from "../utils/math";
+import type { ContributionWeek, WeeklyStats } from './calendar';
+import { levelWeight } from './calendar';
+import { average, maxOf } from '../utils/math';
 
 export function deriveWeeklyStats(weeks: ContributionWeek[]): WeeklyStats[] {
   return weeks.map((week, index) => {
