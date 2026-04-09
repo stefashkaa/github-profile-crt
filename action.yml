@@ -16,19 +16,19 @@ inputs:
     required: false
     default: assets
   themes:
-    description: Theme selector (all, comma-separated preset names, custom).
+    description: Theme selector (all, comma-separated preset names, custom). Defaults to `crt`.
     required: false
     default: crt
   show-grid:
-    description: Toggle chart grid visibility.
+    description: Toggle chart grid visibility. Defaults to `true`.
     required: false
     default: 'true'
   show-stats:
-    description: Toggle dashboard widgets visibility.
+    description: Toggle dashboard widgets visibility. Defaults to `true`.
     required: false
     default: 'true'
   show-stats-footer:
-    description: Toggle footer stats visibility.
+    description: Toggle footer stats visibility. Defaults to `true`.
     required: false
     default: 'true'
   enable-hover-attrs:
@@ -36,11 +36,11 @@ inputs:
     required: false
     default: 'false'
   minify-svg:
-    description: Minify optimized SVG output.
+    description: Minify optimized SVG output. Defaults to `true`.
     required: false
     default: 'true'
   commit-and-push:
-    description: Commit and push generated files back to the current repository branch.
+    description: Commit and push generated files back to the current repository branch. Defaults to `true`.
     required: false
     default: 'true'
   commit-message:
@@ -48,7 +48,7 @@ inputs:
     required: false
     default: 'chore: Update CRT contribution SVGs'
   year:
-    description: Contribution year. Empty for current year.
+    description: Contribution year. Empty for current year (default).
     required: false
     default: ''
 
@@ -65,7 +65,7 @@ outputs:
     description: Whether generated SVG changes were committed and pushed.
 
 runs:
-  using: node20
+  using: node24
   main: dist/action/index.js
 
 branding:

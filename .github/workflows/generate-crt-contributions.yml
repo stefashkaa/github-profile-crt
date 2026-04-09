@@ -15,7 +15,7 @@ jobs:
     steps:
       # Checkout the repository, required if the action is in the same repository
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Generate & push SVGs
         uses: ./
