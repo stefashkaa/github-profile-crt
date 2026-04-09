@@ -40,6 +40,17 @@ function renderNoisePath(seed: number, tileSize: number, points: number): string
   return segments.join('');
 }
 
+function formatNumber(value: number, precision = 1): string {
+  const factor = 10 ** precision;
+  const rounded = Math.round(value * factor) / factor;
+
+  if (Object.is(rounded, -0) || rounded === 0) {
+    return '0';
+  }
+
+  return `${rounded}`;
+}
+
 function spectrumHueAt(index: number, count: number): number {
   if (count <= 1) {
     return 260;
@@ -99,6 +110,9 @@ function renderBars(
   const durationScale = clamp(themeConfig.equalizerDurationScale, 0.35, 2.5);
   const travelScale = clamp(themeConfig.equalizerTravelScale, 0, 2.4);
   const isWinampTheme = themeConfig.id === 'winamp';
+  const f1 = (value: number): string => formatNumber(value, 1);
+  const f2 = (value: number): string => formatNumber(value, 2);
+  const f4 = (value: number): string => formatNumber(value, 4);
 
   return weekly
     .map((week, index) => {
@@ -169,21 +183,17 @@ function renderBars(
       const currentHeight = heightFrames[baseFrameIndex] ?? geometry.height;
 
       const topFaceFromY = (y: number): string =>
-        `${geometry.x},${y} ${geometry.x + layout.barWidth},${y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${y - BAR_DEPTH_Y} ${geometry.x + BAR_DEPTH_X},${y - BAR_DEPTH_Y}`;
+        `${f1(geometry.x)},${f1(y)} ${f1(geometry.x + layout.barWidth)},${f1(y)} ${f1(geometry.x + layout.barWidth + BAR_DEPTH_X)},${f1(y - BAR_DEPTH_Y)} ${f1(geometry.x + BAR_DEPTH_X)},${f1(y - BAR_DEPTH_Y)}`;
       const sideFaceFromY = (y: number): string =>
-        `${geometry.x + layout.barWidth},${y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${y - BAR_DEPTH_Y} ${geometry.x + layout.barWidth + BAR_DEPTH_X},${bottomY - BAR_DEPTH_Y} ${geometry.x + layout.barWidth},${bottomY}`;
-
-      const yValues = topFrames.map((value) => value.toFixed(2)).join(';');
-      const heightValues = heightFrames.map((value) => value.toFixed(2)).join(';');
-      const sideFaceValues = topFrames.map((y) => sideFaceFromY(y)).join(';');
+        `${f1(geometry.x + layout.barWidth)},${f1(y)} ${f1(geometry.x + layout.barWidth + BAR_DEPTH_X)},${f1(y - BAR_DEPTH_Y)} ${f1(geometry.x + layout.barWidth + BAR_DEPTH_X)},${f1(bottomY - BAR_DEPTH_Y)} ${f1(geometry.x + layout.barWidth)},${f1(bottomY)}`;
 
       const pointerDepthX = Math.max(1.3, BAR_DEPTH_X - 0.2);
       const pointerDepthY = Math.max(1.3, BAR_DEPTH_Y - 0.2);
       const pointerX = geometry.x + (layout.barWidth - pointerWidth) / 2;
       const pointerTopFaceFromY = (y: number): string =>
-        `${pointerX},${y} ${pointerX + pointerWidth},${y} ${pointerX + pointerWidth + pointerDepthX},${y - pointerDepthY} ${pointerX + pointerDepthX},${y - pointerDepthY}`;
+        `${f1(pointerX)},${f1(y)} ${f1(pointerX + pointerWidth)},${f1(y)} ${f1(pointerX + pointerWidth + pointerDepthX)},${f1(y - pointerDepthY)} ${f1(pointerX + pointerDepthX)},${f1(y - pointerDepthY)}`;
       const pointerSideFaceFromY = (y: number): string =>
-        `${pointerX + pointerWidth},${y} ${pointerX + pointerWidth + pointerDepthX},${y - pointerDepthY} ${pointerX + pointerWidth + pointerDepthX},${y + pointerHeight - pointerDepthY} ${pointerX + pointerWidth},${y + pointerHeight}`;
+        `${f1(pointerX + pointerWidth)},${f1(y)} ${f1(pointerX + pointerWidth + pointerDepthX)},${f1(y - pointerDepthY)} ${f1(pointerX + pointerWidth + pointerDepthX)},${f1(y + pointerHeight - pointerDepthY)} ${f1(pointerX + pointerWidth)},${f1(y + pointerHeight)}`;
       const pointerFrontY = geometry.y - pointerGap - pointerHeight;
       const pointerMarkup = `
         <g>
@@ -194,10 +204,11 @@ function renderBars(
             stroke="${pointerStroke}"
             stroke-opacity="${pointerStrokeOpacity}"
             stroke-width="0.8"
+            vector-effect="non-scaling-stroke"
           />
           <rect
-            x="${pointerX}"
-            y="${pointerFrontY}"
+            x="${f1(pointerX)}"
+            y="${f1(pointerFrontY)}"
             width="${pointerWidth}"
             height="${pointerHeight}"
             fill="${pointerFrontFill}"
@@ -205,6 +216,7 @@ function renderBars(
             stroke="${pointerStroke}"
             stroke-opacity="${pointerStrokeOpacity}"
             stroke-width="0.8"
+            vector-effect="non-scaling-stroke"
           />
           <polygon
             points="${pointerTopFaceFromY(pointerFrontY)}"
@@ -213,25 +225,27 @@ function renderBars(
             stroke="${pointerStroke}"
             stroke-opacity="${pointerStrokeOpacity}"
             stroke-width="0.8"
+            vector-effect="non-scaling-stroke"
           />
         </g>
       `;
 
       const waveDuration = ((1.58 + (index % 9) * 0.13 + (4 - week.intensity) * 0.03) * durationScale).toFixed(2);
-      const waveDelay = animateEqualizer ? `-${((index % 13) * 0.19).toFixed(2)}` : '0s';
-      const sideFaceAnimate = animateEqualizer
-        ? `<animate attributeName="points" values="${sideFaceValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>`
+      const waveDelay = animateEqualizer ? `-${((index % 13) * 0.19).toFixed(2)}s` : '0s';
+      const scaleFrames = heightFrames.map((height) => (animationPeakHeight <= 0 ? 1 : height / animationPeakHeight));
+      const topOffsetFrames = topFrames.map((top) => top - currentTop);
+      const frame0Scale = scaleFrames[0] ?? 1;
+      const frame1Scale = scaleFrames[1] ?? frame0Scale;
+      const frame2Scale = scaleFrames[2] ?? frame0Scale;
+      const frame0Ty = topOffsetFrames[0] ?? 0;
+      const frame1Ty = topOffsetFrames[1] ?? frame0Ty;
+      const frame2Ty = topOffsetFrames[2] ?? frame0Ty;
+      const matrixDy = (scale: number): number => bottomY * (1 - scale);
+      const barAnimationStyle = animateEqualizer
+        ? `--bar-dur:${waveDuration}s;--bar-delay:${waveDelay};--s0:${f4(frame0Scale)};--s1:${f4(frame1Scale)};--s2:${f4(frame2Scale)};--dy0:${f2(matrixDy(frame0Scale))};--dy1:${f2(matrixDy(frame1Scale))};--dy2:${f2(matrixDy(frame2Scale))};--ty0:${f1(frame0Ty)}px;--ty1:${f1(frame1Ty)}px;--ty2:${f1(frame2Ty)}px;`
         : '';
-      const barBodyAnimate = animateEqualizer
-        ? `
-          <animate attributeName="y" values="${yValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
-          <animate attributeName="height" values="${heightValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>
-        `
-        : '';
-      const topTranslateValues = topFrames.map((y) => `0 ${(y - currentTop).toFixed(2)}`).join(';');
-      const topLayerAnimate = animateEqualizer
-        ? `<animateTransform attributeName="transform" type="translate" values="${topTranslateValues}" dur="${waveDuration}s" begin="${waveDelay}s" repeatCount="indefinite"/>`
-        : '';
+      const bodyAnimationAttrs = animateEqualizer ? ` class="bar-body-anim" style="${barAnimationStyle}"` : '';
+      const topAnimationAttrs = animateEqualizer ? ` class="bar-top-anim" style="${barAnimationStyle}"` : '';
 
       if (week.total <= 0) {
         return `
@@ -245,32 +259,31 @@ function renderBars(
       return `
       <g>
         ${hoverTitle}
-        <polygon
-          points="${sideFaceFromY(currentTop)}"
-          fill="${barSideFill}"
-          opacity="${Math.max(0.14, intensity * 0.62)}"
-          stroke="${outlineStroke}"
-          stroke-opacity="${outlineOpacity}"
-          stroke-width="0.8"
-        >
-          ${sideFaceAnimate}
-        </polygon>
-        <rect
-          x="${geometry.x}"
-          y="${currentTop}"
-          width="${layout.barWidth}"
-          height="${currentHeight}"
-          rx="${themeConfig.barRadius}"
-          fill="${barFrontFill}"
-          opacity="${intensity}"
-          stroke="${outlineStroke}"
-          stroke-opacity="${outlineOpacity}"
-          stroke-width="0.8"
-        >
-          ${barBodyAnimate}
-        </rect>
-        <g>
-          ${topLayerAnimate}
+        <g${bodyAnimationAttrs}>
+          <polygon
+            points="${sideFaceFromY(currentTop)}"
+            fill="${barSideFill}"
+            opacity="${Math.max(0.14, intensity * 0.62)}"
+            stroke="${outlineStroke}"
+            stroke-opacity="${outlineOpacity}"
+            stroke-width="0.8"
+            vector-effect="non-scaling-stroke"
+          />
+          <rect
+            x="${f1(geometry.x)}"
+            y="${f1(currentTop)}"
+            width="${layout.barWidth}"
+            height="${currentHeight}"
+            rx="${themeConfig.barRadius}"
+            fill="${barFrontFill}"
+            opacity="${intensity}"
+            stroke="${outlineStroke}"
+            stroke-opacity="${outlineOpacity}"
+            stroke-width="0.8"
+            vector-effect="non-scaling-stroke"
+          />
+        </g>
+        <g${topAnimationAttrs}>
           <polygon
             points="${topFaceFromY(currentTop)}"
             fill="${barTopFill}"
@@ -278,12 +291,13 @@ function renderBars(
             stroke="${outlineStroke}"
             stroke-opacity="${outlineOpacity}"
             stroke-width="0.8"
+            vector-effect="non-scaling-stroke"
           />
           <line
-            x1="${geometry.x + BAR_DEPTH_X}"
-            y1="${currentTop - BAR_DEPTH_Y}"
-            x2="${geometry.x + layout.barWidth + BAR_DEPTH_X}"
-            y2="${currentTop - BAR_DEPTH_Y}"
+            x1="${f1(geometry.x + BAR_DEPTH_X)}"
+            y1="${f1(currentTop - BAR_DEPTH_Y)}"
+            x2="${f1(geometry.x + layout.barWidth + BAR_DEPTH_X)}"
+            y2="${f1(currentTop - BAR_DEPTH_Y)}"
             stroke="${capLineStroke}"
             stroke-opacity="${isWinampTheme ? 0.74 : Math.min(0.98, intensity + 0.2)}"
             stroke-width="1"
@@ -308,7 +322,7 @@ function renderYAxisLabels(
       const value = Math.round(maxWeekly * progress);
       const y = layout.chartTop + layout.chartHeight * (1 - progress) + 3;
       const x = layout.margin.left - 8;
-      return `<text x="${x}" y="${y.toFixed(2)}" class="y-axis-label" text-anchor="end" fill="${palette.textDim}" opacity="${progress === 1 ? 0.84 : 0.68}">${value}</text>`;
+      return `<text x="${x}" y="${formatNumber(y, 1)}" class="y-axis-label" text-anchor="end" fill="${palette.textDim}" opacity="${progress === 1 ? 0.84 : 0.68}">${value}</text>`;
     })
     .join('\n');
 }
@@ -395,7 +409,8 @@ function renderLanguageStackProfile(
       (useSpectrumChart ? spectrumColor(index, rows.length, 86, 62) : themeConfig.palette.primarySoft);
     const pulseDuration = (1.8 + index * 0.22).toFixed(2);
     const pulseDelay = (index * 0.12).toFixed(2);
-    const pulseClass = animateDashboard ? 'stack-pulse stack-pulse-active' : 'stack-pulse';
+    const pulseClass = animateDashboard ? 'stack-pulse stack-pulse-active' : '';
+    const pulseClassAttr = pulseClass ? ` class="${pulseClass}"` : '';
     const pulseStyle = `--pulse-duration:${pulseDuration}s;--pulse-delay:${pulseDelay}s;`;
     const themeBlendOpacity = useSpectrumChart ? 0.46 : 0.72;
     const languageBlendOpacity = useSpectrumChart ? 0.42 : 0.24;
@@ -416,11 +431,11 @@ function renderLanguageStackProfile(
       `);
 
     rowGlowRects.push(`
-      <rect x="${barTrackX}" y="${trackY}" width="${targetWidth}" height="${barHeight}" rx="1.4" fill="${themeConfig.palette.primarySoft}" fill-opacity="${themeBlendOpacity}" shape-rendering="crispEdges" class="${pulseClass}" style="${pulseStyle}"/>
+      <rect x="${barTrackX}" y="${trackY}" width="${targetWidth}" height="${barHeight}" rx="1.4" fill="${themeConfig.palette.primarySoft}" fill-opacity="${themeBlendOpacity}" shape-rendering="crispEdges"${pulseClassAttr} style="${pulseStyle}"/>
       `);
 
     rowColorRects.push(`
-      <rect x="${barTrackX}" y="${trackY}" width="${targetWidth}" height="${barHeight}" rx="1.4" fill="${color}" fill-opacity="${languageBlendOpacity}" shape-rendering="crispEdges" class="${pulseClass}" style="${pulseStyle}"/>
+      <rect x="${barTrackX}" y="${trackY}" width="${targetWidth}" height="${barHeight}" rx="1.4" fill="${color}" fill-opacity="${languageBlendOpacity}" shape-rendering="crispEdges"${pulseClassAttr} style="${pulseStyle}"/>
       `);
   });
 
@@ -615,7 +630,7 @@ function renderMonthLabels(
   return monthPositions
     .filter(({ showLabel }) => showLabel !== false)
     .map(({ label, x }) => {
-      return `<text x="${x.toFixed(2)}" y="${y}" class="month" text-anchor="middle">${escapeXml(label)}</text>`;
+      return `<text x="${formatNumber(x, 1)}" y="${y}" class="month" text-anchor="middle">${escapeXml(label)}</text>`;
     })
     .join('\n');
 }
@@ -637,7 +652,7 @@ function renderYearLabels(
     const year = monthPositions[index]!.year;
     const yearX = clamp(monthPositions[index]!.x, leftLimit, rightLimit);
 
-    labels.push(`<text x="${yearX.toFixed(2)}" y="${y}" class="year-label" text-anchor="middle">${year}</text>`);
+    labels.push(`<text x="${formatNumber(yearX, 1)}" y="${y}" class="year-label" text-anchor="middle">${year}</text>`);
 
     let nextIndex = index + 1;
     while (nextIndex < monthPositions.length && monthPositions[nextIndex]!.year === year) {
@@ -654,6 +669,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const { username, themeConfig, calendar, insights, visual } = input;
   const palette = themeConfig.palette;
   const useSpectrumChart = themeConfig.spectrumChart === true;
+  const animateEqualizer = themeConfig.animateEqualizer;
   const isWinampTheme = themeConfig.id === 'winamp';
   const showDashboard = visual.showStats;
   const layout = buildLayout(calendar.weeks.length);
@@ -736,7 +752,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const gridPathData = visual.showGrid
     ? [0, 0.25, 0.5, 0.75, 1]
         .map((progress) => {
-          const y = (layout.chartTop + layout.chartHeight * progress).toFixed(2);
+          const y = formatNumber(layout.chartTop + layout.chartHeight * progress, 1);
           return `M${layout.margin.left} ${y}H${layout.width - layout.margin.right}`;
         })
         .join(' ')
@@ -747,7 +763,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     ? [...monthBoundaryXs, chartRightBoundaryX]
         .filter((x, index, all) => index === 0 || Math.abs(x - all[index - 1]!) > 0.01)
         .map((x) => {
-          return `M${x.toFixed(2)} ${layout.chartTop}V${layout.chartBottom}`;
+          return `M${formatNumber(x, 1)} ${layout.chartTop}V${layout.chartBottom}`;
         })
         .join(' ')
     : '';
@@ -895,6 +911,51 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
 
   const chartBaseLineOpacity = Math.max(0.16, themeConfig.barMinOpacity * 0.55);
   const gridStroke = useSpectrumChart ? 'hsl(170, 72%, 72%)' : palette.primarySoft;
+  const barAnimationCss = animateEqualizer
+    ? `
+    .bar-body-anim {
+      animation: barBodyWave var(--bar-dur) linear var(--bar-delay) infinite;
+      will-change: transform;
+    }
+    .bar-top-anim {
+      animation: barTopWave var(--bar-dur) linear var(--bar-delay) infinite;
+      will-change: transform;
+    }
+    @keyframes barBodyWave {
+      0% { transform: matrix(1, 0, 0, var(--s0), 0, var(--dy0)); }
+      25% { transform: matrix(1, 0, 0, var(--s1), 0, var(--dy1)); }
+      50% { transform: matrix(1, 0, 0, var(--s2), 0, var(--dy2)); }
+      75% { transform: matrix(1, 0, 0, var(--s1), 0, var(--dy1)); }
+      100% { transform: matrix(1, 0, 0, var(--s0), 0, var(--dy0)); }
+    }
+    @keyframes barTopWave {
+      0% { transform: translateY(var(--ty0)); }
+      25% { transform: translateY(var(--ty1)); }
+      50% { transform: translateY(var(--ty2)); }
+      75% { transform: translateY(var(--ty1)); }
+      100% { transform: translateY(var(--ty0)); }
+    }
+  `
+    : '';
+  const stackPulseCss = themeConfig.animateDashboard
+    ? `
+    .stack-pulse {
+      transform-box: fill-box;
+      transform-origin: left center;
+    }
+    .stack-pulse-active {
+      animation: stackPulseX var(--pulse-duration) linear var(--pulse-delay) infinite;
+      will-change: transform;
+    }
+    @keyframes stackPulseX {
+      0% { transform: scaleX(0.74); }
+      25% { transform: scaleX(1); }
+      50% { transform: scaleX(0.87); }
+      75% { transform: scaleX(1); }
+      100% { transform: scaleX(0.74); }
+    }
+  `
+    : '';
   const stackPanelX = layout.margin.left + 60;
   const stackPanelY = dashboardTop + 24;
   const stackPanelWidth = 245;
@@ -1058,39 +1119,8 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       stroke-width: 1;
       shape-rendering: crispEdges;
     }
-    .stack-pulse {
-      transform-box: fill-box;
-      transform-origin: left center;
-    }
-    .stack-pulse-active {
-      animation: stackPulseX var(--pulse-duration) linear var(--pulse-delay) infinite;
-      will-change: transform;
-    }
-    .radar-point-outer-active {
-      animation: radarOuterPulse var(--radar-duration) linear infinite;
-      will-change: transform, fill-opacity;
-    }
-    .radar-point-inner-active {
-      animation: radarInnerPulse var(--radar-duration) linear infinite;
-      will-change: transform;
-    }
-    @keyframes stackPulseX {
-      0% { transform: scaleX(0.74); }
-      25% { transform: scaleX(1); }
-      50% { transform: scaleX(0.87); }
-      75% { transform: scaleX(1); }
-      100% { transform: scaleX(0.74); }
-    }
-    @keyframes radarOuterPulse {
-      0% { transform: scale(0.846); fill-opacity: 0.12; }
-      50% { transform: scale(1.077); fill-opacity: 0.24; }
-      100% { transform: scale(0.846); fill-opacity: 0.12; }
-    }
-    @keyframes radarInnerPulse {
-      0% { transform: scale(0.875); }
-      50% { transform: scale(1.167); }
-      100% { transform: scale(0.875); }
-    }
+    ${barAnimationCss}
+    ${stackPulseCss}
   </style>
 
   <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#bg)"/>
