@@ -51,6 +51,22 @@ function formatNumber(value: number, precision = 1): string {
   return `${rounded}`;
 }
 
+function encodeSvgDataUri(svg: string): string {
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
+
+function createNoiseTileDataUri(
+  seed: number,
+  tileSize: number,
+  points: number,
+  fill: string,
+  fillOpacity: number
+): string {
+  const path = renderNoisePath(seed, tileSize, points);
+  const tileSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${tileSize}" height="${tileSize}" viewBox="0 0 ${tileSize} ${tileSize}"><path d="${path}" fill="${fill}" fill-opacity="${fillOpacity}"/></svg>`;
+  return encodeSvgDataUri(tileSvg);
+}
+
 function spectrumHueAt(index: number, count: number): number {
   if (count <= 1) {
     return 260;
@@ -199,33 +215,30 @@ function renderBars(
         <g>
           <polygon
             points="${pointerSideFaceFromY(pointerFrontY)}"
+            class="edge-stroke"
             fill="${pointerSideFill}"
             opacity="${isWinampTheme ? 0.82 : Math.max(0.2, intensity * 0.7)}"
             stroke="${pointerStroke}"
             stroke-opacity="${pointerStrokeOpacity}"
-            stroke-width="0.8"
-            vector-effect="non-scaling-stroke"
           />
           <rect
             x="${f1(pointerX)}"
             y="${f1(pointerFrontY)}"
             width="${pointerWidth}"
             height="${pointerHeight}"
+            class="edge-stroke"
             fill="${pointerFrontFill}"
             opacity="${isWinampTheme ? 0.95 : Math.min(0.96, intensity + 0.16)}"
             stroke="${pointerStroke}"
             stroke-opacity="${pointerStrokeOpacity}"
-            stroke-width="0.8"
-            vector-effect="non-scaling-stroke"
           />
           <polygon
             points="${pointerTopFaceFromY(pointerFrontY)}"
+            class="edge-stroke"
             fill="${pointerTopFill}"
             opacity="${isWinampTheme ? 0.98 : Math.min(0.98, intensity + 0.24)}"
             stroke="${pointerStroke}"
             stroke-opacity="${pointerStrokeOpacity}"
-            stroke-width="0.8"
-            vector-effect="non-scaling-stroke"
           />
         </g>
       `;
@@ -262,12 +275,11 @@ function renderBars(
         <g${bodyAnimationAttrs}>
           <polygon
             points="${sideFaceFromY(currentTop)}"
+            class="edge-stroke"
             fill="${barSideFill}"
             opacity="${Math.max(0.14, intensity * 0.62)}"
             stroke="${outlineStroke}"
             stroke-opacity="${outlineOpacity}"
-            stroke-width="0.8"
-            vector-effect="non-scaling-stroke"
           />
           <rect
             x="${f1(geometry.x)}"
@@ -275,23 +287,21 @@ function renderBars(
             width="${layout.barWidth}"
             height="${currentHeight}"
             rx="${themeConfig.barRadius}"
+            class="edge-stroke"
             fill="${barFrontFill}"
             opacity="${intensity}"
             stroke="${outlineStroke}"
             stroke-opacity="${outlineOpacity}"
-            stroke-width="0.8"
-            vector-effect="non-scaling-stroke"
           />
         </g>
         <g${topAnimationAttrs}>
           <polygon
             points="${topFaceFromY(currentTop)}"
+            class="edge-stroke"
             fill="${barTopFill}"
             opacity="${Math.min(0.97, intensity + 0.18)}"
             stroke="${outlineStroke}"
             stroke-opacity="${outlineOpacity}"
-            stroke-width="0.8"
-            vector-effect="non-scaling-stroke"
           />
           <line
             x1="${f1(geometry.x + BAR_DEPTH_X)}"
@@ -777,11 +787,11 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const includeScanLayer = themeConfig.scanOpacity > 0;
 
   const noiseTileSize = 80;
-  const noiseDotsPrimary = includeNoiseLayer
-    ? renderNoisePath(themeConfig.noiseSeed * 31 + 17, noiseTileSize, 220)
+  const noisePrimaryHref = includeNoiseLayer
+    ? createNoiseTileDataUri(themeConfig.noiseSeed * 31 + 17, noiseTileSize, 220, palette.primarySoft, 0.13)
     : '';
-  const noiseDotsSecondary = includeNoiseLayer
-    ? renderNoisePath(themeConfig.noiseSeed * 47 + 29, noiseTileSize, 140)
+  const noiseSecondaryHref = includeNoiseLayer
+    ? createNoiseTileDataUri(themeConfig.noiseSeed * 47 + 29, noiseTileSize, 140, palette.primarySoft, 0.08)
     : '';
   const noisePatternPrimaryAnimation =
     includeNoiseLayer && themeConfig.animateNoise
@@ -822,11 +832,11 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     ? `
     <pattern id="noisePatternPrimary" width="${noiseTileSize}" height="${noiseTileSize}" patternUnits="userSpaceOnUse">
       ${noisePatternPrimaryAnimation}
-      <path d="${noiseDotsPrimary}" fill="${palette.primarySoft}" fill-opacity="0.13"/>
+      <image x="0" y="0" width="${noiseTileSize}" height="${noiseTileSize}" href="${noisePrimaryHref}" preserveAspectRatio="none"/>
     </pattern>
     <pattern id="noisePatternSecondary" width="${noiseTileSize}" height="${noiseTileSize}" patternUnits="userSpaceOnUse">
       ${noisePatternSecondaryAnimation}
-      <path d="${noiseDotsSecondary}" fill="${palette.primarySoft}" fill-opacity="0.08"/>
+      <image x="0" y="0" width="${noiseTileSize}" height="${noiseTileSize}" href="${noiseSecondaryHref}" preserveAspectRatio="none"/>
     </pattern>
   `
     : '';
@@ -851,16 +861,6 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <stop offset="68%" stop-color="hsl(78, 92%, 56%)"/>
       <stop offset="84%" stop-color="hsl(24, 94%, 60%)"/>
       <stop offset="100%" stop-color="hsl(300, 92%, 62%)"/>
-    </linearGradient>
-
-    <linearGradient id="spectrumGlowGradient" gradientUnits="userSpaceOnUse" x1="${layout.margin.left}" y1="${layout.chartTop}" x2="${layout.width - layout.margin.right}" y2="${layout.chartTop}">
-      <stop offset="0%" stop-color="hsl(260, 100%, 78%)"/>
-      <stop offset="16%" stop-color="hsl(218, 100%, 76%)"/>
-      <stop offset="32%" stop-color="hsl(186, 100%, 74%)"/>
-      <stop offset="50%" stop-color="hsl(132, 100%, 72%)"/>
-      <stop offset="68%" stop-color="hsl(78, 100%, 74%)"/>
-      <stop offset="84%" stop-color="hsl(24, 100%, 76%)"/>
-      <stop offset="100%" stop-color="hsl(300, 100%, 78%)"/>
     </linearGradient>
 
     <linearGradient id="spectrumAreaGradient" gradientUnits="userSpaceOnUse" x1="${layout.margin.left}" y1="${layout.chartTop}" x2="${layout.width - layout.margin.right}" y2="${layout.chartTop}">
@@ -911,15 +911,16 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
 
   const chartBaseLineOpacity = Math.max(0.16, themeConfig.barMinOpacity * 0.55);
   const gridStroke = useSpectrumChart ? 'hsl(170, 72%, 72%)' : palette.primarySoft;
+  const includeBarGradientDef = !useSpectrumChart && !isWinampTheme;
+  const includeAreaGradientDef = !useSpectrumChart;
+  const includeDashboardFilters = showDashboard && Boolean(insights);
   const barAnimationCss = animateEqualizer
     ? `
     .bar-body-anim {
       animation: barBodyWave var(--bar-dur) linear var(--bar-delay) infinite;
-      will-change: transform;
     }
     .bar-top-anim {
       animation: barTopWave var(--bar-dur) linear var(--bar-delay) infinite;
-      will-change: transform;
     }
     @keyframes barBodyWave {
       0% { transform: matrix(1, 0, 0, var(--s0), 0, var(--dy0)); }
@@ -945,7 +946,6 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     }
     .stack-pulse-active {
       animation: stackPulseX var(--pulse-duration) linear var(--pulse-delay) infinite;
-      will-change: transform;
     }
     @keyframes stackPulseX {
       0% { transform: scaleX(0.74); }
@@ -953,6 +953,26 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       50% { transform: scaleX(0.87); }
       75% { transform: scaleX(1); }
       100% { transform: scaleX(0.74); }
+    }
+  `
+    : '';
+  const radarPulseCss = themeConfig.animateDashboard
+    ? `
+    .radar-point-outer-active {
+      animation: radarOuterPulse var(--radar-duration) linear infinite;
+    }
+    .radar-point-inner-active {
+      animation: radarInnerPulse var(--radar-duration) linear infinite;
+    }
+    @keyframes radarOuterPulse {
+      0% { transform: scale(0.846); fill-opacity: 0.12; }
+      50% { transform: scale(1.077); fill-opacity: 0.24; }
+      100% { transform: scale(0.846); fill-opacity: 0.12; }
+    }
+    @keyframes radarInnerPulse {
+      0% { transform: scale(0.875); }
+      50% { transform: scale(1.167); }
+      100% { transform: scale(0.875); }
     }
   `
     : '';
@@ -980,7 +1000,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const footerCredits = 'CREDITS: stefashkaa/github-profile-crt';
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg width="${layout.width}" height="${canvasHeight}" viewBox="0 0 ${layout.width} ${canvasHeight}" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" role="img" aria-labelledby="title desc">
+<svg width="${layout.width}" height="${canvasHeight}" viewBox="0 0 ${layout.width} ${canvasHeight}" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">${escapeXml(username)} contribution CRT monitor</title>
   <desc id="desc">CRT-style contribution chart generated from GitHub contribution calendar data.</desc>
 
@@ -991,15 +1011,23 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <stop offset="100%" stop-color="${palette.bg2}"/>
     </linearGradient>
 
-    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+    ${
+      includeBarGradientDef
+        ? `<linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="${palette.primarySoft}" stop-opacity="0.95"/>
       <stop offset="100%" stop-color="${palette.primary}" stop-opacity="0.45"/>
-    </linearGradient>
+    </linearGradient>`
+        : ''
+    }
 
-    <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+    ${
+      includeAreaGradientDef
+        ? `<linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="${palette.primary}" stop-opacity="${themeConfig.areaOpacity}"/>
       <stop offset="100%" stop-color="${palette.primary}" stop-opacity="0"/>
-    </linearGradient>
+    </linearGradient>`
+        : ''
+    }
     ${winampDefs}
     ${spectrumDefs}
 
@@ -1008,7 +1036,9 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <stop offset="100%" stop-color="rgba(0,0,0,1)"/>
     </radialGradient>
 
-    <filter
+    ${
+      includeDashboardFilters
+        ? `<filter
       id="phosphorGlowDash"
       x="${stackPanelX - dashboardBlurPadding}"
       y="${stackPanelY - dashboardBlurPadding}"
@@ -1022,8 +1052,12 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
-    </filter>
-    <filter
+    </filter>`
+        : ''
+    }
+    ${
+      includeDashboardFilters
+        ? `<filter
       id="phosphorGlowRadar"
       x="${radarCenterX - radarRadius - dashboardBlurPadding}"
       y="${radarCenterY - radarRadius - dashboardBlurPadding}"
@@ -1037,7 +1071,9 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
-    </filter>
+    </filter>`
+        : ''
+    }
 
     ${noisePatternDef}
     ${scanPatternDef}
@@ -1119,8 +1155,13 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       stroke-width: 1;
       shape-rendering: crispEdges;
     }
+    .edge-stroke {
+      stroke-width: 0.8;
+      vector-effect: non-scaling-stroke;
+    }
     ${barAnimationCss}
     ${stackPulseCss}
+    ${radarPulseCss}
   </style>
 
   <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#bg)"/>
