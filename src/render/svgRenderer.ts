@@ -167,9 +167,9 @@ function renderBars(
         : Math.min(0.9, Math.max(0.4, intensity + 0.18));
       const pointerStrokeOpacity = isWinampTheme ? 0.9 : Math.min(0.98, outlineOpacity + 0.06);
       const pointerFrontFill = isWinampTheme ? 'url(#winampPointerFrontGradient)' : barFrontFill;
-      const pointerTopFill = isWinampTheme ? '#f7f9ff' : barTopFill;
-      const pointerSideFill = isWinampTheme ? '#aeb3c3' : barSideFill;
-      const pointerStroke = isWinampTheme ? '#f8faff' : outlineStroke;
+      const pointerTopFill = isWinampTheme ? '#e1e6f1' : barTopFill;
+      const pointerSideFill = isWinampTheme ? '#929caf' : barSideFill;
+      const pointerStroke = isWinampTheme ? '#cfd8e8' : outlineStroke;
       const capLineStroke = isWinampTheme ? '#d7deed' : barTopFill;
 
       const bottomY = geometry.y + geometry.height;
@@ -903,8 +903,8 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     </linearGradient>
 
     <linearGradient id="winampPointerFrontGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f4f6fc"/>
-      <stop offset="100%" stop-color="#c9cfdb"/>
+      <stop offset="0%" stop-color="#dbe2ef"/>
+      <stop offset="100%" stop-color="#aab5c8"/>
     </linearGradient>
   `
     : '';
