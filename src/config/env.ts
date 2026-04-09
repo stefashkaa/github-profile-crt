@@ -44,7 +44,7 @@ export interface ResolvedThemeConfig {
 }
 
 const DEFAULT_OUTPUT_DIRECTORY = 'assets';
-const DEFAULT_THEMES = 'all';
+const DEFAULT_THEMES = 'crt';
 const MIN_SUPPORTED_YEAR = 2008;
 
 const THEME_TOKEN_ALL = 'all';

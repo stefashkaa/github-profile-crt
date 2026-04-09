@@ -13,40 +13,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout the repository, required if the action is in the same repository
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Generate & push SVGs
+        uses: ./
         with:
-          version: 10.33.0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 25
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate SVG
-        env:
-          GITHUB_USER: ${{ vars.GITHUB_USER || github.repository_owner }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN || github.token }}
-          CRT_OUTPUT_DIR: assets
-        run: pnpm generate
-
-      - name: Commit and push SVGs if changed
-        run: |
-          changed_files="$(git status --porcelain -- assets | grep '\.svg' || true)"
-          if [ -z "$changed_files" ]; then
-            echo "No SVG changes detected"
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets
-          git commit -m "chore: update CRT contribution svgs"
-          git push
+          output-dir: assets
+          themes: all

@@ -1,0 +1,73 @@
+name: github-profile-crt
+description: Generate CRT/equalizer themed GitHub contribution SVGs for profile README usage.
+author: stefashkaa
+
+inputs:
+  github-user:
+    description: Target GitHub username. Defaults to github.repository_owner.
+    required: false
+    default: ${{ github.repository_owner }}
+  github-token:
+    description: GitHub token with permission to read contribution data. Defaults to github.token.
+    required: false
+    default: ${{ github.token }}
+  output-dir:
+    description: Directory for generated SVG files. Defaults to `assets`.
+    required: false
+    default: assets
+  themes:
+    description: Theme selector (all, comma-separated preset names, custom).
+    required: false
+    default: crt
+  show-grid:
+    description: Toggle chart grid visibility.
+    required: false
+    default: 'true'
+  show-stats:
+    description: Toggle dashboard widgets visibility.
+    required: false
+    default: 'true'
+  show-stats-footer:
+    description: Toggle footer stats visibility.
+    required: false
+    default: 'true'
+  enable-hover-attrs:
+    description: Include hover title attributes for bars. Not required for GitHub README usage.
+    required: false
+    default: 'false'
+  minify-svg:
+    description: Minify optimized SVG output.
+    required: false
+    default: 'true'
+  commit-and-push:
+    description: Commit and push generated files back to the current repository branch.
+    required: false
+    default: 'true'
+  commit-message:
+    description: Commit message used when commit-and-push is enabled.
+    required: false
+    default: 'chore: Update CRT contribution SVGs'
+  year:
+    description: Contribution year. Empty for current year.
+    required: false
+    default: ''
+
+outputs:
+  output-directory:
+    description: Directory where SVG files were written.
+  generated-files:
+    description: Number of generated themed SVG files.
+  weeks:
+    description: Number of rendered contribution weeks.
+  total-contributions:
+    description: Total contributions across rendered weeks.
+  committed:
+    description: Whether generated SVG changes were committed and pushed.
+
+runs:
+  using: node20
+  main: dist/action/index.js
+
+branding:
+  icon: activity
+  color: green
