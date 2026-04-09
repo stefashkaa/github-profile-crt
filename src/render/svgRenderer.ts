@@ -606,8 +606,12 @@ function renderDashboardPanels(
   `;
 }
 
-function renderMonthLabels(monthPositions: Array<{ label: string; year: number; x: number }>, y: number): string {
+function renderMonthLabels(
+  monthPositions: Array<{ label: string; year: number; x: number; showLabel?: boolean }>,
+  y: number
+): string {
   return monthPositions
+    .filter(({ showLabel }) => showLabel !== false)
     .map(({ label, x }) => {
       return `<text x="${x.toFixed(2)}" y="${y}" class="month" text-anchor="middle">${escapeXml(label)}</text>`;
     })
@@ -661,7 +665,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const weekly = deriveWeeklyStats(calendar.weeks);
   const maxWeekly = Math.max(1, maxOf(weekly.map((week) => week.total)));
   const geometries = weekly.map((week, index) => resolveBarGeometry(index, week.total, maxWeekly, layout));
-  const monthMarkers = calendar.months
+  const rawMonthMarkers = calendar.months
     .map((month) => {
       const monthStartDate = new Date(month.firstDay);
       const index = calendar.weeks.findIndex((week) => new Date(week.firstDay) >= monthStartDate);
@@ -677,6 +681,15 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       };
     })
     .filter((marker): marker is { index: number; label: string; year: number } => marker !== null);
+  const monthMarkers = rawMonthMarkers.map((marker, markerIndex) => {
+    const nextIndex = rawMonthMarkers[markerIndex + 1]?.index ?? weekly.length;
+    const weekCount = Math.max(0, nextIndex - marker.index);
+
+    return {
+      ...marker,
+      weekCount
+    };
+  });
   const monthStep = layout.barWidth + layout.weekGap;
   const chartStartX = layout.margin.left + layout.weekGap / 2;
   const monthBoundaryShift = 0.5 - layout.weekGap / 2;
@@ -688,25 +701,19 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const monthRightLimit = layout.width - layout.margin.right - 12;
   const yearLeftLimit = layout.margin.left + 18;
   const yearRightLimit = layout.width - layout.margin.right - 18;
-  const monthPositions = monthMarkers.map(({ label, year }, markerIndex) => {
+  const monthPositions = monthMarkers.map(({ label, year, weekCount }, markerIndex) => {
     const startBoundaryX = monthBoundaryXs[markerIndex] ?? monthBoundaryXs[0] ?? 0;
     const endBoundaryX = monthBoundaryXs[markerIndex + 1] ?? chartRightBoundaryX;
     const segmentWidth = Math.max(0, endBoundaryX - startBoundaryX);
-    let centerX = startBoundaryX + segmentWidth / 2;
-    const isLastMarker = markerIndex === monthMarkers.length - 1;
-    const isIncompleteTailMonth = isLastMarker && segmentWidth < monthStep * 1.5;
-
-    if (isIncompleteTailMonth) {
-      const rightBias = Math.min(9, Math.max(3, monthStep * 0.2 + (monthStep * 1.5 - segmentWidth) * 0.18));
-      centerX += rightBias;
-    }
-
-    const labelRightLimit = isIncompleteTailMonth ? layout.width - layout.margin.right + 6 : monthRightLimit;
+    const centerX = startBoundaryX + segmentWidth / 2;
+    const isEdgeMonth = markerIndex === 0 || markerIndex === monthMarkers.length - 1;
+    const showLabel = !(isEdgeMonth && weekCount <= 1);
 
     return {
       label,
       year,
-      x: clamp(centerX, monthLeftLimit, labelRightLimit)
+      x: clamp(centerX, monthLeftLimit, monthRightLimit),
+      showLabel
     };
   });
 
