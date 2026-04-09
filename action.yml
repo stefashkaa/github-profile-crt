@@ -4,7 +4,7 @@ author: stefashkaa
 
 inputs:
   github-user:
-    description: Target GitHub username. Defaults to github.repository_owner.
+    description: Target GitHub login (user or organization). Defaults to github.repository_owner.
     required: false
     default: ${{ github.repository_owner }}
   github-token:
@@ -33,6 +33,10 @@ inputs:
     default: 'true'
   enable-hover-attrs:
     description: Include hover title attributes for bars. Not required for GitHub README usage.
+    required: false
+    default: 'false'
+  include-org-private:
+    description: Include private contributions from organization repositories. Defaults to `false` for privacy reasons.
     required: false
     default: 'false'
   minify-svg:

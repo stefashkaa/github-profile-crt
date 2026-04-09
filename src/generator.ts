@@ -1,9 +1,12 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { RuntimeConfig } from './config/env';
+import { fetchLoginAccountType } from './github/fetchLoginAccountType';
 import { createGitHubGraphQlClient } from './github/graphqlClient';
+import { fetchOrganizationData } from './github/fetchOrganizationData';
 import { fetchContributionCalendar } from './github/fetchContributionCalendar';
 import { fetchProfileInsights } from './github/fetchProfileInsights';
+import { createGitHubRestClient } from './github/restClient';
 import { optimizeGeneratedSvg } from './render/optimizeSvg';
 import { renderCrtContributionSvg } from './render/svgRenderer';
 import { outputFileNameForTheme, type ThemeMode, type ThemeName, type ThemeableConfig } from './render/themes';
@@ -28,18 +31,39 @@ export async function generateCrtContributionSvgs(config: RuntimeConfig): Promis
   await fs.mkdir(config.outputDirectory, { recursive: true });
 
   const client = createGitHubGraphQlClient(config.token);
-  const calendarPromise = fetchContributionCalendar(
-    client,
-    config.username,
-    config.contributionWindow.from,
-    config.contributionWindow.to
-  );
-  const insightsPromise = config.visual.showStats
-    ? fetchProfileInsights(client, config.username, config.contributionWindow.from, config.contributionWindow.to).catch(
-        () => null
-      )
-    : Promise.resolve(null);
-  const [calendar, insights] = await Promise.all([calendarPromise, insightsPromise]);
+  const restClient = createGitHubRestClient(config.token);
+  const accountType = await fetchLoginAccountType(restClient, config.username);
+  let calendar;
+  let insights;
+
+  if (accountType === 'organization') {
+    const orgData = await fetchOrganizationData(
+      restClient,
+      config.username,
+      config.contributionWindow.from,
+      config.contributionWindow.to,
+      config.visual.showStats,
+      config.includePrivateContributions
+    );
+
+    calendar = orgData.calendar;
+    insights = orgData.insights;
+  } else {
+    const [userCalendar, userInsights] = await Promise.all([
+      fetchContributionCalendar(client, config.username, config.contributionWindow.from, config.contributionWindow.to),
+      config.visual.showStats
+        ? fetchProfileInsights(
+            client,
+            config.username,
+            config.contributionWindow.from,
+            config.contributionWindow.to
+          ).catch(() => null)
+        : Promise.resolve(null)
+    ]);
+
+    calendar = userCalendar;
+    insights = userInsights;
+  }
 
   const files: GeneratedThemeFile[] = [];
 

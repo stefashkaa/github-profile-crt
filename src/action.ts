@@ -242,7 +242,7 @@ async function run(): Promise<void> {
 
   if (!resolvedUser) {
     throw new Error(
-      "Missing target GitHub username. Provide 'github-user' input or run in a repository context with a resolvable owner."
+      "Missing target GitHub login. Provide 'github-user' input or run in a repository context with a resolvable owner."
     );
   }
 
@@ -264,6 +264,7 @@ async function run(): Promise<void> {
   setEnvIfNonEmpty('CRT_SHOW_STATS', core.getInput('show-stats'));
   setEnvIfNonEmpty('CRT_SHOW_STATS_FOOTER', core.getInput('show-stats-footer'));
   setEnvIfNonEmpty('CRT_ENABLE_HOVER_ATTRS', core.getInput('enable-hover-attrs'));
+  setEnvIfNonEmpty('CRT_INCLUDE_ORG_PRIVATE', core.getInput('include-org-private'));
   setEnvIfNonEmpty('CRT_MINIFY_SVG', core.getInput('minify-svg'));
   setEnvIfNonEmpty('CRT_YEAR', core.getInput('year'));
 

@@ -33,9 +33,11 @@ Most GitHub profile charts look similar. `github-profile-crt` is built to stand 
 
 1. Create or open your GitHub profile repository.
 
-For profile READMEs, it should be named `.github`.
+For user profile READMEs, use `<username>/.github`.
 
-For project repos, it can be any repo you want to showcase the chart in. You can also use this action in non-profile repos to generate CRT-style charts for any GitHub user by setting the `github-user` input.
+For organization profile READMEs, use `<organization>/.github`.
+
+For project repos, it can be any repo you want to showcase the chart in. You can also use this action in non-profile repos by setting `github-user`.
 
 2. Create workflow folders in the repo root:
 
@@ -75,12 +77,18 @@ jobs:
 
 Defaults handled automatically:
 
-- `github-user` defaults to `github.repository_owner`
+- `github-user` defaults to `github.repository_owner` (works for both user and org owners)
 - `github-token` defaults to `github.token`
 - `commit-and-push` defaults to `true`
 - `year` defaults to current year (rolling 12 months)
 - `themes` defaults to `crt`
 - `show-grid`, `show-stats`, `show-stats-footer`, and `minify-svg` default to `true`
+- `include-org-private` defaults to `false`
+
+Account modes:
+
+- If `github-user` is a user login, data comes from GitHub user contributions collection.
+- If `github-user` is an organization login, data is aggregated from organization repositories visible to the provided token (`public` by default, `all` when `include-org-private: 'true'`).
 
 5. Commit the workflow file.
    After commit, run it once from GitHub UI:
