@@ -464,17 +464,10 @@ function renderActivityRadar(
   const sweepRotateAnimation = animateDashboard
     ? `<animateTransform attributeName="transform" type="rotate" values="0 ${centerX} ${centerY};360 ${centerX} ${centerY}" dur="${radarSweepDuration}s" repeatCount="indefinite"/>`
     : '';
-  const outerPointAnimation = (duration: string): string =>
-    animateDashboard
-      ? `
-      <animate attributeName="r" values="4.4;5.6;4.4" dur="${duration}" repeatCount="indefinite"/>
-      <animate attributeName="fill-opacity" values="0.12;0.24;0.12" dur="${duration}" repeatCount="indefinite"/>
-    `
-      : '';
-  const innerPointAnimation = (duration: string): string =>
-    animateDashboard
-      ? `<animate attributeName="r" values="2.1;2.8;2.1" dur="${duration}" repeatCount="indefinite"/>`
-      : '';
+  const radarPointOuterClass = animateDashboard ? 'radar-point-outer radar-point-outer-active' : 'radar-point-outer';
+  const radarPointInnerClass = animateDashboard ? 'radar-point-inner radar-point-inner-active' : 'radar-point-inner';
+  const radarPointStyle = (x: number, y: number, duration: string): string =>
+    `transform-origin:${x.toFixed(2)}px ${y.toFixed(2)}px;--radar-duration:${duration};`;
 
   const values = {
     commit: insights.activity.commits,
@@ -579,30 +572,14 @@ function renderActivityRadar(
     <line x1="${centerX}" y1="${centerY}" x2="${(centerX + radius).toFixed(2)}" y2="${centerY}" stroke="${radialGuideStroke}" stroke-opacity="0.45" stroke-width="1.9" stroke-linecap="round"/>
     <line x1="${centerX}" y1="${centerY}" x2="${centerX}" y2="${(centerY + radius).toFixed(2)}" stroke="${radialGuideStroke}" stroke-opacity="0.45" stroke-width="1.9" stroke-linecap="round"/>
 
-    <circle cx="${basePoints.commit.x.toFixed(2)}" cy="${basePoints.commit.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
-      ${outerPointAnimation('2.2s')}
-    </circle>
-    <circle cx="${basePoints.commit.x.toFixed(2)}" cy="${basePoints.commit.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
-      ${innerPointAnimation('2.2s')}
-    </circle>
-    <circle cx="${basePoints.pr.x.toFixed(2)}" cy="${basePoints.pr.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
-      ${outerPointAnimation('2.5s')}
-    </circle>
-    <circle cx="${basePoints.pr.x.toFixed(2)}" cy="${basePoints.pr.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
-      ${innerPointAnimation('2.5s')}
-    </circle>
-    <circle cx="${basePoints.issue.x.toFixed(2)}" cy="${basePoints.issue.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
-      ${outerPointAnimation('2.8s')}
-    </circle>
-    <circle cx="${basePoints.issue.x.toFixed(2)}" cy="${basePoints.issue.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
-      ${innerPointAnimation('2.8s')}
-    </circle>
-    <circle cx="${basePoints.review.x.toFixed(2)}" cy="${basePoints.review.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2">
-      ${outerPointAnimation('3.1s')}
-    </circle>
-    <circle cx="${basePoints.review.x.toFixed(2)}" cy="${basePoints.review.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}">
-      ${innerPointAnimation('3.1s')}
-    </circle>
+    <circle cx="${basePoints.commit.x.toFixed(2)}" cy="${basePoints.commit.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2" class="${radarPointOuterClass}" style="${radarPointStyle(basePoints.commit.x, basePoints.commit.y, '2.2s')}"/>
+    <circle cx="${basePoints.commit.x.toFixed(2)}" cy="${basePoints.commit.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}" class="${radarPointInnerClass}" style="${radarPointStyle(basePoints.commit.x, basePoints.commit.y, '2.2s')}"/>
+    <circle cx="${basePoints.pr.x.toFixed(2)}" cy="${basePoints.pr.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2" class="${radarPointOuterClass}" style="${radarPointStyle(basePoints.pr.x, basePoints.pr.y, '2.5s')}"/>
+    <circle cx="${basePoints.pr.x.toFixed(2)}" cy="${basePoints.pr.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}" class="${radarPointInnerClass}" style="${radarPointStyle(basePoints.pr.x, basePoints.pr.y, '2.5s')}"/>
+    <circle cx="${basePoints.issue.x.toFixed(2)}" cy="${basePoints.issue.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2" class="${radarPointOuterClass}" style="${radarPointStyle(basePoints.issue.x, basePoints.issue.y, '2.8s')}"/>
+    <circle cx="${basePoints.issue.x.toFixed(2)}" cy="${basePoints.issue.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}" class="${radarPointInnerClass}" style="${radarPointStyle(basePoints.issue.x, basePoints.issue.y, '2.8s')}"/>
+    <circle cx="${basePoints.review.x.toFixed(2)}" cy="${basePoints.review.y.toFixed(2)}" r="5.2" fill="${themeConfig.palette.primarySoft}" fill-opacity="0.2" class="${radarPointOuterClass}" style="${radarPointStyle(basePoints.review.x, basePoints.review.y, '3.1s')}"/>
+    <circle cx="${basePoints.review.x.toFixed(2)}" cy="${basePoints.review.y.toFixed(2)}" r="2.4" fill="${themeConfig.palette.primarySoft}" class="${radarPointInnerClass}" style="${radarPointStyle(basePoints.review.x, basePoints.review.y, '3.1s')}"/>
 
     <text x="${centerX}" y="${prLabelY}" class="dash-label" text-anchor="middle">PR</text>
     <text x="${commitLabelX}" y="${labelY}" class="dash-label" text-anchor="end">COMMIT</text>
@@ -1106,12 +1083,30 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       animation: stackPulseX var(--pulse-duration) linear var(--pulse-delay) infinite;
       will-change: transform;
     }
+    .radar-point-outer-active {
+      animation: radarOuterPulse var(--radar-duration) linear infinite;
+      will-change: transform, fill-opacity;
+    }
+    .radar-point-inner-active {
+      animation: radarInnerPulse var(--radar-duration) linear infinite;
+      will-change: transform;
+    }
     @keyframes stackPulseX {
       0% { transform: scaleX(0.74); }
       25% { transform: scaleX(1); }
       50% { transform: scaleX(0.87); }
       75% { transform: scaleX(1); }
       100% { transform: scaleX(0.74); }
+    }
+    @keyframes radarOuterPulse {
+      0% { transform: scale(0.846); fill-opacity: 0.12; }
+      50% { transform: scale(1.077); fill-opacity: 0.24; }
+      100% { transform: scale(0.846); fill-opacity: 0.12; }
+    }
+    @keyframes radarInnerPulse {
+      0% { transform: scale(0.875); }
+      50% { transform: scale(1.167); }
+      100% { transform: scale(0.875); }
     }
   </style>
 
