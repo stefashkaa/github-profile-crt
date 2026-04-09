@@ -216,7 +216,7 @@ function renderBars(
 
       if (week.total <= 0) {
         return `
-      <g shape-rendering="crispEdges">
+      <g>
         ${hoverTitle}
         ${pointerMarkup}
       </g>
@@ -224,7 +224,7 @@ function renderBars(
       }
 
       return `
-      <g shape-rendering="crispEdges">
+      <g>
         ${hoverTitle}
         <polygon
           points="${sideFaceFromY(currentTop)}"
@@ -782,7 +782,16 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
 
   const noiseFilterDef = includeNoiseLayer
     ? `
-    <filter id="noiseFilter">
+    <filter
+      id="noiseFilter"
+      x="0"
+      y="0"
+      width="${layout.width}"
+      height="${canvasHeight}"
+      filterUnits="userSpaceOnUse"
+      primitiveUnits="userSpaceOnUse"
+      color-interpolation-filters="sRGB"
+      filterRes="${Math.max(220, Math.round(layout.width * 0.62))} ${Math.max(140, Math.round(canvasHeight * 0.62))}">
       <feTurbulence
         id="noiseTurbulence"
         type="fractalNoise"
@@ -1027,7 +1036,9 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   ${gridLines}
   ${verticalTicks}
 
-  ${bars}
+  <g shape-rendering="crispEdges">
+    ${bars}
+  </g>
   <line
     x1="${layout.margin.left}"
     y1="${layout.chartBottom + 0.5}"
