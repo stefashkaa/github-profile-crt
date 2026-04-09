@@ -1,5 +1,11 @@
 # Mono Theme
 
+<!-- nav:top:start -->
+
+[← Back to README](../README.md)
+
+<!-- nav:top:end -->
+
 Grayscale monochrome interpretation with subtle glow and low-saturation dashboard visuals.
 
 ## Dark Mode
@@ -51,3 +57,9 @@ Profile README snippet:
   </picture>
 </p>
 ```
+
+<!-- nav:bottom:start -->
+
+[↑ Back to README](../README.md)
+
+<!-- nav:bottom:end -->

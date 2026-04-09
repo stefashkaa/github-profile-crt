@@ -1,5 +1,11 @@
 # Ice Theme
 
+<!-- nav:top:start -->
+
+[← Back to README](../README.md)
+
+<!-- nav:top:end -->
+
 Cool cyan/blue phosphor style for a clean futuristic CRT look that still keeps the retro signal texture.
 
 ## Dark Mode
@@ -51,3 +57,9 @@ Profile README snippet:
   </picture>
 </p>
 ```
+
+<!-- nav:bottom:start -->
+
+[↑ Back to README](../README.md)
+
+<!-- nav:bottom:end -->

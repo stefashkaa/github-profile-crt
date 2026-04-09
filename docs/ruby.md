@@ -1,5 +1,11 @@
 # Ruby Theme
 
+<!-- nav:top:start -->
+
+[← Back to README](../README.md)
+
+<!-- nav:top:end -->
+
 Red-tinted high-contrast signal style for bold profiles that want aggressive color identity.
 
 ## Dark Mode
@@ -51,3 +57,9 @@ Profile README snippet:
   </picture>
 </p>
 ```
+
+<!-- nav:bottom:start -->
+
+[↑ Back to README](../README.md)
+
+<!-- nav:bottom:end -->

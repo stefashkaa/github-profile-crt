@@ -1,5 +1,11 @@
 # Static Theme
 
+<!-- nav:top:start -->
+
+[← Back to README](../README.md)
+
+<!-- nav:top:end -->
+
 Minimal-motion variant with scan/noise/equalizer/dashboard animations disabled for the clean readability.
 
 ## Dark Mode
@@ -51,3 +57,9 @@ Profile README snippet:
   </picture>
 </p>
 ```
+
+<!-- nav:bottom:start -->
+
+[↑ Back to README](../README.md)
+
+<!-- nav:bottom:end -->

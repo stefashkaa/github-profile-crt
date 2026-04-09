@@ -1,5 +1,11 @@
 # Mint Theme
 
+<!-- nav:top:start -->
+
+[← Back to README](../README.md)
+
+<!-- nav:top:end -->
+
 Fresh mint-green palette with soft glow and smoother contrast for a calmer CRT mood.
 
 ## Dark Mode
@@ -51,3 +57,9 @@ Profile README snippet:
   </picture>
 </p>
 ```
+
+<!-- nav:bottom:start -->
+
+[↑ Back to README](../README.md)
+
+<!-- nav:bottom:end -->
