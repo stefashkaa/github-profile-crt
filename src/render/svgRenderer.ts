@@ -893,7 +893,6 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   `
     : '';
 
-  const chartBaseGlowOpacity = Math.max(0.22, themeConfig.barMinOpacity * 0.7);
   const chartBaseLineOpacity = Math.max(0.16, themeConfig.barMinOpacity * 0.55);
   const gridStroke = useSpectrumChart ? 'hsl(170, 72%, 72%)' : palette.primarySoft;
   const stackPanelX = layout.margin.left + 60;
@@ -907,7 +906,6 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const radarCenterY = stackPanelY + 46;
   const radarRadius = 34;
   const dashboardBlurPadding = Math.max(8, Math.ceil(themeConfig.phosphorBlur * 6));
-  const baselineBlurPadding = Math.max(6, Math.ceil(themeConfig.phosphorBlur * 5));
 
   const lastWeek = weekly[weekly.length - 1];
   const footerUser = `USER: @${username}`;
@@ -949,21 +947,6 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <stop offset="100%" stop-color="rgba(0,0,0,1)"/>
     </radialGradient>
 
-    <filter
-      id="phosphorGlowBaseline"
-      x="${layout.margin.left - baselineBlurPadding}"
-      y="${layout.chartBottom - baselineBlurPadding}"
-      width="${layout.width - layout.margin.left - layout.margin.right + baselineBlurPadding * 2}"
-      height="${baselineBlurPadding * 2 + 4}"
-      filterUnits="userSpaceOnUse"
-      primitiveUnits="userSpaceOnUse"
-      color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="${themeConfig.phosphorBlur}" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
     <filter
       id="phosphorGlowDash"
       x="${stackPanelX - dashboardBlurPadding}"
@@ -1125,16 +1108,6 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   <g shape-rendering="crispEdges">
     ${bars}
   </g>
-  <line
-    x1="${layout.margin.left}"
-    y1="${layout.chartBottom + 0.5}"
-    x2="${layout.width - layout.margin.right}"
-    y2="${layout.chartBottom + 0.5}"
-    stroke="${palette.primarySoft}"
-    stroke-opacity="${chartBaseGlowOpacity}"
-    stroke-width="2.4"
-    filter="url(#phosphorGlowBaseline)"
-  />
   <line
     x1="${layout.margin.left}"
     y1="${layout.chartBottom + 0.5}"
