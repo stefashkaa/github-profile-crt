@@ -203,8 +203,8 @@ function renderBars(
       const sideFaceFromY = (y: number): string =>
         `${f1(geometry.x + layout.barWidth)},${f1(y)} ${f1(geometry.x + layout.barWidth + BAR_DEPTH_X)},${f1(y - BAR_DEPTH_Y)} ${f1(geometry.x + layout.barWidth + BAR_DEPTH_X)},${f1(bottomY - BAR_DEPTH_Y)} ${f1(geometry.x + layout.barWidth)},${f1(bottomY)}`;
 
-      const pointerDepthX = Math.max(1.3, BAR_DEPTH_X - 0.2);
-      const pointerDepthY = Math.max(1.3, BAR_DEPTH_Y - 0.2);
+      const pointerDepthX = Math.max(1.1, Math.min(BAR_DEPTH_X - 0.4, pointerWidth * 0.3));
+      const pointerDepthY = Math.max(0.9, Math.min(BAR_DEPTH_Y - 0.9, pointerHeight * 0.55));
       const pointerX = geometry.x + (layout.barWidth - pointerWidth) / 2;
       const pointerTopFaceFromY = (y: number): string =>
         `${f1(pointerX)},${f1(y)} ${f1(pointerX + pointerWidth)},${f1(y)} ${f1(pointerX + pointerWidth + pointerDepthX)},${f1(y - pointerDepthY)} ${f1(pointerX + pointerDepthX)},${f1(y - pointerDepthY)}`;
@@ -215,7 +215,7 @@ function renderBars(
         <g>
           <polygon
             points="${pointerSideFaceFromY(pointerFrontY)}"
-            class="edge-stroke"
+            class="edge-stroke rounded-edge"
             fill="${pointerSideFill}"
             opacity="${isWinampTheme ? 0.82 : Math.max(0.2, intensity * 0.7)}"
             stroke="${pointerStroke}"
@@ -226,7 +226,7 @@ function renderBars(
             y="${f1(pointerFrontY)}"
             width="${pointerWidth}"
             height="${pointerHeight}"
-            class="edge-stroke"
+            class="edge-stroke rounded-edge"
             fill="${pointerFrontFill}"
             opacity="${isWinampTheme ? 0.95 : Math.min(0.96, intensity + 0.16)}"
             stroke="${pointerStroke}"
@@ -234,7 +234,7 @@ function renderBars(
           />
           <polygon
             points="${pointerTopFaceFromY(pointerFrontY)}"
-            class="edge-stroke"
+            class="edge-stroke rounded-edge"
             fill="${pointerTopFill}"
             opacity="${isWinampTheme ? 0.98 : Math.min(0.98, intensity + 0.24)}"
             stroke="${pointerStroke}"
@@ -275,7 +275,7 @@ function renderBars(
         <g${bodyAnimationAttrs}>
           <polygon
             points="${sideFaceFromY(currentTop)}"
-            class="edge-stroke"
+            class="edge-stroke rounded-edge"
             fill="${barSideFill}"
             opacity="${Math.max(0.14, intensity * 0.62)}"
             stroke="${outlineStroke}"
@@ -287,7 +287,7 @@ function renderBars(
             width="${layout.barWidth}"
             height="${currentHeight}"
             rx="${themeConfig.barRadius}"
-            class="edge-stroke"
+            class="edge-stroke rounded-edge"
             fill="${barFrontFill}"
             opacity="${intensity}"
             stroke="${outlineStroke}"
@@ -297,7 +297,7 @@ function renderBars(
         <g${topAnimationAttrs}>
           <polygon
             points="${topFaceFromY(currentTop)}"
-            class="edge-stroke"
+            class="edge-stroke rounded-edge"
             fill="${barTopFill}"
             opacity="${Math.min(0.97, intensity + 0.18)}"
             stroke="${outlineStroke}"
@@ -1158,6 +1158,10 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     .edge-stroke {
       stroke-width: 0.8;
       vector-effect: non-scaling-stroke;
+    }
+    .rounded-edge {
+      stroke-linejoin: round;
+      stroke-miterlimit: 1;
     }
     ${barAnimationCss}
     ${stackPulseCss}
