@@ -31,136 +31,145 @@ Most GitHub profile charts look similar. `github-profile-crt` is built to stand 
 
 ## Quick Start
 
-### 1. Install
+1. Create or open your GitHub profile repository.
 
-```bash
-pnpm install
+For profile READMEs, it should be named `.github`.
+
+For project repos, it can be any repo you want to showcase the chart in. You can also use this action in non-profile repos to generate CRT-style charts for any GitHub user by setting the `github-user` input.
+
+2. Create workflow folders in the repo root:
+
+```text
+.github/workflows
 ```
 
-### 2. Configure
+3. Create a file:
 
-```bash
-cp .env.example .env
+```text
+.github/workflows/generate-crt-contributions.yml
 ```
 
-Set at least:
+4. Paste this workflow:
 
-```env
-GITHUB_TOKEN=ghp_xxx
-GITHUB_USER=your-github-username
+```yaml
+name: Generate CRT Contributions
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 */12 * * *' # Runs every 12 hours (UTC). Adjust cadence if needed.
+
+permissions:
+  contents: write # Required so the action can commit and push updated SVG files.
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate SVG assets
+        uses: stefashkaa/github-profile-crt@v1
+        with:
+          output-dir: assets # Where SVGs will be written.
+          themes: crt # Supports: all | comma-separated presets | custom.
 ```
 
-### 3. Generate
+Defaults handled automatically:
 
-```bash
-pnpm generate:dev
-```
+- `github-user` defaults to `github.repository_owner`
+- `github-token` defaults to `github.token`
+- `commit-and-push` defaults to `true`
+- `year` defaults to current year (rolling 12 months)
+- `themes` defaults to `crt`
+- `show-grid`, `show-stats`, `show-stats-footer`, and `minify-svg` default to `true`
 
-Generated SVGs are saved to `assets/`.
+5. Commit the workflow file.
+   After commit, run it once from GitHub UI:
+   `Actions -> Generate CRT Contributions -> Run workflow`.
 
-## Add To Profile README
+The action will generate/update SVG files in `assets/` and push them automatically.
+
+6. Create /profile/README.md if it doesn't exist, or edit your existing markdown file to include the generated SVGs:
 
 ```md
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/crt-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="./assets/crt-light.svg">
-    <img alt="CRT Contributions" src="./assets/crt-dark.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="../assets/crt-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="../assets/crt-light.svg">
+    <img alt="CRT Contributions" src="../assets/crt-dark.svg">
   </picture>
 </p>
 ```
 
-## Theme Preview
-
-<p align="center">
-  <img alt="Neon theme preview" src="./assets/neon-dark.svg" width="49%">
-  <img alt="Rainbow theme preview" src="./assets/rainbow-dark.svg" width="49%">
-</p>
-
-<p align="center">
-  <img alt="Winamp theme preview" src="./assets/winamp-dark.svg" width="49%">
-  <img alt="Chaos max theme preview" src="./assets/chaos-max-dark.svg" width="49%">
-</p>
+The `picture` element ensures the correct theme variant is shown based on user preference. Adjust paths if your SVGs are in a different location.
 
 ## Themes
 
-Presets:
+- [crt](./docs/crt.md)
+- [amber](./docs/amber.md)
+- [ice](./docs/ice.md)
+- [ruby](./docs/ruby.md)
+- [mint](./docs/mint.md)
+- [mono](./docs/mono.md)
+- [winamp](./docs/winamp.md)
+- [neon](./docs/neon.md)
+- [rainbow](./docs/rainbow.md)
+- [chaos](./docs/chaos.md)
+- [chaos-max](./docs/chaos-max.md)
+- [static](./docs/static.md)
 
-- `crt`
-- `amber`
-- `ice`
-- `ruby`
-- `mint`
-- `mono`
-- `winamp`
-- `neon`
-- `rainbow`
-- `chaos`
-- `chaos-max`
-- `static`
+Set `themes` in workflow input:
 
-Theme selection:
+- `themes: all` generates all presets
+- `themes: neon,rainbow,crt` generates selected presets
+- `themes: rainbow` generates the rainbow preset
+- `themes: custom` generates your custom palette theme
 
-- `CRT_THEMES=all` generates all presets
-- `CRT_THEMES=neon,rainbow,crt` generates selected presets
-- `CRT_THEMES=custom` generates your custom palette theme
+## Customize Theme
 
-## Key Configuration
+To build a custom palette, set `themes: custom` and pass supported `CRT_CUSTOM_*` values via workflow `env`.
 
-| Variable                 | Default      | Description                                           |
-| ------------------------ | ------------ | ----------------------------------------------------- |
-| `CRT_THEMES`             | `all`        | Theme set to generate                                 |
-| `CRT_SHOW_GRID`          | `true`       | Show main chart grid                                  |
-| `CRT_SHOW_STATS`         | `true`       | Show dashboard widgets                                |
-| `CRT_SHOW_STATS_FOOTER`  | `true`       | Show footer stats row                                 |
-| `CRT_ENABLE_HOVER_ATTRS` | `false`      | Include per-bar `<title>` hover metadata              |
-| `CRT_MINIFY_SVG`         | `true`       | Optimize SVG output                                   |
-| `CRT_YEAR`               | current year | Current year = rolling 12 months, past year = Jan-Dec |
+Example:
 
-Custom palette envs are supported via `CRT_CUSTOM_*` and `CRT_CUSTOM_LIGHT_*` values.
-
-## Data Window Behavior
-
-- `CRT_YEAR=<current year>` or unset:
-  rolling range from current month of previous year to current month now
-- `CRT_YEAR=<past year>`:
-  fixed Jan-Dec of selected year
-- `LAST WEEK` footer stat is hidden for past-year fixed ranges
-
-## GitHub Actions Automation
-
-Included workflow:
-
-- [`.github/workflows/generate-crt-contributions.yml`](./.github/workflows/generate-crt-contributions.yml)
-
-It runs on schedule and manual dispatch, generates SVGs, and auto-commits changed files in `assets/`.
-
-## Local Development
-
-```bash
-pnpm lint
-pnpm typecheck
-pnpm generate:dev
+```yaml
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: stefashkaa/github-profile-crt@v1
+        with:
+          output-dir: assets
+          themes: custom
+        env:
+          CRT_CUSTOM_BASE_THEME: crt
+          CRT_CUSTOM_SPECTRUM_CHART: 'true'
+          CRT_CUSTOM_BG0: '#02060f'
+          CRT_CUSTOM_BG1: '#06182a'
+          CRT_CUSTOM_BG2: '#0c2d42'
+          CRT_CUSTOM_PRIMARY: '#5fffb1'
+          CRT_CUSTOM_PRIMARY_SOFT: '#84ffc4'
+          CRT_CUSTOM_TEXT_DIM: '#8fd1aa'
+          CRT_CUSTOM_SCAN: '#2fff7f'
+          CRT_CUSTOM_ENABLE_LIGHT: 'true'
+          CRT_CUSTOM_LIGHT_BG0: '#eefaf2'
+          CRT_CUSTOM_LIGHT_BG1: '#e2f4e9'
+          CRT_CUSTOM_LIGHT_BG2: '#d0eadf'
+          CRT_CUSTOM_LIGHT_PRIMARY: '#2a9f65'
+          CRT_CUSTOM_LIGHT_PRIMARY_SOFT: '#62ba8a'
+          CRT_CUSTOM_LIGHT_TEXT_DIM: '#557d67'
+          CRT_CUSTOM_LIGHT_SCAN: '#62ba8a'
 ```
 
-Quality tools:
+Supported custom keys:
 
-- ESLint
-- Prettier
-- Husky
-- lint-staged
-
-`pre-commit` runs `pnpm lint-staged`.
-
-## Project Structure
-
-- `src/config` runtime and env parsing
-- `src/github` GitHub GraphQL client and data fetchers
-- `src/model` shared data models
-- `src/render/themes.ts` theme presets and variants
-- `src/render/svgRenderer.ts` SVG renderer
-- `src/generator.ts` orchestration and output
-- `src/cli.ts` command entry point
+- `CRT_CUSTOM_BASE_THEME`
+- `CRT_CUSTOM_SPECTRUM_CHART`
+- `CRT_CUSTOM_BG0`, `CRT_CUSTOM_BG1`, `CRT_CUSTOM_BG2`
+- `CRT_CUSTOM_PRIMARY`, `CRT_CUSTOM_PRIMARY_SOFT`
+- `CRT_CUSTOM_TEXT_DIM`, `CRT_CUSTOM_SCAN`
+- `CRT_CUSTOM_ENABLE_LIGHT`
+- `CRT_CUSTOM_LIGHT_BG0`, `CRT_CUSTOM_LIGHT_BG1`, `CRT_CUSTOM_LIGHT_BG2`
+- `CRT_CUSTOM_LIGHT_PRIMARY`, `CRT_CUSTOM_LIGHT_PRIMARY_SOFT`
+- `CRT_CUSTOM_LIGHT_TEXT_DIM`, `CRT_CUSTOM_LIGHT_SCAN`
 
 ## Open Source Docs
 
@@ -169,6 +178,19 @@ Quality tools:
 - [Security Policy](./SECURITY.md)
 - [Support](./SUPPORT.md)
 - [Changelog](./CHANGELOG.md)
+
+## Contributing
+
+PRs are welcome. For local changes:
+
+```bash
+pnpm install
+pnpm lint
+pnpm typecheck
+pnpm generate:dev
+```
+
+Pre-commit hooks run `lint-staged`.
 
 ## Credits
 
