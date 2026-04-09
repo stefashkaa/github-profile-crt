@@ -16,12 +16,19 @@ export function optimizeGeneratedSvg(svg: string, options: SvgOptimizationOption
         name: 'preset-default',
         params: {
           overrides: {
-            cleanupIds: false,
             convertShapeToPath: false,
-            removeUnknownsAndDefaults: false
+            cleanupIds: false
           }
         }
       },
+      {
+        name: 'cleanupIds',
+        params: {
+          preserve: ['title', 'desc']
+        }
+      },
+      'cleanupListOfValues',
+      'sortDefsChildren',
       'sortAttrs'
     ]
   });
