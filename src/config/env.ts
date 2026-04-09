@@ -30,6 +30,7 @@ export interface ContributionWindow {
 export interface RuntimeConfig {
   username: string;
   token: string;
+  includePrivateContributions: boolean;
   outputDirectory: string;
   minifySvg: boolean;
   visual: VisualConfig;
@@ -313,6 +314,7 @@ export function loadRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
   return {
     username,
     token,
+    includePrivateContributions: booleanEnv(env, 'CRT_INCLUDE_ORG_PRIVATE', false),
     outputDirectory: path.resolve(outputTarget),
     minifySvg: booleanEnv(env, 'CRT_MINIFY_SVG', true),
     visual: visualConfigFromEnv(env, contributionWindow.mode === 'rolling'),
