@@ -84,6 +84,23 @@ function buildGithubAuthHeader(token: string): string {
   return `AUTHORIZATION: basic ${basicAuth}`;
 }
 
+function hasGitHubExtraHeader(cwd: string): boolean {
+  try {
+    const output = execFileSync('git', ['config', '--get-regexp', '^http\\..*\\.extraheader$'], {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+
+    return output
+      .split('\n')
+      .map((line) => line.trim().toLowerCase())
+      .some((line) => line.includes('github.com') && line.includes('authorization: basic'));
+  } catch {
+    return false;
+  }
+}
+
 function runGit(
   args: string[],
   cwd: string,
@@ -95,10 +112,11 @@ function runGit(
 ): string {
   const allowFailure = options?.allowFailure ?? false;
   const trimOutput = options?.trimOutput ?? true;
-  const finalArgs =
-    options?.githubAuthToken && options.githubAuthToken.trim()
-      ? ['-c', `http.https://github.com/.extraheader=${buildGithubAuthHeader(options.githubAuthToken)}`, ...args]
-      : args;
+  const githubAuthToken = options?.githubAuthToken?.trim();
+  const shouldInjectGithubHeader = !!githubAuthToken && !hasGitHubExtraHeader(cwd);
+  const finalArgs = shouldInjectGithubHeader
+    ? ['-c', `http.https://github.com/.extraheader=${buildGithubAuthHeader(githubAuthToken)}`, ...args]
+    : args;
 
   try {
     const output = execFileSync('git', finalArgs, {
