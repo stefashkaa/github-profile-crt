@@ -1,3 +1,6 @@
 {
-  "type": "module"
+  "type": "module",
+  "name": "github-profile-crt-action",
+  "version": "0.1.0",
+  "private": true
 }

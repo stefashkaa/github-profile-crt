@@ -29,7 +29,7 @@
   "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build": "vite build",
-    "build:action": "ncc build src/action.ts -o dist/action --minify",
+    "build:action": "tsx scripts/build-action.mts",
     "build:all": "pnpm build && pnpm build:action",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
