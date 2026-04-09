@@ -258,8 +258,16 @@ function resolveContributionWindow(year: number, now: Date): ContributionWindow 
   const currentYear = now.getUTCFullYear();
 
   if (year === currentYear) {
-    const currentMonth = now.getUTCMonth();
-    const from = new Date(Date.UTC(currentYear - 1, currentMonth, 1, 0, 0, 0));
+    // GitHub GraphQL enforces a strict max span of 1 year for contributionsCollection(from, to).
+    // Using month-start to month-current can exceed that limit by several days.
+    const from = new Date(now);
+    from.setUTCFullYear(from.getUTCFullYear() - 1);
+
+    const maxSpanMs = 365 * 24 * 60 * 60 * 1000;
+    if (now.getTime() - from.getTime() > maxSpanMs) {
+      from.setTime(now.getTime() - maxSpanMs);
+    }
+
     return {
       year,
       from: from.toISOString(),
