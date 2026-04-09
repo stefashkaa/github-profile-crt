@@ -758,6 +758,38 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const yAxisLabels = renderYAxisLabels(layout, maxWeekly, palette);
   const monthLabels = renderMonthLabels(monthPositions, monthLabelY);
   const yearLabels = renderYearLabels(monthPositions, yearLeftLimit, yearRightLimit, yearLabelY);
+  const pointerWidth = Math.max(4, layout.barWidth - 1);
+  const pointerHeight = Math.max(2, Math.floor(layout.barWidth * 0.34));
+  const pointerGap = Math.max(1, pointerHeight - 1);
+  const pointerDepthX = Math.max(1.3, BAR_DEPTH_X - 0.2);
+  const pointerDepthY = Math.max(1.3, BAR_DEPTH_Y - 0.2);
+  const rectPath = (x: number, y: number, width: number, height: number): string =>
+    `M${formatNumber(x, 1)} ${formatNumber(y, 1)}h${formatNumber(width, 1)}v${formatNumber(height, 1)}h-${formatNumber(width, 1)}z`;
+  const gridOcclusionPathData = visual.showGrid
+    ? weekly
+        .map((week, index) => {
+          const geometry = geometries[index]!;
+          const segments: string[] = [];
+
+          if (week.total > 0) {
+            const barX = geometry.x;
+            const barY = geometry.y - BAR_DEPTH_Y;
+            const barWidth = layout.barWidth + BAR_DEPTH_X;
+            const barHeight = layout.chartBottom - geometry.y + BAR_DEPTH_Y;
+            segments.push(rectPath(barX, barY, barWidth, barHeight));
+          }
+
+          const pointerX = geometry.x + (layout.barWidth - pointerWidth) / 2;
+          const pointerY = geometry.y - pointerGap - pointerHeight - pointerDepthY;
+          const pointerOcclusionWidth = pointerWidth + pointerDepthX;
+          const pointerOcclusionHeight = pointerHeight + pointerDepthY;
+          segments.push(rectPath(pointerX, pointerY, pointerOcclusionWidth, pointerOcclusionHeight));
+
+          return segments.join(' ');
+        })
+        .join(' ')
+    : '';
+  const gridMaskAttr = gridOcclusionPathData ? ' mask="url(#gridOcclusionMask)"' : '';
 
   const gridPathData = visual.showGrid
     ? [0, 0.25, 0.5, 0.75, 1]
@@ -778,6 +810,10 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
         .join(' ')
     : '';
   const verticalTicks = verticalTicksPathData ? `<path d="${verticalTicksPathData}" class="grid-line"/>` : '';
+  const maskedGridLines = gridLines ? gridLines.replace(' class="grid-line"', ` class="grid-line"${gridMaskAttr}`) : '';
+  const maskedVerticalTicks = verticalTicks
+    ? verticalTicks.replace(' class="grid-line"', ` class="grid-line"${gridMaskAttr}`)
+    : '';
 
   const dashboardPanels = showDashboard
     ? renderDashboardPanels(insights, layout, dashboardTop, themeConfig, useSpectrumChart)
@@ -914,6 +950,14 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const includeBarGradientDef = !useSpectrumChart && !isWinampTheme;
   const includeAreaGradientDef = !useSpectrumChart;
   const includeDashboardFilters = showDashboard && Boolean(insights);
+  const gridOcclusionMaskDef = gridOcclusionPathData
+    ? `
+    <mask id="gridOcclusionMask" x="${layout.margin.left}" y="${layout.chartTop}" width="${layout.width - layout.margin.left - layout.margin.right}" height="${layout.chartHeight}" maskUnits="userSpaceOnUse">
+      <rect x="${layout.margin.left}" y="${layout.chartTop}" width="${layout.width - layout.margin.left - layout.margin.right}" height="${layout.chartHeight}" fill="white"/>
+      <path d="${gridOcclusionPathData}" fill="black"/>
+    </mask>
+  `
+    : '';
   const barAnimationCss = animateEqualizer
     ? `
     .bar-body-anim {
@@ -1030,6 +1074,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     }
     ${winampDefs}
     ${spectrumDefs}
+    ${gridOcclusionMaskDef}
 
     <radialGradient id="vignette" cx="50%" cy="50%" r="75%">
       <stop offset="60%" stop-color="rgba(0,0,0,0)"/>
@@ -1173,8 +1218,8 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   ${yearLabels}
   ${monthLabels}
   ${yAxisLabels}
-  ${gridLines}
-  ${verticalTicks}
+  ${maskedGridLines}
+  ${maskedVerticalTicks}
 
   <g shape-rendering="crispEdges">
     ${bars}
