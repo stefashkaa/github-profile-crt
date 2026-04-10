@@ -1,19 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-labelledby="title desc">
-  <title id="title">github-profile-crt workflow pipeline</title>
-  <desc id="desc">Animated workflow: trigger, action, fetch, render, optimize, write, decision, commit or done.</desc>
-
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#04110b"/>
-      <stop offset="100%" stop-color="#061d13"/>
+      <stop offset="0%" stop-color="var(--bg-grad-start)"/>
+      <stop offset="100%" stop-color="var(--bg-grad-end)"/>
     </linearGradient>
     <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0a2a1a"/>
-      <stop offset="100%" stop-color="#0b2016"/>
+      <stop offset="0%" stop-color="var(--panel-grad-start)"/>
+      <stop offset="100%" stop-color="var(--panel-grad-end)"/>
     </linearGradient>
     <linearGradient id="panelDecision" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0d3320"/>
-      <stop offset="100%" stop-color="#0b2317"/>
+      <stop offset="0%" stop-color="var(--decision-grad-start)"/>
+      <stop offset="100%" stop-color="var(--decision-grad-end)"/>
     </linearGradient>
     <filter id="glow" x="-40%" y="-80%" width="180%" height="260%">
       <feGaussianBlur stdDeviation="3" result="g"/>
@@ -26,6 +23,12 @@
 
   <style>
     :root {
+      --bg-grad-start: #04110b;
+      --bg-grad-end: #061d13;
+      --panel-grad-start: #0a2a1a;
+      --panel-grad-end: #0b2016;
+      --decision-grad-start: #0d3320;
+      --decision-grad-end: #0b2317;
       --bg-stroke: #1f7a4f;
       --bg-stroke-soft: #36b877;
       --label: #b7ffd8;
@@ -34,17 +37,25 @@
       --wire: #45e18f;
       --wire-soft: rgba(69, 225, 143, 0.38);
       --dot: #bbffe0;
+      --scan-opacity: 0.16;
     }
     @media (prefers-color-scheme: light) {
       :root {
-        --bg-stroke: #3d8a6a;
-        --bg-stroke-soft: #3fa47a;
-        --label: #215540;
-        --text: #1e4f3b;
-        --card-stroke: #4ea07e;
-        --wire: #2f8f67;
-        --wire-soft: rgba(47, 143, 103, 0.25);
-        --dot: #2b8d66;
+        --bg-grad-start: #f6fbf7;
+        --bg-grad-end: #ebf5ee;
+        --panel-grad-start: #ffffff;
+        --panel-grad-end: #edf7f0;
+        --decision-grad-start: #f3fbf6;
+        --decision-grad-end: #e8f4ec;
+        --bg-stroke: #6aa98a;
+        --bg-stroke-soft: #7fbb9d;
+        --label: #1f5a43;
+        --text: #2f6a53;
+        --card-stroke: #4f9f7e;
+        --wire: #2f8763;
+        --wire-soft: rgba(47, 135, 99, 0.28);
+        --dot: #2f8a66;
+        --scan-opacity: 0.34;
       }
     }
 
@@ -56,7 +67,7 @@
     }
     .scan {
       stroke: var(--bg-stroke-soft);
-      stroke-opacity: 0.16;
+      stroke-opacity: var(--scan-opacity);
       stroke-width: 1;
       shape-rendering: crispEdges;
       animation: scanShift 7s linear infinite;
