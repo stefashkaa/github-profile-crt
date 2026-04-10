@@ -404,7 +404,21 @@ function renderLanguageStackProfile(
     `;
   }
 
-  const rows = insights.languages.slice(0, 5);
+  const rows = [...insights.languages]
+    .sort((left, right) => {
+      const byPercentage = right.percentage - left.percentage;
+      if (Math.abs(byPercentage) > 0.000001) {
+        return byPercentage;
+      }
+
+      const bySize = right.size - left.size;
+      if (Math.abs(bySize) > 0.000001) {
+        return bySize;
+      }
+
+      return left.name.localeCompare(right.name);
+    })
+    .slice(0, 5);
 
   const rowLabelAndTrack: string[] = [];
   const rowGlowRects: string[] = [];
