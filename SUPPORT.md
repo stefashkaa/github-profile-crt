@@ -1,20 +1,32 @@
 # Support
 
-## Need Help?
+Thanks for using github-profile-crt.
 
-Use GitHub Issues for:
+## I have a question
 
-- Bug reports
-- Feature requests
-- Integration questions
+Open an issue and include:
 
-Before opening a new issue:
+- Your workflow YAML (redact secrets)
+- The inputs you’re using (themes, year, output-dir, commit-and-push)
+- A screenshot or the generated SVG file if the issue is visual
 
-- Search existing issues
-- Include your `.env` settings without secrets
-- Share generated SVG name and screenshots when relevant
+## I found a bug
 
-## Security Issues
+Use the “Bug report” issue template and include:
 
-For vulnerabilities, follow [SECURITY.md](./SECURITY.md) and avoid posting
-sensitive details publicly.
+- Steps to reproduce
+- A minimal config that triggers the issue
+- The theme name(s) and whether you’re generating light/dark variants
+
+## I want to request a feature
+
+Open an issue with:
+
+- The outcome you want
+- Why it matters (profile use-case, org use-case, accessibility, etc.)
+- Any examples you’ve seen elsewhere
+
+## Security issues
+
+Please report vulnerabilities privately via GitHub Security Advisories.
+See `SECURITY.md`.

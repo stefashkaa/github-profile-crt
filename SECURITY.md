@@ -1,23 +1,28 @@
 # Security Policy
 
-## Supported Versions
+## Supported versions
 
-This project is currently pre-1.0. Security fixes are applied on the latest
-`main` branch.
+Security fixes are applied to the latest release line.
 
-## Reporting A Vulnerability
+## Reporting a vulnerability
 
-Please do not open public issues for security vulnerabilities.
+Please **do not** open a public issue for security reports.
 
-Use GitHub's private vulnerability reporting for this repository. If that is
-not available, open an issue with minimal details and request a private
-follow-up from maintainers.
+Instead, use GitHub Security Advisories for private reporting:
 
-When reporting, include:
+- Go to the repository’s **Security** tab
+- Choose **Report a vulnerability**
 
-- Impact summary
-- Reproduction steps
-- Suggested mitigation if known
+Include:
+
+- A clear description of the issue
+- Steps to reproduce (or a proof-of-concept, if safe)
+- Expected vs actual behaviour
+- Any relevant logs or workflow snippets (remove secrets)
+
+## Response expectations
 
 We will acknowledge reports as quickly as possible and work on a fix based on
 severity.
+
+Thank you for helping keep this action safe.

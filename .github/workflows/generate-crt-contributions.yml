@@ -20,5 +20,5 @@ jobs:
       - name: Generate & push SVGs
         uses: ./
         with:
-          output-dir: assets
+          output-dir: examples
           themes: all
