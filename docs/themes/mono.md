@@ -44,6 +44,6 @@ No color, no sugar — just grayscale signal aesthetics for people who want the 
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../../README.md)
+[↑ Scroll to top](#mono-theme)
 
 <!-- nav:bottom:end -->

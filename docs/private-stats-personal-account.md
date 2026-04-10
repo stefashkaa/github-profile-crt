@@ -11,6 +11,6 @@
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../README.md)
+[↑ Scroll to top](#including-private-stats-usage-for-personal-github-accounts)
 
 <!-- nav:bottom:end -->

@@ -1,0 +1,210 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-labelledby="title desc">
+  <title id="title">github-profile-crt workflow pipeline</title>
+  <desc id="desc">Animated workflow: trigger, action, fetch, render, optimize, write, decision, commit or done.</desc>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#04110b"/>
+      <stop offset="100%" stop-color="#061d13"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a2a1a"/>
+      <stop offset="100%" stop-color="#0b2016"/>
+    </linearGradient>
+    <linearGradient id="panelDecision" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d3320"/>
+      <stop offset="100%" stop-color="#0b2317"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-80%" width="180%" height="260%">
+      <feGaussianBlur stdDeviation="3" result="g"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <style>
+    :root {
+      --bg-stroke: #1f7a4f;
+      --bg-stroke-soft: #36b877;
+      --label: #b7ffd8;
+      --text: #dcffe9;
+      --card-stroke: #2b9966;
+      --wire: #45e18f;
+      --wire-soft: rgba(69, 225, 143, 0.38);
+      --dot: #bbffe0;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-stroke: #3d8a6a;
+        --bg-stroke-soft: #3fa47a;
+        --label: #215540;
+        --text: #1e4f3b;
+        --card-stroke: #4ea07e;
+        --wire: #2f8f67;
+        --wire-soft: rgba(47, 143, 103, 0.25);
+        --dot: #2b8d66;
+      }
+    }
+
+    .frame {
+      fill: url(#bg);
+      stroke: var(--bg-stroke);
+      stroke-width: 1.2;
+      rx: 14;
+    }
+    .scan {
+      stroke: var(--bg-stroke-soft);
+      stroke-opacity: 0.16;
+      stroke-width: 1;
+      shape-rendering: crispEdges;
+      animation: scanShift 7s linear infinite;
+    }
+    .wire {
+      fill: none;
+      stroke: var(--wire);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-opacity: 0.84;
+      stroke-dasharray: 8 10;
+      animation: wireFlow 1.8s linear infinite;
+    }
+    .wire-soft {
+      fill: none;
+      stroke: var(--wire-soft);
+      stroke-width: 4;
+      stroke-linecap: round;
+    }
+    .card {
+      fill: url(#panel);
+      stroke: var(--card-stroke);
+      stroke-width: 1.2;
+      filter: url(#glow);
+      animation: pulse 2.8s ease-in-out infinite;
+    }
+    .decision {
+      fill: url(#panelDecision);
+      stroke: var(--card-stroke);
+      stroke-width: 1.2;
+      filter: url(#glow);
+      animation: pulse 2.8s ease-in-out infinite;
+      animation-delay: 0.6s;
+    }
+    .label {
+      font: 700 15px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      fill: var(--label);
+      letter-spacing: 0.02em;
+    }
+    .sub {
+      font: 600 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      fill: var(--text);
+      opacity: 0.92;
+      letter-spacing: 0.02em;
+    }
+    .dot {
+      fill: var(--dot);
+      filter: url(#glow);
+      opacity: 0;
+      animation: blink 2.1s linear infinite;
+    }
+    .d2 { animation-delay: 0.18s; }
+    .d3 { animation-delay: 0.36s; }
+    .d4 { animation-delay: 0.54s; }
+    .d5 { animation-delay: 0.72s; }
+    .d6 { animation-delay: 0.9s; }
+    .d7 { animation-delay: 1.08s; }
+    .d8 { animation-delay: 1.26s; }
+    .d9 { animation-delay: 1.44s; }
+
+    @keyframes wireFlow {
+      from { stroke-dashoffset: 0; }
+      to { stroke-dashoffset: -36; }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-1px); }
+    }
+    @keyframes blink {
+      0% { opacity: 0; }
+      20% { opacity: 0.95; }
+      45% { opacity: 0.2; }
+      100% { opacity: 0; }
+    }
+    @keyframes scanShift {
+      from { transform: translateY(0); }
+      to { transform: translateY(6px); }
+    }
+  </style>
+
+  <rect class="frame" x="2" y="2" width="1276" height="316" rx="14"/>
+
+  <g>
+    <path class="scan" d="M14 42H1266M14 72H1266M14 102H1266M14 132H1266M14 162H1266M14 192H1266M14 222H1266M14 252H1266M14 282H1266"/>
+  </g>
+
+  <!-- top row cards -->
+  <g>
+    <rect class="card" x="24" y="58" width="130" height="58" rx="10"/>
+    <rect class="card" x="178" y="58" width="130" height="58" rx="10"/>
+    <rect class="card" x="332" y="58" width="130" height="58" rx="10"/>
+    <rect class="card" x="486" y="58" width="130" height="58" rx="10"/>
+    <rect class="card" x="640" y="58" width="130" height="58" rx="10"/>
+    <rect class="card" x="794" y="58" width="130" height="58" rx="10"/>
+    <polygon class="decision" points="1020,53 1060,87 1020,121 980,87"/>
+
+    <text class="label" x="89" y="81" text-anchor="middle">Trigger</text>
+    <text class="sub" x="89" y="98" text-anchor="middle">workflow_dispatch</text>
+
+    <text class="label" x="243" y="81" text-anchor="middle">Action</text>
+    <text class="sub" x="243" y="98" text-anchor="middle">github-profile-crt</text>
+
+    <text class="label" x="397" y="81" text-anchor="middle">Fetch</text>
+    <text class="sub" x="397" y="98" text-anchor="middle">GitHub data</text>
+
+    <text class="label" x="551" y="81" text-anchor="middle">Render</text>
+    <text class="sub" x="551" y="98" text-anchor="middle">themed SVGs</text>
+
+    <text class="label" x="705" y="81" text-anchor="middle">Optimise</text>
+    <text class="sub" x="705" y="98" text-anchor="middle">SVGO (optional)</text>
+
+    <text class="label" x="859" y="81" text-anchor="middle">Write</text>
+    <text class="sub" x="859" y="98" text-anchor="middle">output-dir</text>
+
+    <text class="label" x="1020" y="90" text-anchor="middle">Push?</text>
+  </g>
+
+  <!-- bottom row cards -->
+  <g>
+    <rect class="card" x="850" y="202" width="170" height="58" rx="10"/>
+    <rect class="card" x="1046" y="202" width="180" height="58" rx="10"/>
+
+    <text class="label" x="935" y="225" text-anchor="middle">Commit</text>
+    <text class="sub" x="935" y="242" text-anchor="middle">git commit + push</text>
+
+    <text class="label" x="1136" y="225" text-anchor="middle">Done</text>
+    <text class="sub" x="1136" y="242" text-anchor="middle">workflow finished</text>
+  </g>
+
+  <!-- wires -->
+  <g>
+    <path class="wire-soft" d="M154 87H178M308 87H332M462 87H486M616 87H640M770 87H794M924 87H980"/>
+    <path class="wire" d="M154 87H178M308 87H332M462 87H486M616 87H640M770 87H794M924 87H980"/>
+
+    <path class="wire-soft" d="M1020 121V152M1020 152H935M1020 152H1136M935 152V202M1136 152V202"/>
+    <path class="wire" d="M1020 121V152M1020 152H935M1020 152H1136M935 152V202M1136 152V202"/>
+  </g>
+
+  <!-- flow dots -->
+  <g>
+    <circle class="dot d1" cx="166" cy="87" r="3"/>
+    <circle class="dot d2" cx="320" cy="87" r="3"/>
+    <circle class="dot d3" cx="474" cy="87" r="3"/>
+    <circle class="dot d4" cx="628" cy="87" r="3"/>
+    <circle class="dot d5" cx="782" cy="87" r="3"/>
+    <circle class="dot d6" cx="936" cy="87" r="3"/>
+    <circle class="dot d7" cx="1020" cy="138" r="3"/>
+    <circle class="dot d8" cx="957" cy="152" r="3"/>
+    <circle class="dot d9" cx="1093" cy="152" r="3"/>
+  </g>
+</svg>

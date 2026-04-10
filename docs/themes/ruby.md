@@ -44,6 +44,6 @@ A darker red-tinted preset with warning-screen energy: dramatic, bold, and impos
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../../README.md)
+[↑ Scroll to top](#ruby-theme)
 
 <!-- nav:bottom:end -->

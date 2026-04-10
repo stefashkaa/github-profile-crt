@@ -44,6 +44,6 @@ A cleaner, fresher green that keeps the retro soul but feels more modern, lighte
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../../README.md)
+[↑ Scroll to top](#mint-theme)
 
 <!-- nav:bottom:end -->

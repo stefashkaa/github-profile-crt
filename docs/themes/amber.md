@@ -44,6 +44,6 @@ A warmer take on the classic terminal look, inspired by amber monitors that felt
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../../README.md)
+[↑ Scroll to top](#amber-theme)
 
 <!-- nav:bottom:end -->

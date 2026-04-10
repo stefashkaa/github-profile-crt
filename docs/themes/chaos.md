@@ -44,6 +44,6 @@ A glitched-out preset with unstable color behavior and just enough control to st
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../../README.md)
+[↑ Scroll to top](#chaos-theme)
 
 <!-- nav:bottom:end -->

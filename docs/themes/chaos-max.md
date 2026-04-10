@@ -44,6 +44,6 @@ Chaos with the limiter removed — louder, harsher, more distorted, and made for
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../../README.md)
+[↑ Scroll to top](#chaos-max-theme)
 
 <!-- nav:bottom:end -->

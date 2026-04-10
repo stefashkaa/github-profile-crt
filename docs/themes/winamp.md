@@ -44,6 +44,6 @@ A love letter to the loud desktop era: equalizers, skins, glowing plastic UI, an
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../../README.md)
+[↑ Scroll to top](#winamp-theme)
 
 <!-- nav:bottom:end -->

@@ -44,6 +44,6 @@ Classic green phosphor CRT. Deep blacks, crisp scanlines, and the most “termin
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../../README.md)
+[↑ Scroll to top](#crt-theme)
 
 <!-- nav:bottom:end -->

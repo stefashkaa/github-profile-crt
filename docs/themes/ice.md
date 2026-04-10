@@ -44,6 +44,6 @@ Cold blue light, clean contrast, and a more futuristic mood — like your contri
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../../README.md)
+[↑ Scroll to top](#ice-theme)
 
 <!-- nav:bottom:end -->

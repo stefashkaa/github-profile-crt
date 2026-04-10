@@ -44,6 +44,6 @@ Minimal-motion variant with scan/noise/equalizer/dashboard animations disabled f
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../../README.md)
+[↑ Scroll to top](#static-theme)
 
 <!-- nav:bottom:end -->

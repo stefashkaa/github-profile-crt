@@ -156,12 +156,11 @@ All inputs are optional unless stated otherwise.
 
 ## Common recipes
 
-### Generate without committing (preview mode)
+### Generate without committing
 
 ```yml
 with:
   commit-and-push: false
-  themes: crt
 ```
 
 ### Change the year window
@@ -170,10 +169,10 @@ Render a specific year:
 
 ```yml
 with:
-  year: '2024'
+  year: 2021
 ```
 
-[Example](./docs/year-window.md)
+[Preview](./docs/year-window.md)
 
 ### Turn off the dashboard panels
 
@@ -183,7 +182,7 @@ with:
   show-stats-footer: false
 ```
 
-[Examples](./docs/without-stats-panels.md)
+[Preview](./docs/without-stats-panels.md)
 
 ### Organisation profile
 
@@ -194,10 +193,9 @@ with:
   github-user: DeSource-Labs
   github-token: ${{ secrets.ORG_TOKEN }}
   include-org-private: true
-  themes: mono
 ```
 
-[Example](./docs/org-profile.md)
+[Preview](./docs/org-profile.md)
 
 ## How it works
 
@@ -208,17 +206,9 @@ At a high level:
 - Optionally optimise (SVGO)
 - Optionally commit & push changes
 
-```mermaid
-flowchart LR
-  A[Workflow trigger] --> B[github-profile-crt Action]
-  B --> C[Fetch contribution data]
-  C --> D[Render themed SVGs]
-  D --> E[Optimise SVGs (optional)]
-  E --> F[Write to output-dir]
-  F --> G{commit-and-push?}
-  G -- yes --> H[git commit & push]
-  G -- no --> I[Done]
-```
+<p align="center">
+  <img src="./docs/img/workflow-pipeline.svg" alt="CRT workflow pipeline diagram" width="100%" />
+</p>
 
 ## Troubleshooting
 

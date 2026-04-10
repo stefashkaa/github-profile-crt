@@ -44,6 +44,6 @@ Bright, electric, and nightlife-coded — this preset pushes the graph into cybe
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../../README.md)
+[↑ Scroll to top](#neon-theme)
 
 <!-- nav:bottom:end -->

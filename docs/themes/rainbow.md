@@ -44,6 +44,6 @@ Every bar feels like it found its own mood; colorful, playful, and built for pro
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../../README.md)
+[↑ Scroll to top](#rainbow-theme)
 
 <!-- nav:bottom:end -->

@@ -10,6 +10,6 @@
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../README.md)
+[↑ Scroll to top](#creating-an-organization-token)
 
 <!-- nav:bottom:end -->

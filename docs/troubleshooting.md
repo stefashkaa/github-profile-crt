@@ -36,6 +36,6 @@ Organisation mode is an approximation based on repository data and may not match
 
 <!-- nav:bottom:start -->
 
-[↑ Back to README](../README.md)
+[↑ Scroll to top](#troubleshooting)
 
 <!-- nav:bottom:end -->
