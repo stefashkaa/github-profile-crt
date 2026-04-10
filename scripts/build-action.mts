@@ -20,7 +20,7 @@ function runNccBuild() {
 function patchActionBundle() {
   const source = readFileSync(actionIndexPath, 'utf8');
 
-  const replacements = [
+  const replacements: Array<[string, string]> = [
     ['../data/patch.json', './data/patch.json'],
     ['mdn-data/css/at-rules.json', './data/at-rules.json'],
     ['mdn-data/css/properties.json', './data/properties.json'],
