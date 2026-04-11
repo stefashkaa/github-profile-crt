@@ -123,8 +123,17 @@ export async function fetchProfileInsights(
   if (sortedLanguages.length > MAX_LANGUAGE_SLICES) {
     const top = sortedLanguages.slice(0, MAX_LANGUAGE_SLICES - 1);
     const otherSize = sortedLanguages.slice(MAX_LANGUAGE_SLICES - 1).reduce((sum, language) => sum + language.size, 0);
+    const existingOther = top.find((language) => language.name.toLowerCase() === 'other');
     sortedLanguages.length = 0;
-    sortedLanguages.push(...top, { name: 'Other', size: otherSize, color: '#8b949e' });
+    if (existingOther) {
+      existingOther.size += otherSize;
+      if (!existingOther.color) {
+        existingOther.color = '#8b949e';
+      }
+      sortedLanguages.push(...top);
+    } else {
+      sortedLanguages.push(...top, { name: 'Other', size: otherSize, color: '#8b949e' });
+    }
   }
 
   return {

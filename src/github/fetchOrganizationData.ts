@@ -482,8 +482,17 @@ export async function fetchOrganizationData(
   if (languages.length > MAX_LANGUAGE_SLICES) {
     const topLanguages = languages.slice(0, MAX_LANGUAGE_SLICES - 1);
     const otherSize = languages.slice(MAX_LANGUAGE_SLICES - 1).reduce((sum, language) => sum + language.size, 0);
+    const existingOther = topLanguages.find((language) => language.name.toLowerCase() === 'other');
     languages.length = 0;
-    languages.push(...topLanguages, { name: 'Other', size: otherSize, color: '#8b949e' });
+    if (existingOther) {
+      existingOther.size += otherSize;
+      if (!existingOther.color) {
+        existingOther.color = '#8b949e';
+      }
+      languages.push(...topLanguages);
+    } else {
+      languages.push(...topLanguages, { name: 'Other', size: otherSize, color: '#8b949e' });
+    }
   }
 
   const fromDateForSearch = fromIsoDay;

@@ -1,14 +1,12 @@
 # github-profile-crt
 
-CRT-style GitHub contribution visualizer for profile READMEs.
-
-Turn the default contribution chart into an animated retro signal board with theme presets, light/dark variants, and GitHub Actions automation.
+Bring a little retro warmth to your GitHub profile: **turn your contributions into a CRT “signal board” SVG** — animated scanlines, noise, and a dashboard-style vibe — generated automatically on a schedule.
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/crt-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="./assets/crt-light.svg">
-    <img alt="CRT contribution chart" src="./assets/crt-dark.svg">
+    <source media="(prefers-color-scheme: dark)" srcset="./examples/crt-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="./examples/crt-light.svg">
+    <img alt="CRT-style contribution chart preview" src="./examples/crt-dark.svg" width="100%">
   </picture>
 </p>
 
@@ -19,193 +17,237 @@ Turn the default contribution chart into an animated retro signal board with the
   <a href="https://github.com/stefashkaa/github-profile-crt/issues"><img alt="Issues" src="https://img.shields.io/github/issues/stefashkaa/github-profile-crt"></a>
 </p>
 
-## Why This Project
+## What you get
 
-Most GitHub profile charts look similar. `github-profile-crt` is built to stand out.
+github-profile-crt is a GitHub Action that:
 
-- Animated CRT/equalizer visuals with personality
-- 12+ presets generated in a single run
-- Light and dark variants for profile theme compatibility
-- Optional dashboard widgets for activity and language profile
-- Ready-to-run GitHub workflow for auto-updated SVGs
+- **Fetches** contribution data for a user (GraphQL) or an organization (REST aggregation)
+- **Renders** a CRT-style weekly chart as **SVG**
+- **Applies themes** (dark + light variants), custom palettes are supported too
+- **Optionally commits & pushes** the generated files back to your repo
 
-## Quick Start
+It’s designed for:
 
-1. Create or open your GitHub profile repository.
+- **Profile READMEs** (user and organization)
+- **Project READMEs** (if you want a living “activity panel” in a repo)
 
-For user profile READMEs, use `<username>/.github`.
+## Quick start
 
-For organization profile READMEs, use `<organization>/.github`.
+### Choose where the README lives
 
-For project repos, it can be any repo you want to showcase the chart in. You can also use this action in non-profile repos by setting `github-user`.
+- **User profile README:** create a public repo named **`.github`** under your user account, then add `profile/README.md`
+- **Organization profile README:** create a public repo named **`.github`** under the organization, then add `profile/README.md`
 
-2. Create workflow folders in the repo root:
+(Those are GitHub’s rules; this action simply generates files you embed.)
 
-```text
-.github/workflows
-```
+### Add a workflow
 
-3. Create a file:
+Create a workflow file in the repository that will store the generated SVGs — your profile `.github` repo, your organization `.github` repo, or any other repository you want to use for hosting them.
 
-```text
-.github/workflows/generate-crt-contributions.yml
-```
+Example: `.github/workflows/github-profile-crt.yml`
 
-4. Paste this workflow:
-
-```yaml
-name: Generate CRT Contributions
+```yml
+name: Build CRT contribution SVGs
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '15 */12 * * *' # Runs every 12 hours (UTC). Adjust cadence if needed.
+    # Every day at 10:15 UTC (edit to taste)
+    - cron: '15 10 * * *'
 
 permissions:
-  contents: write # Required so the action can commit and push updated SVG files.
+  contents: write
 
 jobs:
-  generate:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate SVG assets
+      - name: Generate SVGs
         uses: stefashkaa/github-profile-crt@v1
         with:
-          output-dir: assets # Where SVGs will be written.
-          themes: crt # Supports: all | comma-separated presets | custom.
+          output-dir: assets
+          themes: crt
+          # github-user - set for a different user/org or to aggregate org data (defaults to repo owner)
+          # github-token - set for org data access (defaults to GITHUB_TOKEN)
+          # include-org-private - set to 'true' to include private repos in org aggregation (defaults to 'false')
 ```
 
-Defaults handled automatically:
+- For personal accounts, enable private contributions in your [profile settings](./docs/private-stats-personal-account.md)
+- For organizations, use a custom token if you want to include private repository activity: [see setup steps](./docs/org-token-creation.md)
 
-- `github-user` defaults to `github.repository_owner` (works for both user and org owners)
-- `github-token` defaults to `github.token`
-- `commit-and-push` defaults to `true`
-- `year` defaults to current year (rolling 12 months)
-- `themes` defaults to `crt`
-- `show-grid`, `show-stats`, `show-stats-footer`, and `minify-svg` default to `true`
-- `include-org-private` defaults to `false`
+Commit, push, and run the workflow once (or wait for the schedule).
 
-Account modes:
+### Embed it in your README
 
-- If `github-user` is a user login, data comes from GitHub user contributions collection.
-- If `github-user` is an organization login, data is aggregated from organization repositories visible to the provided token (`public` by default, `all` when `include-org-private: 'true'`).
-
-5. Commit the workflow file.
-   After commit, run it once from GitHub UI:
-   `Actions -> Generate CRT Contributions -> Run workflow`.
-
-The action will generate/update SVG files in `assets/` and push them automatically.
-
-6. Create /profile/README.md if it doesn't exist, or edit your existing markdown file to include the generated SVGs:
+In your `profile/README.md` (or somewhere else), embed the generated SVG:
 
 ```md
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="../assets/crt-dark.svg">
-    <source media="(prefers-color-scheme: light)" srcset="../assets/crt-light.svg">
-    <img alt="CRT Contributions" src="../assets/crt-dark.svg">
-  </picture>
-</p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/crt-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/crt-light.svg">
+  <img alt="My CRT contribution chart" src="../assets/crt-dark.svg" width="100%">
+</picture>
 ```
 
 The `picture` element ensures the correct theme variant is shown based on user preference. Adjust paths if your SVGs are in a different location.
 
+Tip: keep the SVGs in a simple folder like `assets/` so paths stay stable.
+
 ## Themes
 
-- [crt](./docs/crt.md)
-- [amber](./docs/amber.md)
-- [ice](./docs/ice.md)
-- [ruby](./docs/ruby.md)
-- [mint](./docs/mint.md)
-- [mono](./docs/mono.md)
-- [winamp](./docs/winamp.md)
-- [neon](./docs/neon.md)
-- [rainbow](./docs/rainbow.md)
-- [chaos](./docs/chaos.md)
-- [chaos-max](./docs/chaos-max.md)
-- [static](./docs/static.md)
+Preset themes:
 
-Set `themes` in workflow input:
+- [crt](./docs/themes/crt.md): the original green terminal glow
+- [amber](./docs/themes/amber.md): warm fossil-era monitor amber
+- [ice](./docs/themes/ice.md): cold blue signal from the future
+- [ruby](./docs/themes/ruby.md): red alert with style
+- [mint](./docs/themes/mint.md): fresh green with a cleaner edge
+- [mono](./docs/themes/mono.md): grayscale, quiet, and sharp
+- [winamp](./docs/themes/winamp.md): loud Y2K media-player nostalgia
+- [neon](./docs/themes/neon.md): midnight cyber-club voltage
+- [rainbow](./docs/themes/rainbow.md): pure color chaos, but joyful
+- [chaos](./docs/themes/chaos.md): unstable signal, controlled damage
+- [chaos-max](./docs/themes/chaos-max.md): full visual meltdown
+- [static](./docs/themes/static.md): no motion, just clean signal
 
-- `themes: all` generates all presets
-- `themes: neon,rainbow,crt` generates selected presets
-- `themes: rainbow` generates the rainbow preset
-- `themes: custom` generates your custom palette theme
+Use one, a list, or all:
 
-## Customize Theme
-
-To build a custom palette, set `themes: custom` and pass supported `CRT_CUSTOM_*` values via workflow `env`.
-
-Example:
-
-```yaml
-jobs:
-  generate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: stefashkaa/github-profile-crt@v1
-        with:
-          output-dir: assets
-          themes: custom
-        env:
-          CRT_CUSTOM_BASE_THEME: crt
-          CRT_CUSTOM_SPECTRUM_CHART: 'true'
-          CRT_CUSTOM_BG0: '#02060f'
-          CRT_CUSTOM_BG1: '#06182a'
-          CRT_CUSTOM_BG2: '#0c2d42'
-          CRT_CUSTOM_PRIMARY: '#5fffb1'
-          CRT_CUSTOM_PRIMARY_SOFT: '#84ffc4'
-          CRT_CUSTOM_TEXT_DIM: '#8fd1aa'
-          CRT_CUSTOM_SCAN: '#2fff7f'
-          CRT_CUSTOM_ENABLE_LIGHT: 'true'
-          CRT_CUSTOM_LIGHT_BG0: '#eefaf2'
-          CRT_CUSTOM_LIGHT_BG1: '#e2f4e9'
-          CRT_CUSTOM_LIGHT_BG2: '#d0eadf'
-          CRT_CUSTOM_LIGHT_PRIMARY: '#2a9f65'
-          CRT_CUSTOM_LIGHT_PRIMARY_SOFT: '#62ba8a'
-          CRT_CUSTOM_LIGHT_TEXT_DIM: '#557d67'
-          CRT_CUSTOM_LIGHT_SCAN: '#62ba8a'
+```yml
+with:
+  themes: crt,rainbow,winamp
 ```
 
-Supported custom keys:
+```yml
+with:
+  themes: all
+```
 
-- `CRT_CUSTOM_BASE_THEME`
-- `CRT_CUSTOM_SPECTRUM_CHART`
-- `CRT_CUSTOM_BG0`, `CRT_CUSTOM_BG1`, `CRT_CUSTOM_BG2`
-- `CRT_CUSTOM_PRIMARY`, `CRT_CUSTOM_PRIMARY_SOFT`
-- `CRT_CUSTOM_TEXT_DIM`, `CRT_CUSTOM_SCAN`
-- `CRT_CUSTOM_ENABLE_LIGHT`
-- `CRT_CUSTOM_LIGHT_BG0`, `CRT_CUSTOM_LIGHT_BG1`, `CRT_CUSTOM_LIGHT_BG2`
-- `CRT_CUSTOM_LIGHT_PRIMARY`, `CRT_CUSTOM_LIGHT_PRIMARY_SOFT`
-- `CRT_CUSTOM_LIGHT_TEXT_DIM`, `CRT_CUSTOM_LIGHT_SCAN`
+### Want your own custom theme? [Customize it!](./docs/customize-theme.md)
 
-## Open Source Docs
+## Inputs
 
-- [Contributing Guide](./CONTRIBUTING.md)
-- [Code of Conduct](./CODE_OF_CONDUCT.md)
-- [Security Policy](./SECURITY.md)
-- [Support](./SUPPORT.md)
-- [Changelog](./CHANGELOG.md)
+All inputs are optional unless stated otherwise.
+
+| Input                 | Default               | What it does                                                                |
+| --------------------- | --------------------- | --------------------------------------------------------------------------- |
+| `github-token`        | `${{ github.token }}` | Token for reading data and (optionally) pushing commits.                    |
+| `github-user`         | repo owner            | GitHub login to render (user or org).                                       |
+| `output-dir`          | `assets`              | Output folder written inside the workspace repo.                            |
+| `themes`              | `crt`                 | Themes to render: comma-separated list, `all`, and/or `custom`.             |
+| `year`                | current year          | If current year: rolling last ~365 days; otherwise full calendar year.      |
+| `commit-and-push`     | `true`                | Commit & push changed SVGs back to the repo.                                |
+| `commit-message`      | auto                  | Custom commit message for generated files.                                  |
+| `show-grid`           | `true`                | Toggle chart grid lines.                                                    |
+| `show-stats`          | `true`                | Toggle the dashboard panels (language + activity vector).                   |
+| `show-stats-footer`   | `true`                | Toggle footer metrics line.                                                 |
+| `enable-hover-attrs`  | `false`               | Adds `<title>` hover text per week (larger SVG).                            |
+| `include-org-private` | `false`               | For org logins: include private repos in aggregation (token must allow it). |
+| `minify-svg`          | `true`                | SVGO optimize output (recommended).                                         |
+
+## Outputs
+
+| Output                | Meaning                                     |
+| --------------------- | ------------------------------------------- |
+| `output-directory`    | Where SVGs were written in the workspace.   |
+| `generated-files`     | Number of SVG files generated.              |
+| `weeks`               | Weeks rendered in the chart.                |
+| `total-contributions` | Total contributions in the rendered window. |
+| `committed`           | `true` if a commit was created and pushed.  |
+
+## Common recipes
+
+### Generate without committing
+
+```yml
+with:
+  commit-and-push: false
+```
+
+### Change the year window
+
+Render a specific year:
+
+```yml
+with:
+  year: 2021
+```
+
+[Preview](./docs/year-window.md)
+
+### Turn off the dashboard panels
+
+```yml
+with:
+  show-stats: false
+  show-stats-footer: false
+```
+
+[Preview](./docs/without-stats-panels.md)
+
+### Organization profile
+
+Set `github-user` to the organization login and use a `github-token` that has access to organization data (see [setup steps](./docs/org-token-creation.md)).
+
+```yml
+with:
+  github-user: DeSource-Labs
+  github-token: ${{ secrets.ORG_TOKEN }}
+  include-org-private: true
+```
+
+[Preview](./docs/org-profile.md)
+
+## How it works
+
+At a high level:
+
+- Fetch contribution data (user: GraphQL; org: REST aggregation)
+- Render themed SVG(s)
+- Optionally optimize (SVGO)
+- Optionally commit & push changes
+
+<p align="center">
+  <img src="./docs/img/workflow-pipeline.svg" alt="CRT workflow pipeline diagram" width="100%" />
+</p>
+
+## Troubleshooting
+
+If nothing updates:
+
+- Confirm `permissions: contents: write` in your workflow.
+- Confirm the SVG paths in your README match your `output-dir`.
+- If the action errors about the workspace not being a git repo, add `actions/checkout`.
+
+[More info](./docs/troubleshooting.md)
+
+## Security
+
+- Pin actions to a release tag or commit SHA in production workflows.
+- Use the minimum required workflow permissions (`contents: write` only when committing).
+
+See `SECURITY.md` for reporting & workflow hardening notes.
 
 ## Contributing
 
-PRs are welcome. For local changes:
+Contributions, bug reports, theme ideas, and docs fixes are welcome.
 
-```bash
-pnpm install
-pnpm lint
-pnpm typecheck
-pnpm generate:dev
-```
-
-Pre-commit hooks run `lint-staged`.
-
-## Credits
-
-Built by [@stefashkaa](https://github.com/stefashkaa).
-
-If this project helps your profile stand out, star the repo and share your theme setup.
+[Start here](CONTRIBUTING.md)
 
 ## License
 
 [MIT](./LICENSE)
+
+## Support
+
+- Questions / help: open an issue
+- Vulnerabilities: use GitHub Security Advisories (private report)
+
+[See `SUPPORT.md`](SUPPORT.md) for details.
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ by <a href="https://github.com/stefashkaa">@stefashkaa</a></sub>
+  <br>
+  <sub>If this project helps your profile stand out, star the repo and share your theme setup</sub>
+</div>
