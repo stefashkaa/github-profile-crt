@@ -11,18 +11,25 @@ const GIT_BINARY_CANDIDATES =
     ? ['C:\\Program Files\\Git\\cmd\\git.exe', 'C:\\Program Files\\Git\\bin\\git.exe']
     : ['/usr/bin/git', '/bin/git', '/usr/local/bin/git', '/opt/homebrew/bin/git'];
 
+let cachedGitExecutable: string | null = null;
+
 function resolveGitExecutable(): string {
-  const executable = GIT_BINARY_CANDIDATES.find((candidatePath) => fs.existsSync(candidatePath));
-  if (!executable) {
-    throw new Error('Unable to locate git binary in trusted system paths.');
+  if (cachedGitExecutable) {
+    return cachedGitExecutable;
   }
 
-  return executable;
+  const trustedExecutable = GIT_BINARY_CANDIDATES.find((candidatePath) => fs.existsSync(candidatePath));
+  cachedGitExecutable = trustedExecutable ?? 'git';
+  return cachedGitExecutable;
 }
 
-const GIT_EXECUTABLE = resolveGitExecutable();
+function hardenedExecEnv(gitExecutable: string): NodeJS.ProcessEnv {
+  // If we fall back to PATH lookup ("git"), preserve runner PATH to support
+  // self-hosted/container setups where git lives outside standard paths.
+  if (gitExecutable === 'git') {
+    return process.env;
+  }
 
-function hardenedExecEnv(): NodeJS.ProcessEnv {
   if (process.platform === 'win32') {
     return {
       ...process.env,
@@ -115,12 +122,14 @@ function buildGithubAuthHeader(token: string): string {
 }
 
 function hasGitHubExtraHeader(cwd: string): boolean {
+  const gitExecutable = resolveGitExecutable();
+
   try {
-    const output = execFileSync(GIT_EXECUTABLE, ['config', '--get-regexp', String.raw`^http\..*\.extraheader$`], {
+    const output = execFileSync(gitExecutable, ['config', '--get-regexp', String.raw`^http\..*\.extraheader$`], {
       cwd,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: hardenedExecEnv()
+      env: hardenedExecEnv(gitExecutable)
     });
 
     return output
@@ -141,6 +150,7 @@ function runGit(
     trimOutput?: boolean;
   }
 ): string {
+  const gitExecutable = resolveGitExecutable();
   const allowFailure = options?.allowFailure ?? false;
   const trimOutput = options?.trimOutput ?? true;
   const githubAuthToken = options?.githubAuthToken?.trim();
@@ -150,11 +160,11 @@ function runGit(
     : args;
 
   try {
-    const output = execFileSync(GIT_EXECUTABLE, finalArgs, {
+    const output = execFileSync(gitExecutable, finalArgs, {
       cwd,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: hardenedExecEnv()
+      env: hardenedExecEnv(gitExecutable)
     });
 
     return trimOutput ? output.trim() : output;
