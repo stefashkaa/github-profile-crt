@@ -17,7 +17,7 @@ function hardenedExecEnv(): NodeJS.ProcessEnv {
   if (process.platform === 'win32') {
     return {
       ...process.env,
-      PATH: 'C:\\Windows\\System32;C:\\Windows'
+      PATH: String.raw`C:\Windows\System32;C:\Windows`
     };
   }
 

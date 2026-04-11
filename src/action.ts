@@ -8,7 +8,7 @@ import { generateCrtContributionSvgs } from './generator';
 
 const GIT_BINARY_CANDIDATES =
   process.platform === 'win32'
-    ? ['C:\\Program Files\\Git\\cmd\\git.exe', 'C:\\Program Files\\Git\\bin\\git.exe']
+    ? [String.raw`C:\Program Files\Git\cmd\git.exe`, String.raw`C:\Program Files\Git\bin\git.exe`]
     : ['/usr/bin/git', '/bin/git', '/usr/local/bin/git', '/opt/homebrew/bin/git'];
 
 let cachedGitExecutable: string | null = null;
@@ -33,7 +33,7 @@ function hardenedExecEnv(gitExecutable: string): NodeJS.ProcessEnv {
   if (process.platform === 'win32') {
     return {
       ...process.env,
-      PATH: 'C:\\Windows\\System32;C:\\Windows'
+      PATH: String.raw`C:\Windows\System32;C:\Windows`
     };
   }
 
