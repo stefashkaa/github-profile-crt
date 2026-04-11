@@ -1,14 +1,27 @@
 ## Summary
 
-Describe what changed and why.
+What changed and why?
+
+## Problem / Motivation
+
+What user-facing or developer-facing problem does this PR solve?
 
 ## Type Of Change
 
-- [ ] Feature
-- [ ] Bug fix
+- [ ] Bug fix (non-breaking)
+- [ ] Feature (non-breaking)
+- [ ] Breaking change
 - [ ] Docs
-- [ ] Refactor
-- [ ] Chore
+- [ ] Refactor / perf
+- [ ] CI / build / tooling
+
+## Testing
+
+Describe how this was tested.
+
+## Visual Diff (if applicable)
+
+Attach before/after screenshots or generated SVG previews.
 
 ## Checklist
 
@@ -16,8 +29,5 @@ Describe what changed and why.
 - [ ] I ran `pnpm typecheck`
 - [ ] I ran `pnpm generate:dev`
 - [ ] I updated docs and `.env.example` when needed
-- [ ] I added before/after screenshots for visual changes
-
-## Visual Diff (if applicable)
-
-Attach screenshots or generated SVG previews.
+- [ ] I added visual proof for rendering changes
+- [ ] I verified action behavior if `action.yml` or `src/action.ts` changed

@@ -1,12 +1,27 @@
 name: Feature request
-description: Suggest a new feature, theme, or workflow enhancement
+description: Suggest a feature, new theme, dashboard improvement, or workflow enhancement
 title: 'feat: '
 labels:
   - enhancement
 body:
   - type: markdown
     attributes:
-      value: Thanks for sharing your idea.
+      value: |
+        Thanks for sharing your idea. Include concrete use cases and expected output.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Target area
+      options:
+        - Renderer / chart visuals
+        - Theme system
+        - Dashboard widgets
+        - Data sources / stats
+        - GitHub Action UX
+        - Docs
+    validations:
+      required: true
 
   - type: textarea
     id: problem
@@ -26,17 +41,20 @@ body:
       required: true
 
   - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How do we know this is done?
+      placeholder: |
+        - [ ] New input is documented
+        - [ ] Output SVG matches expected visuals
+        - [ ] Works in both dark/light profile modes
+
+  - type: textarea
     id: alternatives
     attributes:
       label: Alternatives considered
       description: Other ideas or workarounds you tried
-
-  - type: input
-    id: scope
-    attributes:
-      label: Scope
-      description: Which area is impacted?
-      placeholder: renderer, theme system, workflow, docs...
 
   - type: textarea
     id: references

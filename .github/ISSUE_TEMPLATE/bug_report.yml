@@ -1,12 +1,27 @@
 name: Bug report
-description: Report a bug in SVG generation, rendering, or workflow behavior
+description: Report a bug in SVG generation, rendering, action runtime, or data collection
 title: 'bug: '
 labels:
   - bug
 body:
   - type: markdown
     attributes:
-      value: Thanks for reporting. Please include enough detail to reproduce.
+      value: |
+        Thanks for reporting. Please include reproducible steps and non-secret config values.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Renderer / SVG output
+        - Theme / colors / visual artifacts
+        - GitHub Action runtime
+        - CLI usage
+        - Data fetching (user/org stats)
+        - Docs
+    validations:
+      required: true
 
   - type: textarea
     id: summary
@@ -24,7 +39,7 @@ body:
       placeholder: |
         1. Set env ...
         2. Run `pnpm generate:dev`
-        3. Open assets/crt-dark.svg
+        3. Open `assets/crt-dark.svg`
     validations:
       required: true
 
@@ -36,18 +51,38 @@ body:
       required: true
 
   - type: input
-    id: theme
+    id: themes
     attributes:
-      label: Theme
-      description: Which theme is affected?
+      label: Theme(s)
+      description: Which theme(s) are affected?
       placeholder: crt, rainbow, winamp...
 
-  - type: input
+  - type: textarea
     id: env
     attributes:
-      label: Relevant env config
-      description: Paste non-secret env values
-      placeholder: CRT_YEAR=2024, CRT_SHOW_GRID=true
+      label: Relevant config (non-secret)
+      description: Paste sanitized env/action inputs
+      placeholder: |
+        CRT_THEMES=crt
+        CRT_SHOW_GRID=true
+        CRT_YEAR=2025
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: |
+        - OS: macOS 14 / Ubuntu 24.04
+        - Node: 22.x
+        - pnpm: 10.x
+        - Execution: local CLI / GitHub Actions
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste relevant console/action logs
+      render: shell
 
   - type: textarea
     id: attachments
