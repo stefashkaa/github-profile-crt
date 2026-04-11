@@ -140,7 +140,7 @@ pnpm build:all
 - `src/action.ts` — GitHub Action entrypoint (inputs, git commit/push)
 - `src/config/*` — config parsing and defaults
 - `src/github/*` — GitHub GraphQL/REST clients and fetchers
-- `src/render/*` — SVG renderer + optimisation
+- `src/render/*` — SVG renderer + optimization
 - `src/render/themes.ts` — theme definitions and light variants
 - `docs/` — theme previews + docs pages
 

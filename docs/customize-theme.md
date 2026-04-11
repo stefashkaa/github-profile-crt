@@ -6,7 +6,7 @@
 
 <!-- nav:top:end -->
 
-Custom theme lets you start from a preset and override colors, without editing code.
+A custom theme lets you start from a preset and override colors without editing code.
 
 ## Enable
 
@@ -19,7 +19,7 @@ with:
 
 ## Pick a base preset
 
-Set the base preset via environment:
+Set the base preset with:
 
 - `CRT_CUSTOM_BASE_THEME` (default: `crt`)
 
@@ -42,7 +42,7 @@ Override any subset of:
 - `CRT_CUSTOM_TEXT_DIM`: Most labels/text (`months`, `footer`, panel titles, small labels, UI separators).
 - `CRT_CUSTOM_SCAN`: Animated scanline color.
 
-For light mode, the same mapping applies with `CRT_CUSTOM_LIGHT_*` variables.
+For light mode, use the same mapping with `CRT_CUSTOM_LIGHT_*` variables.
 
 Example:
 
@@ -75,9 +75,9 @@ env:
 
 ## Optional spectrum chart
 
-- `CRT_CUSTOM_SPECTRUM_CHART=true` enables rainbow-style colouring.
+- `CRT_CUSTOM_SPECTRUM_CHART=true` enables rainbow-style coloring.
 
-## Living demo
+## Full example
 
 ### Workflow snippet
 

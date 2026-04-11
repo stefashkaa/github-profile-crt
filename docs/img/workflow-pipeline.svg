@@ -176,7 +176,7 @@
     <text class="label" x="551" y="81" text-anchor="middle">Render</text>
     <text class="sub" x="551" y="98" text-anchor="middle">themed SVGs</text>
 
-    <text class="label" x="705" y="81" text-anchor="middle">Optimise</text>
+    <text class="label" x="705" y="81" text-anchor="middle">Optimize</text>
     <text class="sub" x="705" y="98" text-anchor="middle">SVGO (optional)</text>
 
     <text class="label" x="859" y="81" text-anchor="middle">Write</text>

@@ -42,7 +42,7 @@ It’s designed for:
 
 ### Add a workflow
 
-Create a workflow file in the repository that will _store the generated SVGs_ (org or your profile `.github` repo, or any repo you want).
+Create a workflow file in the repository that will store the generated SVGs — your profile `.github` repo, your organization `.github` repo, or any other repository you want to use for hosting them.
 
 Example: `.github/workflows/github-profile-crt.yml`
 
@@ -72,8 +72,8 @@ jobs:
           # include-org-private - set to 'true' to include private repos in org aggregation (defaults to 'false')
 ```
 
-- To allow private data for personal accounts, you need to enable it in your [account settings](./docs/private-stats-personal-account.md)
-- To enable private repo data for orgs, you must use a custom token by following [these steps](./docs/org-token-creation.md)
+- For personal accounts, enable private contributions in your [profile settings](./docs/private-stats-personal-account.md)
+- For organizations, use a custom token if you want to include private repository activity: [see setup steps](./docs/org-token-creation.md)
 
 Commit, push, and run the workflow once (or wait for the schedule).
 
@@ -142,7 +142,7 @@ All inputs are optional unless stated otherwise.
 | `show-stats-footer`   | `true`                | Toggle footer metrics line.                                                 |
 | `enable-hover-attrs`  | `false`               | Adds `<title>` hover text per week (larger SVG).                            |
 | `include-org-private` | `false`               | For org logins: include private repos in aggregation (token must allow it). |
-| `minify-svg`          | `true`                | SVGO optimise output (recommended).                                         |
+| `minify-svg`          | `true`                | SVGO optimize output (recommended).                                         |
 
 ## Outputs
 
@@ -186,7 +186,7 @@ with:
 
 ### Organization profile
 
-Set `github-user` to the organization login and `github-token` with org data access (see [these steps](./docs/org-token-creation.md)).
+Set `github-user` to the organization login and use a `github-token` that has access to organization data (see [setup steps](./docs/org-token-creation.md)).
 
 ```yml
 with:
@@ -203,7 +203,7 @@ At a high level:
 
 - Fetch contribution data (user: GraphQL; org: REST aggregation)
 - Render themed SVG(s)
-- Optionally optimise (SVGO)
+- Optionally optimize (SVGO)
 - Optionally commit & push changes
 
 <p align="center">
@@ -222,7 +222,7 @@ If nothing updates:
 
 ## Security
 
-- Prefer pinning actions to a release tag or commit SHA in production workflows.
+- Pin actions to a release tag or commit SHA in production workflows.
 - Use the minimum required workflow permissions (`contents: write` only when committing).
 
 See `SECURITY.md` for reporting & workflow hardening notes.

@@ -16,7 +16,7 @@ This is mainly needed for organization profiles, especially if you want to inclu
 2. In **Resource owner**, select your organization
 3. Choose an expiration date
 
-A longer expiration is usually fine here because the token only needs read access.
+A longer expiration is usually fine here because this token only needs read access.
 
 ![GitHub Org Token Creation: steps 1-3](./img/org-token-1.png)
 
