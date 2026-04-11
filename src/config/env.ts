@@ -292,12 +292,11 @@ export function loadRuntimeConfig(env: EnvSource = process.env): RuntimeConfig {
   const username = optionalStringEnv(env, 'GITHUB_USER');
   const token = optionalStringEnv(env, 'GITHUB_TOKEN');
 
+  if (!username) {
+    throw new Error('Missing GITHUB_USER');
+  }
   if (!token) {
     throw new Error('Missing GITHUB_TOKEN');
-  }
-
-  if (!(username && username.trim())) {
-    throw new Error('GITHUB_USER cannot be empty if provided');
   }
 
   const outputTarget = stringEnv(env, 'CRT_OUTPUT_DIR', DEFAULT_OUTPUT_DIRECTORY);

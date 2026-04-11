@@ -83,6 +83,8 @@ function spectrumColor(index: number, count: number, saturation: number, lightne
 const BAR_DEPTH_X = 2;
 const BAR_DEPTH_Y = 2;
 
+type Layout = ReturnType<typeof buildLayout>;
+
 interface BarGeometry {
   x: number;
   y: number;
@@ -90,12 +92,54 @@ interface BarGeometry {
   centerX: number;
 }
 
-function resolveBarGeometry(
-  index: number,
-  total: number,
-  maxWeekly: number,
-  layout: ReturnType<typeof buildLayout>
-): BarGeometry {
+interface MonthMarker {
+  index: number;
+  label: string;
+  year: number;
+  weekCount: number;
+}
+
+interface MonthPosition {
+  label: string;
+  year: number;
+  x: number;
+  showLabel?: boolean;
+}
+
+interface MonthLabelGeometry {
+  monthPositions: MonthPosition[];
+  monthBoundaryXs: number[];
+  chartRightBoundaryX: number;
+}
+
+interface BarColors {
+  barFrontFill: string;
+  barTopFill: string;
+  barSideFill: string;
+  outlineStroke: string;
+  outlineOpacity: number;
+  pointerStrokeOpacity: number;
+  pointerFrontFill: string;
+  pointerTopFill: string;
+  pointerSideFill: string;
+  pointerStroke: string;
+  capLineStroke: string;
+}
+
+interface DashboardGeometry {
+  stackPanelX: number;
+  stackPanelY: number;
+  stackPanelWidth: number;
+  stackPanelHeight: number;
+  radarPanelX: number;
+  radarPanelY: number;
+  radarPanelWidth: number;
+  radarCenterX: number;
+  radarCenterY: number;
+  radarRadius: number;
+}
+
+function resolveBarGeometry(index: number, total: number, maxWeekly: number, layout: Layout): BarGeometry {
   const x = layout.margin.left + layout.weekGap / 2 + index * (layout.barWidth + layout.weekGap) + 0.5;
   const safeMaxWeekly = maxWeekly > 0 ? maxWeekly : 1;
   const normalized = total <= 0 ? 0 : total / safeMaxWeekly;
@@ -111,10 +155,181 @@ function resolveBarGeometry(
   };
 }
 
+function resolveMonthMarkers(calendar: ContributionCalendar): MonthMarker[] {
+  const weekStartTimes = calendar.weeks.map((week) => Date.parse(week.firstDay));
+  const rawMonthMarkers = calendar.months
+    .map((month) => {
+      const monthStartTime = Date.parse(month.firstDay);
+      const index = weekStartTimes.findIndex((weekStart) => weekStart >= monthStartTime);
+
+      if (index < 0 || index >= weekStartTimes.length) {
+        return null;
+      }
+
+      return {
+        index,
+        label: month.name.slice(0, 3).toUpperCase(),
+        year: month.year
+      };
+    })
+    .filter((marker): marker is { index: number; label: string; year: number } => marker !== null);
+
+  return rawMonthMarkers.map((marker, markerIndex) => {
+    const nextIndex = rawMonthMarkers[markerIndex + 1]?.index ?? calendar.weeks.length;
+    const weekCount = Math.max(0, nextIndex - marker.index);
+
+    return {
+      ...marker,
+      weekCount
+    };
+  });
+}
+
+function resolveMonthLabelGeometry(
+  layout: Layout,
+  monthMarkers: MonthMarker[],
+  weeklyCount: number
+): MonthLabelGeometry {
+  const monthStep = layout.barWidth + layout.weekGap;
+  const chartStartX = layout.margin.left + layout.weekGap / 2;
+  const monthBoundaryShift = 0.5 - layout.weekGap / 2;
+  const chartRightBoundaryX = layout.width - layout.margin.right;
+  const monthBoundaryXs = monthMarkers.map(({ index }) => chartStartX + index * monthStep + monthBoundaryShift);
+  const monthLeftLimit = layout.margin.left + 12;
+  const monthRightLimit = layout.width - layout.margin.right - 12;
+
+  const monthPositions: MonthPosition[] = monthMarkers.map(({ label, year, weekCount }, markerIndex) => {
+    const startBoundaryX = monthBoundaryXs[markerIndex] ?? monthBoundaryXs[0] ?? 0;
+    const endBoundaryX = monthBoundaryXs[markerIndex + 1] ?? chartRightBoundaryX;
+    const segmentWidth = Math.max(0, endBoundaryX - startBoundaryX);
+    const centerX = startBoundaryX + segmentWidth / 2;
+    const isEdgeMonth = markerIndex === 0 || markerIndex === monthMarkers.length - 1;
+    const showLabel = !(isEdgeMonth && weekCount <= 1);
+
+    return {
+      label,
+      year,
+      x: clamp(centerX, monthLeftLimit, monthRightLimit),
+      showLabel
+    };
+  });
+
+  if (weeklyCount === 0) {
+    return {
+      monthPositions: [],
+      monthBoundaryXs: [],
+      chartRightBoundaryX
+    };
+  }
+
+  return {
+    monthPositions,
+    monthBoundaryXs,
+    chartRightBoundaryX
+  };
+}
+
+function resolveDashboardGeometry(layout: Layout, dashboardTop: number): DashboardGeometry {
+  const stackPanelX = layout.margin.left + 60;
+  const stackPanelY = dashboardTop + 24;
+  const stackPanelWidth = 245;
+  const stackPanelHeight = 66;
+  const radarPanelInset = layout.margin.left + 86;
+  const radarPanelWidth = 245;
+  const radarPanelX = layout.width - radarPanelInset - radarPanelWidth;
+  const radarPanelY = stackPanelY;
+  const radarCenterX = radarPanelX + radarPanelWidth / 2 + 70;
+  const radarCenterY = radarPanelY + 46;
+  const radarRadius = 34;
+
+  return {
+    stackPanelX,
+    stackPanelY,
+    stackPanelWidth,
+    stackPanelHeight,
+    radarPanelX,
+    radarPanelY,
+    radarPanelWidth,
+    radarCenterX,
+    radarCenterY,
+    radarRadius
+  };
+}
+
+function buildHorizontalGridPath(layout: Layout): string {
+  return [0, 0.25, 0.5, 0.75, 1]
+    .map((progress) => {
+      const y = formatNumber(layout.chartTop + layout.chartHeight * progress, 1);
+      return `M${layout.margin.left} ${y}H${layout.width - layout.margin.right}`;
+    })
+    .join(' ');
+}
+
+function buildVerticalGridPath(layout: Layout, monthBoundaryXs: number[], chartRightBoundaryX: number): string {
+  return [...monthBoundaryXs, chartRightBoundaryX]
+    .filter((x, index, all) => index === 0 || Math.abs(x - all[index - 1]!) > 0.01)
+    .map((x) => `M${formatNumber(x, 1)} ${layout.chartTop}V${layout.chartBottom}`)
+    .join(' ');
+}
+
+function resolveBarColors(
+  index: number,
+  totalBars: number,
+  intensity: number,
+  isWinampTheme: boolean,
+  useSpectrumChart: boolean,
+  primary: string,
+  primarySoft: string
+): BarColors {
+  const barFrontFill = useSpectrumChart
+    ? spectrumColor(index, totalBars, 92, 54)
+    : isWinampTheme
+      ? 'url(#winampBarGradient)'
+      : 'url(#barGradient)';
+  const barTopFill = useSpectrumChart
+    ? spectrumColor(index, totalBars, 97, 73)
+    : isWinampTheme
+      ? 'url(#winampTopGradient)'
+      : primarySoft;
+  const barSideFill = useSpectrumChart
+    ? spectrumColor(index, totalBars, 88, 42)
+    : isWinampTheme
+      ? 'url(#winampSideGradient)'
+      : primary;
+  const outlineStroke = useSpectrumChart
+    ? spectrumColor(index, totalBars, 98, 80)
+    : isWinampTheme
+      ? '#f0f3fa'
+      : primarySoft;
+  const outlineOpacity = isWinampTheme
+    ? Math.min(0.88, Math.max(0.52, intensity + 0.1))
+    : Math.min(0.9, Math.max(0.4, intensity + 0.18));
+  const pointerStrokeOpacity = isWinampTheme ? 0.9 : Math.min(0.98, outlineOpacity + 0.06);
+  const pointerFrontFill = isWinampTheme ? 'url(#winampPointerFrontGradient)' : barFrontFill;
+  const pointerTopFill = isWinampTheme ? '#e1e6f1' : barTopFill;
+  const pointerSideFill = isWinampTheme ? '#929caf' : barSideFill;
+  const pointerStroke = isWinampTheme ? '#cfd8e8' : outlineStroke;
+  const capLineStroke = isWinampTheme ? '#d7deed' : barTopFill;
+
+  return {
+    barFrontFill,
+    barTopFill,
+    barSideFill,
+    outlineStroke,
+    outlineOpacity,
+    pointerStrokeOpacity,
+    pointerFrontFill,
+    pointerTopFill,
+    pointerSideFill,
+    pointerStroke,
+    capLineStroke
+  };
+}
+
 function renderBars(
   weekly: WeeklyStats[],
   geometries: BarGeometry[],
-  layout: ReturnType<typeof buildLayout>,
+  layout: Layout,
   themeConfig: ThemeableConfig,
   primary: string,
   primarySoft: string,
@@ -142,35 +357,19 @@ function renderBars(
 
       const title = `${week.firstDay}: ${week.total} contributions | active days: ${week.activeDays} | peak day: ${week.peak}`;
       const hoverTitle = enableHoverAttrs ? `<title>${escapeXml(title)}</title>` : '';
-      const barFrontFill = useSpectrumChart
-        ? spectrumColor(index, weekly.length, 92, 54)
-        : isWinampTheme
-          ? 'url(#winampBarGradient)'
-          : 'url(#barGradient)';
-      const barTopFill = useSpectrumChart
-        ? spectrumColor(index, weekly.length, 97, 73)
-        : isWinampTheme
-          ? 'url(#winampTopGradient)'
-          : primarySoft;
-      const barSideFill = useSpectrumChart
-        ? spectrumColor(index, weekly.length, 88, 42)
-        : isWinampTheme
-          ? 'url(#winampSideGradient)'
-          : primary;
-      const outlineStroke = useSpectrumChart
-        ? spectrumColor(index, weekly.length, 98, 80)
-        : isWinampTheme
-          ? '#f0f3fa'
-          : primarySoft;
-      const outlineOpacity = isWinampTheme
-        ? Math.min(0.88, Math.max(0.52, intensity + 0.1))
-        : Math.min(0.9, Math.max(0.4, intensity + 0.18));
-      const pointerStrokeOpacity = isWinampTheme ? 0.9 : Math.min(0.98, outlineOpacity + 0.06);
-      const pointerFrontFill = isWinampTheme ? 'url(#winampPointerFrontGradient)' : barFrontFill;
-      const pointerTopFill = isWinampTheme ? '#e1e6f1' : barTopFill;
-      const pointerSideFill = isWinampTheme ? '#929caf' : barSideFill;
-      const pointerStroke = isWinampTheme ? '#cfd8e8' : outlineStroke;
-      const capLineStroke = isWinampTheme ? '#d7deed' : barTopFill;
+      const {
+        barFrontFill,
+        barTopFill,
+        barSideFill,
+        outlineStroke,
+        outlineOpacity,
+        pointerStrokeOpacity,
+        pointerFrontFill,
+        pointerTopFill,
+        pointerSideFill,
+        pointerStroke,
+        capLineStroke
+      } = resolveBarColors(index, weekly.length, intensity, isWinampTheme, useSpectrumChart, primary, primarySoft);
 
       const bottomY = geometry.y + geometry.height;
       const pointerWidth = Math.max(4, layout.barWidth - 1);
@@ -320,11 +519,7 @@ function renderBars(
     .join('\n');
 }
 
-function renderYAxisLabels(
-  layout: ReturnType<typeof buildLayout>,
-  maxWeekly: number,
-  palette: ThemeableConfig['palette']
-): string {
+function renderYAxisLabels(layout: Layout, maxWeekly: number, palette: ThemeableConfig['palette']): string {
   const steps = [1, 0.75, 0.5, 0.25, 0];
 
   return steps
@@ -364,19 +559,18 @@ function formatLanguagePercentage(percentage: number): string {
 
 function renderLanguageStackProfile(
   insights: ProfileInsights,
-  layout: ReturnType<typeof buildLayout>,
-  dashboardTop: number,
+  dashboardGeometry: DashboardGeometry,
   themeConfig: ThemeableConfig,
   useSpectrumChart: boolean
 ): string {
   const hasLanguageData = insights.languages.length > 0 && insights.totalLanguageSize > 0;
   const animateDashboard = themeConfig.animateDashboard;
-  const titleX = layout.margin.left + 60;
-  const titleY = dashboardTop + 2;
-  const panelX = titleX;
-  const panelY = dashboardTop + 24;
-  const panelWidth = 245;
-  const panelHeight = 66;
+  const titleX = dashboardGeometry.stackPanelX;
+  const titleY = dashboardGeometry.stackPanelY - 22;
+  const panelX = dashboardGeometry.stackPanelX;
+  const panelY = dashboardGeometry.stackPanelY;
+  const panelWidth = dashboardGeometry.stackPanelWidth;
+  const panelHeight = dashboardGeometry.stackPanelHeight;
   const topPadding = 7;
   const rowStep = 11;
   const barHeight = 7;
@@ -481,19 +675,13 @@ function renderLanguageStackProfile(
 
 function renderActivityRadar(
   insights: ProfileInsights,
-  layout: ReturnType<typeof buildLayout>,
-  dashboardTop: number,
+  dashboardGeometry: DashboardGeometry,
   themeConfig: ThemeableConfig,
   useSpectrumChart: boolean
 ): string {
-  const dashboardPanelInset = layout.margin.left + 86;
-  const dashboardPanelWidth = 245;
-  const dashboardPanelX = layout.width - dashboardPanelInset - dashboardPanelWidth;
-  const dashboardPanelY = dashboardTop + 24;
-  const activityShiftX = 70;
-  const centerX = dashboardPanelX + dashboardPanelWidth / 2 + activityShiftX;
-  const centerY = dashboardPanelY + 46;
-  const radius = 34;
+  const centerX = dashboardGeometry.radarCenterX;
+  const centerY = dashboardGeometry.radarCenterY;
+  const radius = dashboardGeometry.radarRadius;
   const animateDashboard = themeConfig.animateDashboard;
   const radarStroke = useSpectrumChart ? 'url(#spectrumStrokeGradient)' : themeConfig.palette.primary;
   const radarFill = useSpectrumChart ? 'url(#spectrumAreaGradient)' : 'url(#areaGradient)';
@@ -586,7 +774,7 @@ function renderActivityRadar(
   const reviewLabelY = centerY + radius + 12;
   const commitLabelX = centerX - radius - labelOffset;
   const issueLabelX = centerX + radius + labelOffset;
-  const headerY = dashboardTop + 2;
+  const headerY = dashboardGeometry.radarPanelY - 22;
   const subtitleY = headerY + 12;
 
   return `
@@ -630,27 +818,24 @@ function renderActivityRadar(
 
 function renderDashboardPanels(
   insights: ProfileInsights | null | undefined,
-  layout: ReturnType<typeof buildLayout>,
-  dashboardTop: number,
+  layout: Layout,
+  dashboardGeometry: DashboardGeometry,
   themeConfig: ThemeableConfig,
   useSpectrumChart: boolean
 ): string {
   if (!insights) {
     return `
-    <text x="${layout.width / 2}" y="${dashboardTop + 42}" class="dash-label" text-anchor="middle">INSIGHTS UNAVAILABLE</text>
+    <text x="${layout.width / 2}" y="${dashboardGeometry.stackPanelY + 18}" class="dash-label" text-anchor="middle">INSIGHTS UNAVAILABLE</text>
     `;
   }
 
   return `
-  ${renderLanguageStackProfile(insights, layout, dashboardTop, themeConfig, useSpectrumChart)}
-  ${renderActivityRadar(insights, layout, dashboardTop, themeConfig, useSpectrumChart)}
+  ${renderLanguageStackProfile(insights, dashboardGeometry, themeConfig, useSpectrumChart)}
+  ${renderActivityRadar(insights, dashboardGeometry, themeConfig, useSpectrumChart)}
   `;
 }
 
-function renderMonthLabels(
-  monthPositions: Array<{ label: string; year: number; x: number; showLabel?: boolean }>,
-  y: number
-): string {
+function renderMonthLabels(monthPositions: MonthPosition[], y: number): string {
   return monthPositions
     .filter(({ showLabel }) => showLabel !== false)
     .map(({ label, x }) => {
@@ -659,12 +844,7 @@ function renderMonthLabels(
     .join('\n');
 }
 
-function renderYearLabels(
-  monthPositions: Array<{ label: string; year: number; x: number }>,
-  leftLimit: number,
-  rightLimit: number,
-  y: number
-): string {
+function renderYearLabels(monthPositions: MonthPosition[], leftLimit: number, rightLimit: number, y: number): string {
   if (monthPositions.length === 0) {
     return '';
   }
@@ -707,57 +887,17 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const weekly = deriveWeeklyStats(calendar.weeks);
   const maxWeekly = Math.max(1, maxOf(weekly.map((week) => week.total)));
   const geometries = weekly.map((week, index) => resolveBarGeometry(index, week.total, maxWeekly, layout));
-  const rawMonthMarkers = calendar.months
-    .map((month) => {
-      const monthStartDate = new Date(month.firstDay);
-      const index = calendar.weeks.findIndex((week) => new Date(week.firstDay) >= monthStartDate);
-
-      if (index < 0 || index >= weekly.length) {
-        return null;
-      }
-
-      return {
-        index,
-        label: month.name.slice(0, 3).toUpperCase(),
-        year: month.year
-      };
-    })
-    .filter((marker): marker is { index: number; label: string; year: number } => marker !== null);
-  const monthMarkers = rawMonthMarkers.map((marker, markerIndex) => {
-    const nextIndex = rawMonthMarkers[markerIndex + 1]?.index ?? weekly.length;
-    const weekCount = Math.max(0, nextIndex - marker.index);
-
-    return {
-      ...marker,
-      weekCount
-    };
-  });
-  const monthStep = layout.barWidth + layout.weekGap;
-  const chartStartX = layout.margin.left + layout.weekGap / 2;
-  const monthBoundaryShift = 0.5 - layout.weekGap / 2;
-  const chartRightBoundaryX = layout.width - layout.margin.right;
-  const monthBoundaryXs = monthMarkers.map(({ index }) => chartStartX + index * monthStep + monthBoundaryShift);
+  const monthMarkers = resolveMonthMarkers(calendar);
+  const { monthPositions, monthBoundaryXs, chartRightBoundaryX } = resolveMonthLabelGeometry(
+    layout,
+    monthMarkers,
+    weekly.length
+  );
   const monthLabelY = layout.margin.top + layout.headerHeight + layout.subHeaderHeight + 12;
   const yearLabelY = monthLabelY - 14;
-  const monthLeftLimit = layout.margin.left + 12;
-  const monthRightLimit = layout.width - layout.margin.right - 12;
   const yearLeftLimit = layout.margin.left + 18;
   const yearRightLimit = layout.width - layout.margin.right - 18;
-  const monthPositions = monthMarkers.map(({ label, year, weekCount }, markerIndex) => {
-    const startBoundaryX = monthBoundaryXs[markerIndex] ?? monthBoundaryXs[0] ?? 0;
-    const endBoundaryX = monthBoundaryXs[markerIndex + 1] ?? chartRightBoundaryX;
-    const segmentWidth = Math.max(0, endBoundaryX - startBoundaryX);
-    const centerX = startBoundaryX + segmentWidth / 2;
-    const isEdgeMonth = markerIndex === 0 || markerIndex === monthMarkers.length - 1;
-    const showLabel = !(isEdgeMonth && weekCount <= 1);
-
-    return {
-      label,
-      year,
-      x: clamp(centerX, monthLeftLimit, monthRightLimit),
-      showLabel
-    };
-  });
+  const dashboardGeometry = resolveDashboardGeometry(layout, dashboardTop);
 
   const bars = renderBars(
     weekly,
@@ -773,28 +913,16 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   const monthLabels = renderMonthLabels(monthPositions, monthLabelY);
   const yearLabels = renderYearLabels(monthPositions, yearLeftLimit, yearRightLimit, yearLabelY);
 
-  const gridPathData = visual.showGrid
-    ? [0, 0.25, 0.5, 0.75, 1]
-        .map((progress) => {
-          const y = formatNumber(layout.chartTop + layout.chartHeight * progress, 1);
-          return `M${layout.margin.left} ${y}H${layout.width - layout.margin.right}`;
-        })
-        .join(' ')
-    : '';
+  const gridPathData = visual.showGrid ? buildHorizontalGridPath(layout) : '';
   const gridLines = gridPathData ? `<path d="${gridPathData}" class="grid-line"/>` : '';
 
   const verticalTicksPathData = visual.showGrid
-    ? [...monthBoundaryXs, chartRightBoundaryX]
-        .filter((x, index, all) => index === 0 || Math.abs(x - all[index - 1]!) > 0.01)
-        .map((x) => {
-          return `M${formatNumber(x, 1)} ${layout.chartTop}V${layout.chartBottom}`;
-        })
-        .join(' ')
+    ? buildVerticalGridPath(layout, monthBoundaryXs, chartRightBoundaryX)
     : '';
   const verticalTicks = verticalTicksPathData ? `<path d="${verticalTicksPathData}" class="grid-line"/>` : '';
 
   const dashboardPanels = showDashboard
-    ? renderDashboardPanels(insights, layout, dashboardTop, themeConfig, useSpectrumChart)
+    ? renderDashboardPanels(insights, layout, dashboardGeometry, themeConfig, useSpectrumChart)
     : '';
 
   const includeNoiseLayer = themeConfig.noiseOpacity > 0;
@@ -990,16 +1118,6 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     }
   `
     : '';
-  const stackPanelX = layout.margin.left + 60;
-  const stackPanelY = dashboardTop + 24;
-  const stackPanelWidth = 245;
-  const stackPanelHeight = 66;
-  const radarPanelInset = layout.margin.left + 86;
-  const radarPanelWidth = 245;
-  const radarPanelX = layout.width - radarPanelInset - radarPanelWidth;
-  const radarCenterX = radarPanelX + radarPanelWidth / 2 + 70;
-  const radarCenterY = stackPanelY + 46;
-  const radarRadius = 34;
   const dashboardBlurPadding = Math.max(8, Math.ceil(themeConfig.phosphorBlur * 6));
 
   const lastWeek = weekly[weekly.length - 1];
@@ -1054,10 +1172,10 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       includeDashboardFilters
         ? `<filter
       id="phosphorGlowDash"
-      x="${stackPanelX - dashboardBlurPadding}"
-      y="${stackPanelY - dashboardBlurPadding}"
-      width="${stackPanelWidth + dashboardBlurPadding * 2}"
-      height="${stackPanelHeight + dashboardBlurPadding * 2}"
+      x="${dashboardGeometry.stackPanelX - dashboardBlurPadding}"
+      y="${dashboardGeometry.stackPanelY - dashboardBlurPadding}"
+      width="${dashboardGeometry.stackPanelWidth + dashboardBlurPadding * 2}"
+      height="${dashboardGeometry.stackPanelHeight + dashboardBlurPadding * 2}"
       filterUnits="userSpaceOnUse"
       primitiveUnits="userSpaceOnUse"
       color-interpolation-filters="sRGB">
@@ -1073,10 +1191,10 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       includeDashboardFilters
         ? `<filter
       id="phosphorGlowRadar"
-      x="${radarCenterX - radarRadius - dashboardBlurPadding}"
-      y="${radarCenterY - radarRadius - dashboardBlurPadding}"
-      width="${radarRadius * 2 + dashboardBlurPadding * 2}"
-      height="${radarRadius * 2 + dashboardBlurPadding * 2}"
+      x="${dashboardGeometry.radarCenterX - dashboardGeometry.radarRadius - dashboardBlurPadding}"
+      y="${dashboardGeometry.radarCenterY - dashboardGeometry.radarRadius - dashboardBlurPadding}"
+      width="${dashboardGeometry.radarRadius * 2 + dashboardBlurPadding * 2}"
+      height="${dashboardGeometry.radarRadius * 2 + dashboardBlurPadding * 2}"
       filterUnits="userSpaceOnUse"
       primitiveUnits="userSpaceOnUse"
       color-interpolation-filters="sRGB">

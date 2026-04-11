@@ -1,6 +1,7 @@
 import type { ContributionCalendar, ContributionLevel, ContributionMonth, ContributionWeek } from '../model/calendar';
 import type { ProfileInsights } from '../model/insights';
 import { clamp } from '../utils/math';
+import { addLanguageWeight, collapseLanguageBuckets, DEFAULT_MAX_LANGUAGE_SLICES } from './languageAggregation';
 import type { RestClient } from './restClient';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -10,7 +11,6 @@ const COMMIT_ACTIVITY_MAX_ATTEMPTS = 3;
 const COMMIT_ACTIVITY_RETRY_DELAY_MS = 450;
 const COMMIT_LIST_PER_PAGE = 100;
 const COMMIT_LIST_MAX_PAGES = 30;
-const MAX_LANGUAGE_SLICES = 5;
 
 interface OrganizationRepository {
   name: string;
@@ -87,17 +87,6 @@ function levelForCount(count: number, maxCount: number): ContributionLevel {
   return 'FOURTH_QUARTILE';
 }
 
-function fallbackLanguageColor(name: string): string {
-  let hash = 0;
-
-  for (const char of name) {
-    hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
-  }
-
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 70%, 55%)`;
-}
-
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -128,6 +117,18 @@ function countTotalContributions(dayCounts: Map<string, number>): number {
   }
 
   return total;
+}
+
+function maxDayContribution(dayCounts: Map<string, number>): number {
+  let maxContribution = 0;
+
+  for (const contributionCount of dayCounts.values()) {
+    if (contributionCount > maxContribution) {
+      maxContribution = contributionCount;
+    }
+  }
+
+  return maxContribution;
 }
 
 async function mapWithConcurrency<TInput, TResult>(
@@ -353,6 +354,44 @@ function buildMonths(fromDay: Date, toDay: Date): ContributionMonth[] {
   return months;
 }
 
+function buildContributionWeeks(
+  fromDay: Date,
+  toDay: Date,
+  fromIsoDay: string,
+  toIsoDay: string,
+  aggregatedDayCounts: Map<string, number>,
+  maxDayCount: number
+): ContributionWeek[] {
+  const firstWeek = startOfUtcWeek(fromDay);
+  const lastWeek = startOfUtcWeek(toDay);
+  const weeks: ContributionWeek[] = [];
+
+  for (let weekStartMs = firstWeek.getTime(); weekStartMs <= lastWeek.getTime(); weekStartMs += 7 * DAY_MS) {
+    const weekStartDate = new Date(weekStartMs);
+    const contributionDays = Array.from({ length: 7 }, (_, dayIndex) => {
+      const dayDate = new Date(weekStartMs + dayIndex * DAY_MS);
+      const dayKey = utcDateOnly(dayDate);
+      const inWindow = dayKey >= fromIsoDay && dayKey <= toIsoDay;
+      const contributionCount = inWindow ? (aggregatedDayCounts.get(dayKey) ?? 0) : 0;
+
+      return {
+        date: `${dayKey}T00:00:00.000Z`,
+        contributionCount,
+        contributionLevel: levelForCount(contributionCount, maxDayCount),
+        weekday: dayDate.getUTCDay(),
+        color: '#9be9a8'
+      };
+    });
+
+    weeks.push({
+      firstDay: weekStartDate.toISOString(),
+      contributionDays
+    });
+  }
+
+  return weeks;
+}
+
 async function fetchIssueSearchCount(client: RestClient, query: string): Promise<number> {
   try {
     const { data } = await client.request<SearchIssuesResponse>('/search/issues', {
@@ -391,7 +430,7 @@ export async function fetchOrganizationData(
   );
 
   const aggregatedDayCounts = new Map<string, number>();
-  const languageWeights = new Map<string, { size: number; color: string }>();
+  const languageBuckets = new Map<string, { name: string; size: number; color: string }>();
 
   for (const entry of commitActivityByRepo) {
     if (entry.snapshot.total <= 0) {
@@ -403,63 +442,14 @@ export async function fetchOrganizationData(
     }
 
     if (includeInsights) {
-      const languageName = entry.repository.language ?? 'Other';
-      const languageColor = fallbackLanguageColor(languageName);
-      const currentLanguage = languageWeights.get(languageName);
-
-      if (!currentLanguage) {
-        languageWeights.set(languageName, {
-          size: entry.snapshot.total,
-          color: languageColor
-        });
-      } else {
-        currentLanguage.size += entry.snapshot.total;
-      }
+      addLanguageWeight(languageBuckets, entry.repository.language ?? 'Other', entry.snapshot.total);
     }
   }
 
-  const firstWeek = startOfUtcWeek(fromDay);
-  const lastWeek = startOfUtcWeek(toDay);
-  const dayCountsInRange = [...aggregatedDayCounts.values()];
-  const maxDayCount = dayCountsInRange.length > 0 ? Math.max(...dayCountsInRange) : 0;
-  const weeks: ContributionWeek[] = [];
+  const maxDayCount = maxDayContribution(aggregatedDayCounts);
+  const weeks = buildContributionWeeks(fromDay, toDay, fromIsoDay, toIsoDay, aggregatedDayCounts, maxDayCount);
 
-  for (let weekStartMs = firstWeek.getTime(); weekStartMs <= lastWeek.getTime(); weekStartMs += 7 * DAY_MS) {
-    const weekStartDate = new Date(weekStartMs);
-    const contributionDays = Array.from({ length: 7 }, (_, dayIndex) => {
-      const dayDate = new Date(weekStartMs + dayIndex * DAY_MS);
-      const dayKey = utcDateOnly(dayDate);
-      const inWindow = dayKey >= fromIsoDay && dayKey <= toIsoDay;
-      const contributionCount = inWindow ? (aggregatedDayCounts.get(dayKey) ?? 0) : 0;
-
-      return {
-        date: `${dayKey}T00:00:00.000Z`,
-        contributionCount,
-        contributionLevel: levelForCount(contributionCount, maxDayCount),
-        weekday: dayDate.getUTCDay(),
-        color: '#9be9a8'
-      };
-    });
-
-    weeks.push({
-      firstDay: weekStartDate.toISOString(),
-      contributionDays
-    });
-  }
-
-  const totalContributions = weeks.reduce((sum, week) => {
-    return (
-      sum +
-      week.contributionDays.reduce((weekSum, day) => {
-        const dayKey = day.date.slice(0, 10);
-        if (dayKey < fromIsoDay || dayKey > toIsoDay) {
-          return weekSum;
-        }
-
-        return weekSum + day.contributionCount;
-      }, 0)
-    );
-  }, 0);
+  const totalContributions = countTotalContributions(aggregatedDayCounts);
 
   const calendar: ContributionCalendar = {
     totalContributions,
@@ -474,26 +464,8 @@ export async function fetchOrganizationData(
     };
   }
 
-  const languages = [...languageWeights.entries()]
-    .map(([name, value]) => ({ name, ...value }))
-    .sort((left, right) => right.size - left.size);
+  const languages = collapseLanguageBuckets(languageBuckets, DEFAULT_MAX_LANGUAGE_SLICES);
   const totalLanguageSize = languages.reduce((sum, language) => sum + language.size, 0);
-
-  if (languages.length > MAX_LANGUAGE_SLICES) {
-    const topLanguages = languages.slice(0, MAX_LANGUAGE_SLICES - 1);
-    const otherSize = languages.slice(MAX_LANGUAGE_SLICES - 1).reduce((sum, language) => sum + language.size, 0);
-    const existingOther = topLanguages.find((language) => language.name.toLowerCase() === 'other');
-    languages.length = 0;
-    if (existingOther) {
-      existingOther.size += otherSize;
-      if (!existingOther.color) {
-        existingOther.color = '#8b949e';
-      }
-      languages.push(...topLanguages);
-    } else {
-      languages.push(...topLanguages, { name: 'Other', size: otherSize, color: '#8b949e' });
-    }
-  }
 
   const fromDateForSearch = fromIsoDay;
   const toDateForSearch = toIsoDay;

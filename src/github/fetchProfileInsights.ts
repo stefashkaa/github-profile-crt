@@ -1,10 +1,10 @@
 import type { ProfileInsights } from '../model/insights';
 import type { GraphQlClient } from './graphqlClient';
+import { addLanguageWeight, collapseLanguageBuckets, DEFAULT_MAX_LANGUAGE_SLICES } from './languageAggregation';
 import { profileInsightsQuery } from './query';
 
 const DEFAULT_REPOSITORY_LIMIT = 80;
 const DEFAULT_LANGUAGE_LIMIT_PER_REPOSITORY = 8;
-const MAX_LANGUAGE_SLICES = 5;
 
 interface ProfileInsightsQueryResponse {
   user: {
@@ -38,17 +38,6 @@ interface ProfileInsightsQueryResponse {
   } | null;
 }
 
-function fallbackLanguageColor(name: string): string {
-  let hash = 0;
-
-  for (const char of name) {
-    hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
-  }
-
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 70%, 55%)`;
-}
-
 export async function fetchProfileInsights(
   client: GraphQlClient,
   username: string,
@@ -67,7 +56,7 @@ export async function fetchProfileInsights(
     throw new Error(`GitHub user "${username}" was not found`);
   }
 
-  const languageMap = new Map<string, { size: number; color: string }>();
+  const languageBuckets = new Map<string, { name: string; size: number; color: string }>();
 
   for (const entry of data.user.contributionsCollection.commitContributionsByRepository ?? []) {
     const repository = entry.repository;
@@ -81,14 +70,7 @@ export async function fetchProfileInsights(
 
     if (languageEdges.length === 0) {
       const fallbackLanguage = repository.primaryLanguage?.name ?? 'Other';
-      const fallbackColor = repository.primaryLanguage?.color ?? fallbackLanguageColor(fallbackLanguage);
-      const current = languageMap.get(fallbackLanguage);
-
-      if (!current) {
-        languageMap.set(fallbackLanguage, { size: contributionWeight, color: fallbackColor });
-      } else {
-        current.size += contributionWeight;
-      }
+      addLanguageWeight(languageBuckets, fallbackLanguage, contributionWeight, repository.primaryLanguage?.color);
 
       continue;
     }
@@ -100,41 +82,12 @@ export async function fetchProfileInsights(
       const name = edge.node.name;
       const share = totalRepoLanguageSize > 0 ? edge.size / totalRepoLanguageSize : fallbackShare;
       const weightedSize = contributionWeight * share;
-      const color = edge.node.color ?? fallbackLanguageColor(name);
-      const current = languageMap.get(name);
-
-      if (!current) {
-        languageMap.set(name, { size: weightedSize, color });
-        continue;
-      }
-
-      current.size += weightedSize;
-      if (!current.color && color) {
-        current.color = color;
-      }
+      addLanguageWeight(languageBuckets, name, weightedSize, edge.node.color);
     }
   }
 
-  const sortedLanguages = [...languageMap.entries()]
-    .map(([name, value]) => ({ name, ...value }))
-    .sort((left, right) => right.size - left.size);
+  const sortedLanguages = collapseLanguageBuckets(languageBuckets, DEFAULT_MAX_LANGUAGE_SLICES);
   const totalLanguageSize = sortedLanguages.reduce((sum, language) => sum + language.size, 0);
-
-  if (sortedLanguages.length > MAX_LANGUAGE_SLICES) {
-    const top = sortedLanguages.slice(0, MAX_LANGUAGE_SLICES - 1);
-    const otherSize = sortedLanguages.slice(MAX_LANGUAGE_SLICES - 1).reduce((sum, language) => sum + language.size, 0);
-    const existingOther = top.find((language) => language.name.toLowerCase() === 'other');
-    sortedLanguages.length = 0;
-    if (existingOther) {
-      existingOther.size += otherSize;
-      if (!existingOther.color) {
-        existingOther.color = '#8b949e';
-      }
-      sortedLanguages.push(...top);
-    } else {
-      sortedLanguages.push(...top, { name: 'Other', size: otherSize, color: '#8b949e' });
-    }
-  }
 
   return {
     activity: {
