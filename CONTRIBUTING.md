@@ -198,7 +198,7 @@ Scopes are optional but can be used to specify the area of the codebase affected
 
 ```bash
 # New feature
-git commit -m "feat(render): add new "minimal" theme"
+git commit -m "feat(render): add new 'minimal' theme"
 # Bug fix
 git commit -m "fix(github): handle API rate limit errors gracefully"
 # Documentation update
@@ -217,10 +217,43 @@ git commit -m "docs: update README with new theme examples"
 
 ### PR Description Template
 
-TODO: TBD
+Use the repository PR template from:
+
+- [`.github/PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md)
+
+Minimum content for a high-quality PR:
+
+1. **Summary** — what changed and why.
+2. **Problem / Motivation** — which user or maintainer pain point is solved.
+3. **Type of change** — bug/feature/docs/refactor/etc.
+4. **Testing** — exact commands and what was verified.
+5. **Visual diff** — before/after screenshots for any rendering change.
+
+Example:
 
 ```markdown
+## Summary
 
+Adjust WINAMP pointer shades to improve visibility in light mode without changing geometry.
+
+## Problem / Motivation
+
+Pointer caps were near-invisible on light backgrounds.
+
+## Type Of Change
+
+- [x] Bug fix (non-breaking)
+
+## Testing
+
+- pnpm lint
+- pnpm typecheck
+- pnpm generate:dev
+- Checked generated `assets/winamp-light.svg` in GitHub light and dark themes
+
+## Visual Diff (if applicable)
+
+- Attached before/after screenshots in the PR description.
 ```
 
 ### Review Process
@@ -233,7 +266,38 @@ TODO: TBD
 
 ## 🚀 Release Process
 
-TODO: TBD
+Maintainers-only release flow:
+
+1. Ensure `main` is green and docs are updated.
+2. Update `CHANGELOG.md` manually:
+   - Move completed items from `## [Unreleased]` into a new `## [X.Y.Z] - YYYY-MM-DD` section.
+   - Keep entries short and user-facing (`Added`, `Changed`, `Fixed`, `Removed`).
+   - This repository does **not** currently auto-generate changelog entries.
+3. Run final validation locally:
+   - `pnpm lint`
+   - `pnpm typecheck`
+   - `pnpm build:all`
+   - `pnpm generate:dev`
+4. Commit any generated/required artifacts.
+5. Bump version in `package.json` (if needed for release tracking).
+6. Create and push a version tag:
+
+```bash
+git checkout main
+git pull --ff-only
+git tag -a vX.Y.Z -m "Release vX.Y.Z"
+git push origin vX.Y.Z
+```
+
+7. Create GitHub Release notes for `vX.Y.Z`.
+8. Move the major action tag (for example `v1`) to the new release so users pinned to major get updates:
+
+```bash
+git tag -fa v1 -m "Update v1 to vX.Y.Z"
+git push origin v1 --force
+```
+
+9. Verify Marketplace listing and sample workflow still work after release.
 
 ## 🎯 Areas We Need Help
 
@@ -246,7 +310,8 @@ TODO: TBD
 ## 💬 Community
 
 - **GitHub Discussions:** [Ask questions, share ideas](https://github.com/stefashkaa/github-profile-crt/discussions)
-- **Issues:** [Report bugs, request features](https://github.com/stefashkaa/github-profile-crt/issues)
+- **Issues:** [Report bugs or request features](https://github.com/stefashkaa/github-profile-crt/issues)
+- **Security:** [Report vulnerabilities privately](https://github.com/stefashkaa/github-profile-crt/security/advisories/new)
 
 ## 📄 License
 
