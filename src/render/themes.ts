@@ -758,14 +758,12 @@ function applyThemeOverride(base: ThemeableConfig, override?: ThemeVariantOverri
   }
 
   const { palette: paletteOverride, ...restOverride } = override;
+  const mergedPalette = paletteOverride ? { ...base.palette, ...paletteOverride } : base.palette;
 
   return {
     ...base,
     ...restOverride,
-    palette: {
-      ...base.palette,
-      ...(paletteOverride ?? {})
-    }
+    palette: mergedPalette
   };
 }
 

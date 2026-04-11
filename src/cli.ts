@@ -15,9 +15,10 @@ async function main(): Promise<void> {
   const finalTotalBytes = result.files.reduce((sum, file) => sum + file.finalSize, 0);
   const savedBytes = totalSavedBytes(rawTotalBytes, finalTotalBytes);
   const savedPercent = rawTotalBytes > 0 ? ((savedBytes / rawTotalBytes) * 100).toFixed(1) : '0.0';
+  const optimizationSummary = result.optimized ? `, saved ${savedBytes} bytes (${savedPercent}%)` : '';
 
   console.log(
-    `Generated ${result.files.length} themed SVGs in ${result.outputDirectory} (${result.weeks} weeks, ${result.totalContributions} contributions total${result.optimized ? `, saved ${savedBytes} bytes (${savedPercent}%)` : ''})`
+    `Generated ${result.files.length} themed SVGs in ${result.outputDirectory} (${result.weeks} weeks, ${result.totalContributions} contributions total${optimizationSummary})`
   );
 
   for (const file of result.files) {
@@ -25,7 +26,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error: unknown) => {
+try {
+  await main();
+} catch (error: unknown) {
   if (error instanceof Error) {
     console.error(error.message);
   } else {
@@ -33,4 +36,4 @@ main().catch((error: unknown) => {
   }
 
   process.exit(1);
-});
+}

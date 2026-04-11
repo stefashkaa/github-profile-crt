@@ -139,6 +139,14 @@ interface DashboardGeometry {
   radarRadius: number;
 }
 
+interface RenderBarsOptions {
+  themeConfig: ThemeableConfig;
+  primary: string;
+  primarySoft: string;
+  useSpectrumChart: boolean;
+  enableHoverAttrs: boolean;
+}
+
 function resolveBarGeometry(index: number, total: number, maxWeekly: number, layout: Layout): BarGeometry {
   const x = layout.margin.left + layout.weekGap / 2 + index * (layout.barWidth + layout.weekGap) + 0.5;
   const safeMaxWeekly = maxWeekly > 0 ? maxWeekly : 1;
@@ -281,26 +289,23 @@ function resolveBarColors(
   primary: string,
   primarySoft: string
 ): BarColors {
-  const barFrontFill = useSpectrumChart
-    ? spectrumColor(index, totalBars, 92, 54)
-    : isWinampTheme
-      ? 'url(#winampBarGradient)'
-      : 'url(#barGradient)';
-  const barTopFill = useSpectrumChart
-    ? spectrumColor(index, totalBars, 97, 73)
-    : isWinampTheme
-      ? 'url(#winampTopGradient)'
-      : primarySoft;
-  const barSideFill = useSpectrumChart
-    ? spectrumColor(index, totalBars, 88, 42)
-    : isWinampTheme
-      ? 'url(#winampSideGradient)'
-      : primary;
-  const outlineStroke = useSpectrumChart
-    ? spectrumColor(index, totalBars, 98, 80)
-    : isWinampTheme
-      ? '#f0f3fa'
-      : primarySoft;
+  let barFrontFill = 'url(#barGradient)';
+  let barTopFill = primarySoft;
+  let barSideFill = primary;
+  let outlineStroke = primarySoft;
+
+  if (useSpectrumChart) {
+    barFrontFill = spectrumColor(index, totalBars, 92, 54);
+    barTopFill = spectrumColor(index, totalBars, 97, 73);
+    barSideFill = spectrumColor(index, totalBars, 88, 42);
+    outlineStroke = spectrumColor(index, totalBars, 98, 80);
+  } else if (isWinampTheme) {
+    barFrontFill = 'url(#winampBarGradient)';
+    barTopFill = 'url(#winampTopGradient)';
+    barSideFill = 'url(#winampSideGradient)';
+    outlineStroke = '#f0f3fa';
+  }
+
   const outlineOpacity = isWinampTheme
     ? Math.min(0.88, Math.max(0.52, intensity + 0.1))
     : Math.min(0.9, Math.max(0.4, intensity + 0.18));
@@ -330,12 +335,9 @@ function renderBars(
   weekly: WeeklyStats[],
   geometries: BarGeometry[],
   layout: Layout,
-  themeConfig: ThemeableConfig,
-  primary: string,
-  primarySoft: string,
-  useSpectrumChart: boolean,
-  enableHoverAttrs: boolean
+  options: RenderBarsOptions
 ): string {
+  const { themeConfig, primary, primarySoft, useSpectrumChart, enableHoverAttrs } = options;
   const maxBarHeight = layout.chartHeight - 6;
   const animateEqualizer = themeConfig.animateEqualizer;
   const durationScale = clamp(themeConfig.equalizerDurationScale, 0.35, 2.5);
@@ -869,129 +871,79 @@ function renderYearLabels(monthPositions: MonthPosition[], leftLimit: number, ri
   return labels.join('\n');
 }
 
-export function renderCrtContributionSvg(input: SvgRenderInput): string {
-  const { username, themeConfig, calendar, insights, visual } = input;
-  const palette = themeConfig.palette;
-  const useSpectrumChart = themeConfig.spectrumChart === true;
-  const animateEqualizer = themeConfig.animateEqualizer;
-  const isWinampTheme = themeConfig.id === 'winamp';
-  const showDashboard = visual.showStats;
-  const layout = buildLayout(calendar.weeks.length);
-  const dashboardTopGap = showDashboard ? 30 : 0;
-  const dashboardFooterGap = showDashboard ? 52 : 0;
+interface CanvasMetrics {
+  dashboardTop: number;
+  footerY: number;
+  canvasHeight: number;
+}
+
+function resolveCanvasMetrics(layout: Layout, showDashboard: boolean): CanvasMetrics {
+  if (!showDashboard) {
+    const footerY = layout.chartBottom + 28;
+    return {
+      dashboardTop: layout.heatmapTop,
+      footerY,
+      canvasHeight: footerY + layout.margin.bottom
+    };
+  }
+
+  const dashboardTopGap = 30;
+  const dashboardFooterGap = 52;
   const dashboardTop = layout.heatmapTop + dashboardTopGap;
-  const footerY = showDashboard ? layout.footerY + dashboardTopGap + dashboardFooterGap : layout.chartBottom + 28;
-  const canvasHeight = showDashboard
-    ? layout.height + dashboardTopGap + dashboardFooterGap
-    : footerY + layout.margin.bottom;
-  const weekly = deriveWeeklyStats(calendar.weeks);
-  const maxWeekly = Math.max(1, maxOf(weekly.map((week) => week.total)));
-  const geometries = weekly.map((week, index) => resolveBarGeometry(index, week.total, maxWeekly, layout));
-  const monthMarkers = resolveMonthMarkers(calendar);
-  const { monthPositions, monthBoundaryXs, chartRightBoundaryX } = resolveMonthLabelGeometry(
-    layout,
-    monthMarkers,
-    weekly.length
-  );
-  const monthLabelY = layout.margin.top + layout.headerHeight + layout.subHeaderHeight + 12;
-  const yearLabelY = monthLabelY - 14;
-  const yearLeftLimit = layout.margin.left + 18;
-  const yearRightLimit = layout.width - layout.margin.right - 18;
-  const dashboardGeometry = resolveDashboardGeometry(layout, dashboardTop);
+  const footerY = layout.footerY + dashboardTopGap + dashboardFooterGap;
 
-  const bars = renderBars(
-    weekly,
-    geometries,
-    layout,
-    themeConfig,
-    palette.primary,
-    palette.primarySoft,
-    useSpectrumChart,
-    visual.enableHoverAttrs
-  );
-  const yAxisLabels = renderYAxisLabels(layout, maxWeekly, palette);
-  const monthLabels = renderMonthLabels(monthPositions, monthLabelY);
-  const yearLabels = renderYearLabels(monthPositions, yearLeftLimit, yearRightLimit, yearLabelY);
+  return {
+    dashboardTop,
+    footerY,
+    canvasHeight: layout.height + dashboardTopGap + dashboardFooterGap
+  };
+}
 
-  const gridPathData = visual.showGrid ? buildHorizontalGridPath(layout) : '';
-  const gridLines = gridPathData ? `<path d="${gridPathData}" class="grid-line"/>` : '';
+interface GridLayerFragments {
+  gridLines: string;
+  verticalTicks: string;
+}
 
-  const verticalTicksPathData = visual.showGrid
-    ? buildVerticalGridPath(layout, monthBoundaryXs, chartRightBoundaryX)
-    : '';
-  const verticalTicks = verticalTicksPathData ? `<path d="${verticalTicksPathData}" class="grid-line"/>` : '';
+function buildGridLayerFragments(
+  showGrid: boolean,
+  layout: Layout,
+  monthBoundaryXs: number[],
+  chartRightBoundaryX: number
+): GridLayerFragments {
+  if (!showGrid) {
+    return {
+      gridLines: '',
+      verticalTicks: ''
+    };
+  }
 
-  const dashboardPanels = showDashboard
-    ? renderDashboardPanels(insights, layout, dashboardGeometry, themeConfig, useSpectrumChart)
-    : '';
+  const gridPathData = buildHorizontalGridPath(layout);
+  const verticalTicksPathData = buildVerticalGridPath(layout, monthBoundaryXs, chartRightBoundaryX);
 
-  const includeNoiseLayer = themeConfig.noiseOpacity > 0;
-  const includeScanLayer = themeConfig.scanOpacity > 0;
+  return {
+    gridLines: gridPathData ? `<path d="${gridPathData}" class="grid-line"/>` : '',
+    verticalTicks: verticalTicksPathData ? `<path d="${verticalTicksPathData}" class="grid-line"/>` : ''
+  };
+}
 
-  const noiseTileSize = 80;
-  const noisePrimaryHref = includeNoiseLayer
-    ? createNoiseTileDataUri(themeConfig.noiseSeed * 31 + 17, noiseTileSize, 220, palette.primarySoft, 0.13)
-    : '';
-  const noiseSecondaryHref = includeNoiseLayer
-    ? createNoiseTileDataUri(themeConfig.noiseSeed * 47 + 29, noiseTileSize, 140, palette.primarySoft, 0.08)
-    : '';
-  const noisePatternPrimaryAnimation =
-    includeNoiseLayer && themeConfig.animateNoise
-      ? `
-      <animateTransform
-        attributeName="patternTransform"
-        type="translate"
-        values="0 0; ${Math.round(noiseTileSize * 0.46)} ${Math.round(noiseTileSize * 0.28)}; 0 0"
-        dur="${Math.max(1.8, themeConfig.noiseDuration * 1.06).toFixed(2)}s"
-        repeatCount="indefinite"/>
-    `
-      : '';
-  const noisePatternSecondaryAnimation =
-    includeNoiseLayer && themeConfig.animateNoise
-      ? `
-      <animateTransform
-        attributeName="patternTransform"
-        type="translate"
-        values="0 0; ${Math.round(-noiseTileSize * 0.32)} ${Math.round(noiseTileSize * 0.41)}; 0 0"
-        dur="${Math.max(1.7, themeConfig.noiseDuration * 0.84).toFixed(2)}s"
-        repeatCount="indefinite"/>
-    `
-      : '';
+interface ThemeDefinitionFragments {
+  includeBarGradientDef: boolean;
+  includeAreaGradientDef: boolean;
+  spectrumDefs: string;
+  winampDefs: string;
+  gridStroke: string;
+}
 
-  const scanPatternAnimation =
-    includeScanLayer && themeConfig.animateScanlines
-      ? `
-      <animateTransform
-        attributeName="patternTransform"
-        type="translate"
-        values="0 0; 0 ${themeConfig.scanSpacing * 2}"
-        dur="${themeConfig.scanLineDuration}s"
-        repeatCount="indefinite"/>
-    `
-      : '';
-
-  const noisePatternDef = includeNoiseLayer
-    ? `
-    <pattern id="noisePatternPrimary" width="${noiseTileSize}" height="${noiseTileSize}" patternUnits="userSpaceOnUse">
-      ${noisePatternPrimaryAnimation}
-      <image x="0" y="0" width="${noiseTileSize}" height="${noiseTileSize}" href="${noisePrimaryHref}" preserveAspectRatio="none"/>
-    </pattern>
-    <pattern id="noisePatternSecondary" width="${noiseTileSize}" height="${noiseTileSize}" patternUnits="userSpaceOnUse">
-      ${noisePatternSecondaryAnimation}
-      <image x="0" y="0" width="${noiseTileSize}" height="${noiseTileSize}" href="${noiseSecondaryHref}" preserveAspectRatio="none"/>
-    </pattern>
-  `
-    : '';
-
-  const scanPatternDef = includeScanLayer
-    ? `
-    <pattern id="scanPattern" width="${themeConfig.scanSpacing}" height="${themeConfig.scanSpacing}" patternUnits="userSpaceOnUse">
-      ${scanPatternAnimation}
-      <rect width="${themeConfig.scanSpacing}" height="${Math.max(1, themeConfig.scanSpacing - 2)}" fill="transparent"/>
-      <rect y="${Math.max(1, themeConfig.scanSpacing - 2)}" width="${themeConfig.scanSpacing}" height="1" fill="${palette.scan}"/>
-    </pattern>
-  `
-    : '';
+function buildThemeDefinitionFragments(
+  layout: Layout,
+  themeConfig: ThemeableConfig,
+  useSpectrumChart: boolean,
+  isWinampTheme: boolean,
+  palette: ThemeableConfig['palette']
+): ThemeDefinitionFragments {
+  const includeBarGradientDef = !useSpectrumChart && !isWinampTheme;
+  const includeAreaGradientDef = !useSpectrumChart;
+  const gridStroke = useSpectrumChart ? 'hsl(170, 72%, 72%)' : palette.primarySoft;
 
   const spectrumDefs = useSpectrumChart
     ? `
@@ -1051,10 +1003,176 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   `
     : '';
 
+  return {
+    includeBarGradientDef,
+    includeAreaGradientDef,
+    spectrumDefs,
+    winampDefs,
+    gridStroke
+  };
+}
+
+interface NoiseAndScanFragments {
+  patternDefs: string;
+  overlays: string;
+}
+
+function buildNoiseAndScanFragments(
+  layout: Layout,
+  canvasHeight: number,
+  themeConfig: ThemeableConfig,
+  palette: ThemeableConfig['palette']
+): NoiseAndScanFragments {
+  const includeNoiseLayer = themeConfig.noiseOpacity > 0;
+  const includeScanLayer = themeConfig.scanOpacity > 0;
+  const noiseTileSize = 80;
+
+  const noisePrimaryHref = includeNoiseLayer
+    ? createNoiseTileDataUri(themeConfig.noiseSeed * 31 + 17, noiseTileSize, 220, palette.primarySoft, 0.13)
+    : '';
+  const noiseSecondaryHref = includeNoiseLayer
+    ? createNoiseTileDataUri(themeConfig.noiseSeed * 47 + 29, noiseTileSize, 140, palette.primarySoft, 0.08)
+    : '';
+  const noisePatternPrimaryAnimation =
+    includeNoiseLayer && themeConfig.animateNoise
+      ? `
+      <animateTransform
+        attributeName="patternTransform"
+        type="translate"
+        values="0 0; ${Math.round(noiseTileSize * 0.46)} ${Math.round(noiseTileSize * 0.28)}; 0 0"
+        dur="${Math.max(1.8, themeConfig.noiseDuration * 1.06).toFixed(2)}s"
+        repeatCount="indefinite"/>
+    `
+      : '';
+  const noisePatternSecondaryAnimation =
+    includeNoiseLayer && themeConfig.animateNoise
+      ? `
+      <animateTransform
+        attributeName="patternTransform"
+        type="translate"
+        values="0 0; ${Math.round(-noiseTileSize * 0.32)} ${Math.round(noiseTileSize * 0.41)}; 0 0"
+        dur="${Math.max(1.7, themeConfig.noiseDuration * 0.84).toFixed(2)}s"
+        repeatCount="indefinite"/>
+    `
+      : '';
+  const scanPatternAnimation =
+    includeScanLayer && themeConfig.animateScanlines
+      ? `
+      <animateTransform
+        attributeName="patternTransform"
+        type="translate"
+        values="0 0; 0 ${themeConfig.scanSpacing * 2}"
+        dur="${themeConfig.scanLineDuration}s"
+        repeatCount="indefinite"/>
+    `
+      : '';
+
+  const noisePatternDef = includeNoiseLayer
+    ? `
+    <pattern id="noisePatternPrimary" width="${noiseTileSize}" height="${noiseTileSize}" patternUnits="userSpaceOnUse">
+      ${noisePatternPrimaryAnimation}
+      <image x="0" y="0" width="${noiseTileSize}" height="${noiseTileSize}" href="${noisePrimaryHref}" preserveAspectRatio="none"/>
+    </pattern>
+    <pattern id="noisePatternSecondary" width="${noiseTileSize}" height="${noiseTileSize}" patternUnits="userSpaceOnUse">
+      ${noisePatternSecondaryAnimation}
+      <image x="0" y="0" width="${noiseTileSize}" height="${noiseTileSize}" href="${noiseSecondaryHref}" preserveAspectRatio="none"/>
+    </pattern>
+  `
+    : '';
+  const scanPatternDef = includeScanLayer
+    ? `
+    <pattern id="scanPattern" width="${themeConfig.scanSpacing}" height="${themeConfig.scanSpacing}" patternUnits="userSpaceOnUse">
+      ${scanPatternAnimation}
+      <rect width="${themeConfig.scanSpacing}" height="${Math.max(1, themeConfig.scanSpacing - 2)}" fill="transparent"/>
+      <rect y="${Math.max(1, themeConfig.scanSpacing - 2)}" width="${themeConfig.scanSpacing}" height="1" fill="${palette.scan}"/>
+    </pattern>
+  `
+    : '';
+
+  const overlays = [
+    `<rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#bg)"/>`,
+    includeNoiseLayer
+      ? `<rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#noisePatternPrimary)" opacity="${(themeConfig.noiseOpacity * 0.72).toFixed(4)}"/>`
+      : '',
+    includeNoiseLayer
+      ? `<rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#noisePatternSecondary)" opacity="${(themeConfig.noiseOpacity * 0.58).toFixed(4)}"/>`
+      : '',
+    includeScanLayer
+      ? `<rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#scanPattern)" opacity="${themeConfig.scanOpacity}"/>`
+      : ''
+  ]
+    .filter(Boolean)
+    .join('\n  ');
+
+  return {
+    patternDefs: `${noisePatternDef}\n${scanPatternDef}`,
+    overlays
+  };
+}
+
+export function renderCrtContributionSvg(input: SvgRenderInput): string {
+  const { username, themeConfig, calendar, insights, visual } = input;
+  const palette = themeConfig.palette;
+  const useSpectrumChart = themeConfig.spectrumChart === true;
+  const animateEqualizer = themeConfig.animateEqualizer;
+  const isWinampTheme = themeConfig.id === 'winamp';
+  const showDashboard = visual.showStats;
+  const layout = buildLayout(calendar.weeks.length);
+  const { dashboardTop, footerY, canvasHeight } = resolveCanvasMetrics(layout, showDashboard);
+  const weekly = deriveWeeklyStats(calendar.weeks);
+  const maxWeekly = Math.max(1, maxOf(weekly.map((week) => week.total)));
+  const geometries = weekly.map((week, index) => resolveBarGeometry(index, week.total, maxWeekly, layout));
+  const monthMarkers = resolveMonthMarkers(calendar);
+  const { monthPositions, monthBoundaryXs, chartRightBoundaryX } = resolveMonthLabelGeometry(
+    layout,
+    monthMarkers,
+    weekly.length
+  );
+  const monthLabelY = layout.margin.top + layout.headerHeight + layout.subHeaderHeight + 12;
+  const yearLabelY = monthLabelY - 14;
+  const yearLeftLimit = layout.margin.left + 18;
+  const yearRightLimit = layout.width - layout.margin.right - 18;
+  const dashboardGeometry = resolveDashboardGeometry(layout, dashboardTop);
+
+  const bars = renderBars(weekly, geometries, layout, {
+    themeConfig,
+    primary: palette.primary,
+    primarySoft: palette.primarySoft,
+    useSpectrumChart,
+    enableHoverAttrs: visual.enableHoverAttrs
+  });
+  const yAxisLabels = renderYAxisLabels(layout, maxWeekly, palette);
+  const monthLabels = renderMonthLabels(monthPositions, monthLabelY);
+  const yearLabels = renderYearLabels(monthPositions, yearLeftLimit, yearRightLimit, yearLabelY);
+
+  const { gridLines, verticalTicks } = buildGridLayerFragments(
+    visual.showGrid,
+    layout,
+    monthBoundaryXs,
+    chartRightBoundaryX
+  );
+
+  const dashboardPanels = showDashboard
+    ? renderDashboardPanels(insights, layout, dashboardGeometry, themeConfig, useSpectrumChart)
+    : '';
+
+  const { includeBarGradientDef, includeAreaGradientDef, spectrumDefs, winampDefs, gridStroke } =
+    buildThemeDefinitionFragments(layout, themeConfig, useSpectrumChart, isWinampTheme, palette);
+  const { patternDefs, overlays } = buildNoiseAndScanFragments(layout, canvasHeight, themeConfig, palette);
+
   const chartBaseLineOpacity = Math.max(0.16, themeConfig.barMinOpacity * 0.55);
-  const gridStroke = useSpectrumChart ? 'hsl(170, 72%, 72%)' : palette.primarySoft;
-  const includeBarGradientDef = !useSpectrumChart && !isWinampTheme;
-  const includeAreaGradientDef = !useSpectrumChart;
+  const barGradientDef = includeBarGradientDef
+    ? `<linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${palette.primarySoft}" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="${palette.primary}" stop-opacity="0.45"/>
+    </linearGradient>`
+    : '';
+  const areaGradientDef = includeAreaGradientDef
+    ? `<linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${palette.primary}" stop-opacity="${themeConfig.areaOpacity}"/>
+      <stop offset="100%" stop-color="${palette.primary}" stop-opacity="0"/>
+    </linearGradient>`
+    : '';
   const includeDashboardFilters = showDashboard && Boolean(insights);
   const barAnimationCss = animateEqualizer
     ? `
@@ -1119,8 +1237,40 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
   `
     : '';
   const dashboardBlurPadding = Math.max(8, Math.ceil(themeConfig.phosphorBlur * 6));
+  const dashboardFilterDefs = includeDashboardFilters
+    ? `<filter
+      id="phosphorGlowDash"
+      x="${dashboardGeometry.stackPanelX - dashboardBlurPadding}"
+      y="${dashboardGeometry.stackPanelY - dashboardBlurPadding}"
+      width="${dashboardGeometry.stackPanelWidth + dashboardBlurPadding * 2}"
+      height="${dashboardGeometry.stackPanelHeight + dashboardBlurPadding * 2}"
+      filterUnits="userSpaceOnUse"
+      primitiveUnits="userSpaceOnUse"
+      color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="${themeConfig.phosphorBlur}" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter
+      id="phosphorGlowRadar"
+      x="${dashboardGeometry.radarCenterX - dashboardGeometry.radarRadius - dashboardBlurPadding}"
+      y="${dashboardGeometry.radarCenterY - dashboardGeometry.radarRadius - dashboardBlurPadding}"
+      width="${dashboardGeometry.radarRadius * 2 + dashboardBlurPadding * 2}"
+      height="${dashboardGeometry.radarRadius * 2 + dashboardBlurPadding * 2}"
+      filterUnits="userSpaceOnUse"
+      primitiveUnits="userSpaceOnUse"
+      color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="${themeConfig.phosphorBlur}" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>`
+    : '';
 
-  const lastWeek = weekly[weekly.length - 1];
+  const lastWeek = weekly.at(-1);
   const footerUser = `USER: @${username}`;
   const footerStatsParts = [`CONTRIBUTIONS: ${calendar.totalContributions}`, `BEST WEEK: ${maxWeekly}`];
 
@@ -1143,23 +1293,8 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <stop offset="100%" stop-color="${palette.bg2}"/>
     </linearGradient>
 
-    ${
-      includeBarGradientDef
-        ? `<linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${palette.primarySoft}" stop-opacity="0.95"/>
-      <stop offset="100%" stop-color="${palette.primary}" stop-opacity="0.45"/>
-    </linearGradient>`
-        : ''
-    }
-
-    ${
-      includeAreaGradientDef
-        ? `<linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${palette.primary}" stop-opacity="${themeConfig.areaOpacity}"/>
-      <stop offset="100%" stop-color="${palette.primary}" stop-opacity="0"/>
-    </linearGradient>`
-        : ''
-    }
+    ${barGradientDef}
+    ${areaGradientDef}
     ${winampDefs}
     ${spectrumDefs}
 
@@ -1168,47 +1303,8 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
       <stop offset="100%" stop-color="rgba(0,0,0,1)"/>
     </radialGradient>
 
-    ${
-      includeDashboardFilters
-        ? `<filter
-      id="phosphorGlowDash"
-      x="${dashboardGeometry.stackPanelX - dashboardBlurPadding}"
-      y="${dashboardGeometry.stackPanelY - dashboardBlurPadding}"
-      width="${dashboardGeometry.stackPanelWidth + dashboardBlurPadding * 2}"
-      height="${dashboardGeometry.stackPanelHeight + dashboardBlurPadding * 2}"
-      filterUnits="userSpaceOnUse"
-      primitiveUnits="userSpaceOnUse"
-      color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="${themeConfig.phosphorBlur}" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>`
-        : ''
-    }
-    ${
-      includeDashboardFilters
-        ? `<filter
-      id="phosphorGlowRadar"
-      x="${dashboardGeometry.radarCenterX - dashboardGeometry.radarRadius - dashboardBlurPadding}"
-      y="${dashboardGeometry.radarCenterY - dashboardGeometry.radarRadius - dashboardBlurPadding}"
-      width="${dashboardGeometry.radarRadius * 2 + dashboardBlurPadding * 2}"
-      height="${dashboardGeometry.radarRadius * 2 + dashboardBlurPadding * 2}"
-      filterUnits="userSpaceOnUse"
-      primitiveUnits="userSpaceOnUse"
-      color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="${themeConfig.phosphorBlur}" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>`
-        : ''
-    }
-
-    ${noisePatternDef}
-    ${scanPatternDef}
+    ${dashboardFilterDefs}
+    ${patternDefs}
   </defs>
 
   <style>
@@ -1300,10 +1396,7 @@ export function renderCrtContributionSvg(input: SvgRenderInput): string {
     ${radarPulseCss}
   </style>
 
-  <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#bg)"/>
-  ${includeNoiseLayer ? `<rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#noisePatternPrimary)" opacity="${(themeConfig.noiseOpacity * 0.72).toFixed(4)}"/>` : ''}
-  ${includeNoiseLayer ? `<rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#noisePatternSecondary)" opacity="${(themeConfig.noiseOpacity * 0.58).toFixed(4)}"/>` : ''}
-  ${includeScanLayer ? `<rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#scanPattern)" opacity="${themeConfig.scanOpacity}"/>` : ''}
+  ${overlays}
   <rect width="${layout.width}" height="${canvasHeight}" rx="14" fill="url(#vignette)" opacity="${themeConfig.vignetteOpacity}"/>
 
   ${yearLabels}

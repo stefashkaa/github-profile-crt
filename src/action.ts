@@ -6,6 +6,36 @@ import path from 'node:path';
 import { loadRuntimeConfig } from './config/env';
 import { generateCrtContributionSvgs } from './generator';
 
+const GIT_BINARY_CANDIDATES =
+  process.platform === 'win32'
+    ? ['C:\\Program Files\\Git\\cmd\\git.exe', 'C:\\Program Files\\Git\\bin\\git.exe']
+    : ['/usr/bin/git', '/bin/git', '/usr/local/bin/git', '/opt/homebrew/bin/git'];
+
+function resolveGitExecutable(): string {
+  const executable = GIT_BINARY_CANDIDATES.find((candidatePath) => fs.existsSync(candidatePath));
+  if (!executable) {
+    throw new Error('Unable to locate git binary in trusted system paths.');
+  }
+
+  return executable;
+}
+
+const GIT_EXECUTABLE = resolveGitExecutable();
+
+function hardenedExecEnv(): NodeJS.ProcessEnv {
+  if (process.platform === 'win32') {
+    return {
+      ...process.env,
+      PATH: 'C:\\Windows\\System32;C:\\Windows'
+    };
+  }
+
+  return {
+    ...process.env,
+    PATH: '/usr/bin:/bin:/usr/local/bin'
+  };
+}
+
 function resolveRepositoryOwner(): string | undefined {
   const explicitOwner = process.env.GITHUB_REPOSITORY_OWNER?.trim();
 
@@ -86,10 +116,11 @@ function buildGithubAuthHeader(token: string): string {
 
 function hasGitHubExtraHeader(cwd: string): boolean {
   try {
-    const output = execFileSync('git', ['config', '--get-regexp', '^http\\..*\\.extraheader$'], {
+    const output = execFileSync(GIT_EXECUTABLE, ['config', '--get-regexp', String.raw`^http\..*\.extraheader$`], {
       cwd,
       encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: hardenedExecEnv()
     });
 
     return output
@@ -119,10 +150,11 @@ function runGit(
     : args;
 
   try {
-    const output = execFileSync('git', finalArgs, {
+    const output = execFileSync(GIT_EXECUTABLE, finalArgs, {
       cwd,
       encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: hardenedExecEnv()
     });
 
     return trimOutput ? output.trim() : output;
@@ -288,11 +320,12 @@ async function run(): Promise<void> {
   core.setOutput('committed', String(committed));
 }
 
-run().catch((error: unknown) => {
+try {
+  await run();
+} catch (error: unknown) {
   if (error instanceof Error) {
     core.setFailed(error.message);
-    return;
+  } else {
+    core.setFailed(String(error));
   }
-
-  core.setFailed(String(error));
-});
+}
