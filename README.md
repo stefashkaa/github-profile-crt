@@ -12,6 +12,7 @@ Bring a little retro warmth to your GitHub profile: **turn your contributions in
 
 <p align="center">
   <a href="https://github.com/stefashkaa/github-profile-crt/actions/workflows/generate-crt-contributions.yml"><img alt="Workflow" src="https://img.shields.io/github/actions/workflow/status/stefashkaa/github-profile-crt/generate-crt-contributions.yml?label=generate"></a>
+  <a href="https://sonarcloud.io/summary/new_code?id=stefashkaa_github-profile-crt"><img src="https://sonarcloud.io/api/project_badges/measure?project=stefashkaa_github-profile-crt&metric=alert_status" alt="SonarCloud"></a>
   <a href="https://github.com/stefashkaa/github-profile-crt/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/stefashkaa/github-profile-crt"></a>
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/github/license/stefashkaa/github-profile-crt"></a>
   <a href="https://github.com/stefashkaa/github-profile-crt/issues"><img alt="Issues" src="https://img.shields.io/github/issues/stefashkaa/github-profile-crt"></a>
