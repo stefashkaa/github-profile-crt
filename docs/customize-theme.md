@@ -6,7 +6,7 @@
 
 <!-- nav:top:end -->
 
-Custom theme lets you start from a preset and override colours, without editing code.
+Custom theme lets you start from a preset and override colors, without editing code.
 
 ## Enable
 

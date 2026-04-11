@@ -30,9 +30,9 @@ Try:
 - Rendering `themes: all` once to confirm file generation
 - Temporarily setting `minify-svg: false` to debug
 
-## Organisation results look different from a user’s contribution graph
+## Organization results look different from a user’s contribution graph
 
-Organisation mode is an approximation based on repository data and may not match every “contribution type” shown in GitHub UI. It’s best used as a single, consistent “org activity signal” rather than a strict mirror.
+Organization mode is an approximation based on repository data and may not match every “contribution type” shown in GitHub UI. It’s best used as a single, consistent “org activity signal” rather than a strict mirror.
 
 <!-- nav:bottom:start -->
 

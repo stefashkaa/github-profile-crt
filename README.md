@@ -21,14 +21,14 @@ Bring a little retro warmth to your GitHub profile: **turn your contributions in
 
 github-profile-crt is a GitHub Action that:
 
-- **Fetches** contribution data for a user (GraphQL) or an organisation (REST aggregation)
+- **Fetches** contribution data for a user (GraphQL) or an organization (REST aggregation)
 - **Renders** a CRT-style weekly chart as **SVG**
 - **Applies themes** (dark + light variants), custom palettes are supported too
 - **Optionally commits & pushes** the generated files back to your repo
 
 It’s designed for:
 
-- **Profile READMEs** (user and organisation)
+- **Profile READMEs** (user and organization)
 - **Project READMEs** (if you want a living “activity panel” in a repo)
 
 ## Quick start
@@ -36,7 +36,7 @@ It’s designed for:
 ### Choose where the README lives
 
 - **User profile README:** create a public repo named **`.github`** under your user account, then add `profile/README.md`
-- **Organisation profile README:** create a public repo named **`.github`** under the organisation, then add `profile/README.md`
+- **Organization profile README:** create a public repo named **`.github`** under the organization, then add `profile/README.md`
 
 (Those are GitHub’s rules; this action simply generates files you embed.)
 
@@ -83,9 +83,9 @@ In your `profile/README.md` (or somewhere else), embed the generated SVG:
 
 ```md
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/crt-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="assets/crt-light.svg">
-  <img alt="My CRT contribution chart" src="assets/crt-dark.svg" width="100%">
+  <source media="(prefers-color-scheme: dark)" srcset="../assets/crt-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="../assets/crt-light.svg">
+  <img alt="My CRT contribution chart" src="../assets/crt-dark.svg" width="100%">
 </picture>
 ```
 
@@ -108,7 +108,7 @@ Preset themes:
 - [rainbow](./docs/themes/rainbow.md): pure color chaos, but joyful
 - [chaos](./docs/themes/chaos.md): unstable signal, controlled damage
 - [chaos-max](./docs/themes/chaos-max.md): full visual meltdown
-- [static](./docs/themes/static.md): no animations at all, just a beauty
+- [static](./docs/themes/static.md): no motion, just clean signal
 
 Use one, a list, or all:
 
@@ -184,9 +184,9 @@ with:
 
 [Preview](./docs/without-stats-panels.md)
 
-### Organisation profile
+### Organization profile
 
-Set `github-user` to the organisation login and `github-token` with org data access (see [these steps](./docs/org-token-creation.md)).
+Set `github-user` to the organization login and `github-token` with org data access (see [these steps](./docs/org-token-creation.md)).
 
 ```yml
 with:

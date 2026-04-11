@@ -6,7 +6,7 @@
 
 <!-- nav:top:end -->
 
-Minimal-motion variant with scan/noise/equalizer/dashboard animations disabled for the clean readability.
+A quieter variant with motion stripped back for people who want the CRT look without the constant movement.
 
 ## Dark Mode
 

@@ -9,7 +9,7 @@
 ## Workflow snippet
 
 ```yml
-- name: Generate Organisation Contributions SVGs
+- name: Generate Organization Contributions SVGs
   uses: stefashkaa/github-profile-crt@v1
   with:
     output-dir: assets
@@ -30,7 +30,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="../assets/neon-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="../assets/neon-light.svg">
-    <img alt="Organisation contributions" src="../assets/neon-dark.svg" width="100%">
+    <img alt="Organization contributions" src="../assets/neon-dark.svg" width="100%">
   </picture>
 </p>
 ```
@@ -41,7 +41,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./img/neon-dark-org.svg">
     <source media="(prefers-color-scheme: light)" srcset="./img/neon-light-org.svg">
-    <img alt="Organisation contributions preview" src="./img/neon-dark-org.svg" width="100%">
+    <img alt="Organization contributions preview" src="./img/neon-dark-org.svg" width="100%">
   </picture>
 </p>
 
