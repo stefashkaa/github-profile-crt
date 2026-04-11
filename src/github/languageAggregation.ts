@@ -34,9 +34,14 @@ function languageKey(rawName: string): string {
 
 export function fallbackLanguageColor(name: string): string {
   let hash = 0;
+  const INT32_MOD = 4_294_967_296;
+  const INT32_SIGN_BIT = 2_147_483_648;
 
   for (const char of name) {
-    hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
+    const codePoint = char.codePointAt(0) ?? 0;
+    const next = Math.trunc(hash * 31 + codePoint);
+    const wrappedUnsigned = ((next % INT32_MOD) + INT32_MOD) % INT32_MOD;
+    hash = wrappedUnsigned >= INT32_SIGN_BIT ? wrappedUnsigned - INT32_MOD : wrappedUnsigned;
   }
 
   const hue = Math.abs(hash) % 360;

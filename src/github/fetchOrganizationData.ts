@@ -2,7 +2,7 @@ import type { ContributionCalendar, ContributionLevel, ContributionMonth, Contri
 import type { ProfileInsights } from '../model/insights';
 import { clamp } from '../utils/math';
 import { addLanguageWeight, collapseLanguageBuckets, DEFAULT_MAX_LANGUAGE_SLICES } from './languageAggregation';
-import type { RestClient } from './restClient';
+import type { RestClient, RestClientResponse } from './restClient';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_ORG_REPOSITORY_LIMIT = 80;
@@ -44,6 +44,14 @@ interface RepoContributionSnapshot {
 
 interface SearchIssuesResponse {
   total_count: number;
+}
+
+interface RepositoryCommitsPageRequest {
+  orgLogin: string;
+  repositoryName: string;
+  fromIsoDay: string;
+  toIsoDay: string;
+  page: number;
 }
 
 function utcDateOnly(date: Date): string {
@@ -101,6 +109,10 @@ function isRestStatusError(error: unknown, status: number): boolean {
   return error.message.startsWith(`REST ${status}:`);
 }
 
+function isRecoverableRepoCommitListError(error: unknown): boolean {
+  return [403, 409, 422, 404].some((status) => isRestStatusError(error, status));
+}
+
 function addDayCount(dayCounts: Map<string, number>, dayKey: string, contributionCount: number): void {
   if (contributionCount <= 0) {
     return;
@@ -129,6 +141,62 @@ function maxDayContribution(dayCounts: Map<string, number>): number {
   }
 
   return maxContribution;
+}
+
+function emptyContributionSnapshot(): RepoContributionSnapshot {
+  return {
+    dayCounts: new Map(),
+    total: 0
+  };
+}
+
+function commitDayKey(commit: RepoCommitListItem): string | undefined {
+  return (commit.commit?.author?.date ?? commit.commit?.committer?.date)?.slice(0, 10);
+}
+
+function isDayInIsoWindow(dayKey: string, fromIsoDay: string, toIsoDay: string): boolean {
+  return dayKey >= fromIsoDay && dayKey <= toIsoDay;
+}
+
+async function requestRepoCommitsPage(
+  client: RestClient,
+  params: RepositoryCommitsPageRequest
+): Promise<RestClientResponse<RepoCommitListItem[]> | null> {
+  const { orgLogin, repositoryName, fromIsoDay, toIsoDay, page } = params;
+
+  try {
+    return await client.request<RepoCommitListItem[]>(
+      `/repos/${encodeURIComponent(orgLogin)}/${encodeURIComponent(repositoryName)}/commits`,
+      {
+        since: `${fromIsoDay}T00:00:00.000Z`,
+        until: `${toIsoDay}T23:59:59.999Z`,
+        per_page: COMMIT_LIST_PER_PAGE,
+        page
+      }
+    );
+  } catch (error) {
+    if (isRecoverableRepoCommitListError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+function collectCommitCountsFromPage(
+  dayCounts: Map<string, number>,
+  commits: RepoCommitListItem[],
+  fromIsoDay: string,
+  toIsoDay: string
+): void {
+  for (const commit of commits) {
+    const dayKey = commitDayKey(commit);
+    if (!dayKey || !isDayInIsoWindow(dayKey, fromIsoDay, toIsoDay)) {
+      continue;
+    }
+
+    addDayCount(dayCounts, dayKey, 1);
+  }
 }
 
 async function mapWithConcurrency<TInput, TResult>(
@@ -261,32 +329,16 @@ async function fetchRepoCommitListSnapshot(
   const dayCounts = new Map<string, number>();
 
   for (let page = 1; page <= COMMIT_LIST_MAX_PAGES; page += 1) {
-    let response;
+    const response = await requestRepoCommitsPage(client, {
+      orgLogin,
+      repositoryName,
+      fromIsoDay,
+      toIsoDay,
+      page
+    });
 
-    try {
-      response = await client.request<RepoCommitListItem[]>(
-        `/repos/${encodeURIComponent(orgLogin)}/${encodeURIComponent(repositoryName)}/commits`,
-        {
-          since: `${fromIsoDay}T00:00:00.000Z`,
-          until: `${toIsoDay}T23:59:59.999Z`,
-          per_page: COMMIT_LIST_PER_PAGE,
-          page
-        }
-      );
-    } catch (error) {
-      if (
-        isRestStatusError(error, 403) ||
-        isRestStatusError(error, 409) ||
-        isRestStatusError(error, 422) ||
-        isRestStatusError(error, 404)
-      ) {
-        return {
-          dayCounts: new Map(),
-          total: 0
-        };
-      }
-
-      throw error;
+    if (!response) {
+      return emptyContributionSnapshot();
     }
 
     const commits = response.data;
@@ -294,19 +346,7 @@ async function fetchRepoCommitListSnapshot(
       break;
     }
 
-    for (const commit of commits) {
-      const commitDate = commit.commit?.author?.date ?? commit.commit?.committer?.date;
-      if (!commitDate) {
-        continue;
-      }
-
-      const dayKey = commitDate.slice(0, 10);
-      if (dayKey < fromIsoDay || dayKey > toIsoDay) {
-        continue;
-      }
-
-      addDayCount(dayCounts, dayKey, 1);
-    }
+    collectCommitCountsFromPage(dayCounts, commits, fromIsoDay, toIsoDay);
 
     const linkHeader = response.headers.get('link') ?? '';
     const hasNextPage = linkHeader.includes('rel="next"');

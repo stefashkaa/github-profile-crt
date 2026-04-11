@@ -36,7 +36,7 @@ export function buildAreaPath(points: ChartPoint[], baseY: number): string {
     path += ` L ${point.x} ${previousPoint.y} L ${point.x} ${point.y}`;
   }
 
-  const lastPoint = points[points.length - 1]!;
+  const lastPoint = points.at(-1)!;
   path += ` L ${lastPoint.x} ${baseY} Z`;
 
   return path;

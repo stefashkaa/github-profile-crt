@@ -1,19 +1,37 @@
 import { execFileSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 
 const projectRoot = process.cwd();
+const require = createRequire(import.meta.url);
 
 const actionOutputDir = path.join(projectRoot, 'dist', 'action');
 const actionIndexPath = path.join(actionOutputDir, 'index.js');
 const actionPackagePath = path.join(actionOutputDir, 'package.json');
 const actionDataDir = path.join(actionOutputDir, 'data');
 const rootPackagePath = path.join(projectRoot, 'package.json');
+const nccCliPath = require.resolve('@vercel/ncc/dist/ncc/cli.js');
+
+function hardenedExecEnv(): NodeJS.ProcessEnv {
+  if (process.platform === 'win32') {
+    return {
+      ...process.env,
+      PATH: 'C:\\Windows\\System32;C:\\Windows'
+    };
+  }
+
+  return {
+    ...process.env,
+    PATH: '/usr/bin:/bin:/usr/local/bin'
+  };
+}
 
 function runNccBuild() {
-  execFileSync('ncc', ['build', 'src/action.ts', '-o', 'dist/action', '--minify'], {
+  execFileSync(process.execPath, [nccCliPath, 'build', 'src/action.ts', '-o', 'dist/action', '--minify'], {
     cwd: projectRoot,
-    stdio: 'inherit'
+    stdio: 'inherit',
+    env: hardenedExecEnv()
   });
 }
 

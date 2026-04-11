@@ -4,14 +4,13 @@ export interface RestClientResponse<TData> {
   status: number;
 }
 
+type RestSearchParams = Record<string, string | number | undefined>;
+
 export interface RestClient {
-  request<TData>(
-    path: string,
-    searchParams?: Record<string, string | number | undefined>
-  ): Promise<RestClientResponse<TData>>;
+  request<TData>(path: string, searchParams?: RestSearchParams): Promise<RestClientResponse<TData>>;
 }
 
-function buildRequestUrl(path: string, searchParams?: Record<string, string | number | undefined>): URL {
+function buildRequestUrl(path: string, searchParams?: RestSearchParams): URL {
   const url = new URL(`https://api.github.com${path}`);
 
   if (searchParams) {
@@ -29,10 +28,7 @@ function buildRequestUrl(path: string, searchParams?: Record<string, string | nu
 
 export function createGitHubRestClient(token: string): RestClient {
   return {
-    async request<TData>(
-      path: string,
-      searchParams?: Record<string, string | number | undefined>
-    ): Promise<RestClientResponse<TData>> {
+    async request<TData>(path: string, searchParams?: RestSearchParams): Promise<RestClientResponse<TData>> {
       const url = buildRequestUrl(path, searchParams);
       const response = await fetch(url, {
         method: 'GET',

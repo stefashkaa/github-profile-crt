@@ -6,6 +6,43 @@ import path from 'node:path';
 import { loadRuntimeConfig } from './config/env';
 import { generateCrtContributionSvgs } from './generator';
 
+const GIT_BINARY_CANDIDATES =
+  process.platform === 'win32'
+    ? ['C:\\Program Files\\Git\\cmd\\git.exe', 'C:\\Program Files\\Git\\bin\\git.exe']
+    : ['/usr/bin/git', '/bin/git', '/usr/local/bin/git', '/opt/homebrew/bin/git'];
+
+let cachedGitExecutable: string | null = null;
+
+function resolveGitExecutable(): string {
+  if (cachedGitExecutable) {
+    return cachedGitExecutable;
+  }
+
+  const trustedExecutable = GIT_BINARY_CANDIDATES.find((candidatePath) => fs.existsSync(candidatePath));
+  cachedGitExecutable = trustedExecutable ?? 'git';
+  return cachedGitExecutable;
+}
+
+function hardenedExecEnv(gitExecutable: string): NodeJS.ProcessEnv {
+  // If we fall back to PATH lookup ("git"), preserve runner PATH to support
+  // self-hosted/container setups where git lives outside standard paths.
+  if (gitExecutable === 'git') {
+    return process.env;
+  }
+
+  if (process.platform === 'win32') {
+    return {
+      ...process.env,
+      PATH: 'C:\\Windows\\System32;C:\\Windows'
+    };
+  }
+
+  return {
+    ...process.env,
+    PATH: '/usr/bin:/bin:/usr/local/bin'
+  };
+}
+
 function resolveRepositoryOwner(): string | undefined {
   const explicitOwner = process.env.GITHUB_REPOSITORY_OWNER?.trim();
 
@@ -85,11 +122,14 @@ function buildGithubAuthHeader(token: string): string {
 }
 
 function hasGitHubExtraHeader(cwd: string): boolean {
+  const gitExecutable = resolveGitExecutable();
+
   try {
-    const output = execFileSync('git', ['config', '--get-regexp', '^http\\..*\\.extraheader$'], {
+    const output = execFileSync(gitExecutable, ['config', '--get-regexp', String.raw`^http\..*\.extraheader$`], {
       cwd,
       encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: hardenedExecEnv(gitExecutable)
     });
 
     return output
@@ -110,6 +150,7 @@ function runGit(
     trimOutput?: boolean;
   }
 ): string {
+  const gitExecutable = resolveGitExecutable();
   const allowFailure = options?.allowFailure ?? false;
   const trimOutput = options?.trimOutput ?? true;
   const githubAuthToken = options?.githubAuthToken?.trim();
@@ -119,10 +160,11 @@ function runGit(
     : args;
 
   try {
-    const output = execFileSync('git', finalArgs, {
+    const output = execFileSync(gitExecutable, finalArgs, {
       cwd,
       encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: hardenedExecEnv(gitExecutable)
     });
 
     return trimOutput ? output.trim() : output;
@@ -288,11 +330,12 @@ async function run(): Promise<void> {
   core.setOutput('committed', String(committed));
 }
 
-run().catch((error: unknown) => {
+try {
+  await run();
+} catch (error: unknown) {
   if (error instanceof Error) {
     core.setFailed(error.message);
-    return;
+  } else {
+    core.setFailed(String(error));
   }
-
-  core.setFailed(String(error));
-});
+}
