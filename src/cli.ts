@@ -17,19 +17,23 @@ async function main(): Promise<void> {
   const savedPercent = rawTotalBytes > 0 ? ((savedBytes / rawTotalBytes) * 100).toFixed(1) : '0.0';
   const optimizationSummary = result.optimized ? `, saved ${savedBytes} bytes (${savedPercent}%)` : '';
 
-  console.log(
-    `Generated ${result.files.length} themed SVGs (${result.weeks} weeks, ${result.totalContributions} contributions total${optimizationSummary})`
+  process.stdout.write(
+    `Generated ${result.files.length} themed SVGs in ${result.outputDirectory} (${result.weeks} weeks, ${result.totalContributions} contributions total${optimizationSummary})\n`
   );
 
-  for (const [index, file] of result.files.entries()) {
-    console.log(` - SVG ${index + 1}: ${file.mode} mode (${file.finalSize} bytes)`);
+  for (const file of result.files) {
+    process.stdout.write(` - ${file.themeId} (${file.mode}): ${file.outputPath} (${file.finalSize} bytes)\n`);
   }
 }
 
 try {
   await main();
-} catch {
-  console.error('Generation failed. Check the configuration and try again.');
+} catch (error: unknown) {
+  if (error instanceof Error) {
+    process.stderr.write(`${error.message}\n`);
+  } else {
+    process.stderr.write(`${String(error)}\n`);
+  }
 
   process.exit(1);
 }
