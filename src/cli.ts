@@ -18,22 +18,18 @@ async function main(): Promise<void> {
   const optimizationSummary = result.optimized ? `, saved ${savedBytes} bytes (${savedPercent}%)` : '';
 
   console.log(
-    `Generated ${result.files.length} themed SVGs in ${result.outputDirectory} (${result.weeks} weeks, ${result.totalContributions} contributions total${optimizationSummary})`
+    `Generated ${result.files.length} themed SVGs (${result.weeks} weeks, ${result.totalContributions} contributions total${optimizationSummary})`
   );
 
-  for (const file of result.files) {
-    console.log(` - ${file.themeId} (${file.mode}): ${file.outputPath} (${file.finalSize} bytes)`);
+  for (const [index, file] of result.files.entries()) {
+    console.log(` - SVG ${index + 1}: ${file.mode} mode (${file.finalSize} bytes)`);
   }
 }
 
 try {
   await main();
-} catch (error: unknown) {
-  if (error instanceof Error) {
-    console.error(error.message);
-  } else {
-    console.error(error);
-  }
+} catch {
+  console.error('Generation failed. Check the configuration and try again.');
 
   process.exit(1);
 }
