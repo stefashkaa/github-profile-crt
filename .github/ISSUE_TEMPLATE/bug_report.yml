@@ -73,7 +73,7 @@ body:
       label: Environment
       placeholder: |
         - OS: macOS 14 / Ubuntu 24.04
-        - Node: 22.x
+        - Node: >=24
         - pnpm: 10.x
         - Execution: local CLI / GitHub Actions
 

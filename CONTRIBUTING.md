@@ -78,7 +78,7 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ### Prerequisites
 
-- Node.js (see `package.json` for the supported range)
+- Node.js >=24 (see `package.json` for the supported range)
 - pnpm (this repo uses pnpm; see `packageManager`)
 
 ### Installation
