@@ -16,9 +16,20 @@ jobs:
       # Checkout the repository, required if the action is in the same repository
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GH_TOKEN }}
 
-      - name: Generate & push SVGs
+      - name: Generate SVGs
         uses: ./
         with:
           output-dir: examples
           themes: all
+          commit-and-push: false
+
+      - name: Commit & push SVGs
+        run: |
+          git config user.name "stefashkaa"
+          git config user.email "stef4n.popov@gmail.com"
+          git add -- examples
+          git diff --cached --quiet || git commit -m "chore: Update CRT contribution SVGs"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
