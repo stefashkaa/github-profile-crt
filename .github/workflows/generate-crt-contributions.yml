@@ -16,8 +16,6 @@ jobs:
       # Checkout the repository, required if the action is in the same repository
       - name: Checkout
         uses: actions/checkout@v5
-        with:
-          token: ${{ secrets.GH_TOKEN }}
 
       - name: Generate SVGs
         uses: ./
@@ -33,5 +31,3 @@ jobs:
           git add -- examples
           git diff --cached --quiet || git commit -m "chore: Update CRT contribution SVGs"
           git push origin main
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
