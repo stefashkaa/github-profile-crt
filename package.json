@@ -55,16 +55,16 @@
   "devDependencies": {
     "@actions/core": "^3.0.1",
     "@eslint/js": "^10.0.1",
-    "@types/node": "^25.6.2",
+    "@types/node": "^25.9.1",
     "@vercel/ncc": "^0.38.4",
-    "eslint": "^10.3.0",
+    "eslint": "^10.4.1",
     "globals": "^17.6.0",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.3",
+    "lint-staged": "^17.0.7",
     "prettier": "^3.8.3",
-    "tsx": "^4.21.0",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.11"
+    "typescript-eslint": "^8.60.1",
+    "vite": "^8.0.16"
   }
 }
