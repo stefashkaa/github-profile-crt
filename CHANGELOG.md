@@ -5,11 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project follows [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.1.0] - 2026-09-12
 
 ### Added
 
-- (nothing yet)
+#### Optimization and quality
+
+- Peer dependency validation command (`pnpm check:peers`).
+- Production dependency audit command (`pnpm audit:prod`).
+
+### Changed
+
+#### Runtime and CLI
+
+- Raised the minimum Node.js version for local CLI usage and development from 20 to 24.
+- Replaced CLI console logging with explicit stdout/stderr writes, including newline handling and string conversion for non-Error failures.
+
+#### Build and dependencies
+
+- Updated pnpm from 10.33.0 to 12.3.4 and refreshed the dependency lockfile.
+- Updated runtime and Action dependencies:
+  - `dotenv` to 17.4.2.
+  - `svgo` to 4.1.0.
+  - `@actions/core` to 3.0.1.
+- Updated build tooling:
+  - Vite to 8.3.0.
+  - TypeScript to 6.0.3.
+  - ncc to 0.45.0.
+  - tsx to 4.23.13.
+- Updated quality tooling and type definitions:
+  - ESLint to 10.10.0.
+  - typescript-eslint to 8.70.0.
+  - Prettier to 3.9.6.
+  - lint-staged to 17.5.1.
+  - globals to 17.12.0.
+  - Node.js type definitions to 26.5.1.
+- Switched Vite entrypoint resolution from `__dirname` to `import.meta.dirname`.
+- Regenerated the distributed GitHub Action bundle with updated dependencies and ncc.
 
 ## [1.0.0] - 2026-04-11
 
