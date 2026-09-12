@@ -26,7 +26,7 @@
   "engines": {
     "node": ">=24"
   },
-  "packageManager": "pnpm@11.10.0",
+  "packageManager": "pnpm@12.3.4",
   "scripts": {
     "build": "vite build",
     "build:action": "tsx scripts/build-action.mts",
@@ -39,7 +39,9 @@
     "generate": "pnpm build && node dist/cli.js",
     "generate:dev": "tsx src/cli.ts",
     "generate:raw": "CRT_MINIFY_SVG=false tsx src/cli.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "check:peers": "pnpm peers check",
+    "audit:prod": "pnpm audit --prod"
   },
   "lint-staged": {
     "*.{ts,tsx,js,mjs,cjs}": [
@@ -50,21 +52,21 @@
   },
   "dependencies": {
     "dotenv": "^17.4.2",
-    "svgo": "^4.0.1"
+    "svgo": "^4.1.0"
   },
   "devDependencies": {
     "@actions/core": "^3.0.1",
     "@eslint/js": "^10.0.1",
-    "@types/node": "^26.1.1",
-    "@vercel/ncc": "^0.44.1",
-    "eslint": "^10.7.0",
-    "globals": "^17.7.0",
+    "@types/node": "^26.5.1",
+    "@vercel/ncc": "^0.45.0",
+    "eslint": "^10.10.0",
+    "globals": "^17.12.0",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.8",
-    "prettier": "^3.9.5",
-    "tsx": "^4.23.0",
+    "lint-staged": "^17.5.1",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.13",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.63.0",
-    "vite": "^8.1.4"
+    "typescript-eslint": "^8.70.0",
+    "vite": "^8.3.0"
   }
 }

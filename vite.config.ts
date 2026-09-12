@@ -10,8 +10,8 @@ export default defineConfig({
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        index: resolve(__dirname, 'src/index.ts'),
-        cli: resolve(__dirname, 'src/cli.ts')
+        index: resolve(import.meta.dirname, 'src/index.ts'),
+        cli: resolve(import.meta.dirname, 'src/cli.ts')
       },
       external: [/^node:/, 'dotenv/config', 'svgo'],
       output: {
